@@ -104,3 +104,11 @@ class Score:
     reason: str
     thickness_cm: float
     last_clear_day: date | None
+
+
+class SourceUnavailable(Exception):
+    """An external data source failed after retries."""
+
+    def __init__(self, source: str, detail: str = "") -> None:
+        super().__init__(f"{source} unavailable" + (f": {detail}" if detail else ""))
+        self.source = source
