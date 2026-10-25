@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wildice"
+version = "0.1.0"
+description = "Flags Alaska lakes with snow-free ice for skating"
+requires-python = ">=3.12"
+dependencies = [
+  "requests",
+  "shapely>=2",
+  "pyproj",
+  "PyYAML",
+  "osm2geojson",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "responses"]
+
+[tool.setuptools]
+packages = ["wildice"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

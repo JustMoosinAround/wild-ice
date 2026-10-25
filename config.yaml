@@ -1,0 +1,32 @@
+region:
+  bbox: [59.3, -152.5, 62.8, -144.0]  # south, west, north, east
+filters:
+  min_area_acres: 20
+  max_road_miles: 2
+  max_trail_miles: 1
+ice:
+  alpha: 2.0
+  skate_cm: 10
+  open_cm: 2
+snow:
+  cover_cm: 2
+reset:  # placeholders, tuned by backtest
+  rain_mm: 5
+  thaw_days: 2
+  wind_gust_kmh: 60
+  light_snow_cm: 5
+imagery:  # placeholders, tuned by backtest
+  min_valid_fraction: 0.7
+  fresh_days: 3
+  shore_buffer_m: 30
+  snow_ndsi: 0.4
+  snow_brightness: 0.3
+  dark_brightness: 0.12
+  s1_frozen_delta_db: 3.0
+  lookback_days: 14
+  monthly_request_budget: 9000
+site:
+  base_url: "https://<github-user>.github.io/wild-ice"
+season_start: "10-01"
+pinned: []
+hidden: []
