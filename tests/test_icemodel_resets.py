@@ -99,3 +99,13 @@ def test_reset_clears_possible_and_white_flag():
     s = run_ice_model(cold(), cfg, {d(2): SurfaceClass.WHITE, d(3): SurfaceClass.DARK,
                                     d(5): SurfaceClass.DARK})
     assert s.last_reset == ResetEvent(d(3), ResetKind.CONFIRMED)
+
+
+def test_freeze_up_after_warm_run_is_not_likely_reset():
+    s = run_ice_model([wx(0, 1), wx(1, 1), wx(2, -2)], cfg)
+    assert s.last_reset == ResetEvent(date(2025, 11, 3), ResetKind.FREEZE_UP)
+
+
+def test_freeze_up_after_rain_is_not_likely_reset():
+    s = run_ice_model([wx(0, 1, rain=6), wx(1, -2)], cfg)
+    assert s.last_reset == ResetEvent(date(2025, 11, 2), ResetKind.FREEZE_UP)

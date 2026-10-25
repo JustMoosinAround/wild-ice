@@ -45,6 +45,7 @@ def run_ice_model(
         prev_thickness = thickness
         thickness = cfg.ice.alpha * sqrt(cum)
         frozen = thickness > 0
+        just_froze = frozen and prev_thickness == 0
         if frozen and prev_thickness == 0:
             freeze_up = d.day
             last_reset = ResetEvent(d.day, ResetKind.FREEZE_UP)
@@ -72,7 +73,8 @@ def run_ice_model(
             ):
                 reset_kind = ResetKind.CONFIRMED
             elif (
-                d.t_mean <= 0
+                not just_froze
+                and d.t_mean <= 0
                 and prev_warm_days > 0
                 and (prev_warm_days >= r.thaw_days or prev_warm_rain >= r.rain_mm)
             ):
