@@ -94,9 +94,12 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
 
     parts = [f"~{h:.0f} cm est."]
     if snow > 0:
-        since = ice.last_reset.day if ice.last_reset else ice.last_snow_day
-        parts.append(f"{snow:.0f} cm snow since {_fmt(since)}" if since
-                     else f"{snow:.0f} cm snow")
+        if ice.last_reset:
+            parts.append(f"{snow:.0f} cm snow since {_fmt(ice.last_reset.day)}")
+        elif ice.last_snow_day:
+            parts.append(f"{snow:.0f} cm snow, last on {_fmt(ice.last_snow_day)}")
+        else:
+            parts.append(f"{snow:.0f} cm snow")
     elif ice.last_reset is not None:
         phrase = _RESET_PHRASE.get(ice.last_reset.kind, "reset")
         parts.append(f"no snow since {phrase} on {_fmt(ice.last_reset.day)}")
@@ -106,8 +109,8 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
         parts.append(f"dark on {_fmt(last_clear_day)} image")
     elif latest_cls is SurfaceClass.WHITE:
         parts.append(f"white on {_fmt(last_clear_day)} image")
-    elif radar_frozen:
-        parts.append("radar shows ice")
+    elif radar_frozen and label is Label.LIKELY_BLACK_ICE:
+        parts.append("radar suggests ice")
     elif last_clear_day is not None:
         parts.append(f"no clear image since {_fmt(last_clear_day)}")
     else:

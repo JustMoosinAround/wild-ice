@@ -85,7 +85,7 @@ def test_black_ice_radar_only_medium():
     im = img(0, None, s1=[S1Obs(RUN - timedelta(days=1), -15)], base=-20)
     s = score_lake(lake, ice(), im, RUN, cfg)
     assert (s.label, s.confidence) == (Label.LIKELY_BLACK_ICE, Confidence.MEDIUM)
-    assert "radar shows ice" in s.reason
+    assert "radar suggests ice" in s.reason
 
 
 def test_radar_ignored_when_s2_in_window():
@@ -126,3 +126,15 @@ def test_reason_mentions_possible_reset():
     pr = ResetEvent(date(2026, 11, 6), ResetKind.POSSIBLE)
     s = score_lake(lake, ice(possible=[pr]), None, date(2026, 11, 10), cfg)
     assert "possible wind clearing Nov 6" in s.reason
+
+
+def test_reason_snow_no_reset_says_last_on():
+    s = score_lake(lake, ice(snow=3, last_snow=date(2026, 1, 8)), None, RUN, cfg)
+    assert "3 cm snow, last on Jan 8" in s.reason
+    assert "snow since" not in s.reason
+
+
+def test_radar_phrase_absent_for_open_water():
+    im = img(0, None, s1=[S1Obs(RUN, -15)], base=-20)
+    s = score_lake(lake, ice(h=1), im, RUN, cfg)
+    assert s.label is Label.OPEN_WATER and "radar" not in s.reason
