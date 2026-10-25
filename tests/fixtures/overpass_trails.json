@@ -1,0 +1,36 @@
+{
+ "version": 0.6,
+ "generator": "Overpass API 0.7.62",
+ "osm3s": {
+  "timestamp_osm_base": "2026-10-20T00:00:00Z"
+ },
+ "elements": [
+  {
+   "type": "way",
+   "id": 3001,
+   "bounds": {
+    "minlat": 60.995,
+    "minlon": -148.888,
+    "maxlat": 61.01,
+    "maxlon": -148.888
+   },
+   "nodes": [
+    300100,
+    300101
+   ],
+   "geometry": [
+    {
+     "lat": 60.995,
+     "lon": -148.888
+    },
+    {
+     "lat": 61.01,
+     "lon": -148.888
+    }
+   ],
+   "tags": {
+    "highway": "path"
+   }
+  }
+ ]
+}
