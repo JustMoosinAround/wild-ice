@@ -132,6 +132,16 @@ def _merge(*lists: list[DayWeather]) -> list[DayWeather]:
     return [by_day[k] for k in sorted(by_day)]
 
 
+def _is_complete(days: list[DayWeather], start: date, run_date: date) -> bool:
+    """True if cached days start at season start, reach within the forecast
+    window (past_days=14) of run_date, and have no gaps."""
+    if not days or days[0].day != start:
+        return False
+    if days[-1].day < run_date - timedelta(days=13):
+        return False
+    return (days[-1].day - start).days + 1 == len(days)
+
+
 def update_cache(cache_dir: Path, cells: list[Cell], run_date: date, cfg: Config,
                  session: requests.Session) -> dict[Cell, list[DayWeather]]:
     start = season_start(run_date, cfg)
@@ -141,9 +151,9 @@ def update_cache(cache_dir: Path, cells: list[Cell], run_date: date, cfg: Config
         path = _cache_path(cache_dir, cell)
         days = _load(path) if path.exists() else []
         days = [d for d in days if d.day >= start]
-        if days and days[0].day == start:
+        if _is_complete(days, start, run_date):
             cached[cell] = days
-        else:  # missing, stale (previous season) or incomplete: backfill
+        else:  # missing, stale, or gappy: backfill from season start
             cached[cell] = days
             fresh.append(cell)
     backfill = fetch_daily(fresh, start, run_date, session, archive=True) if fresh else {}
