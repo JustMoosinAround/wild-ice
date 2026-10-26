@@ -113,6 +113,16 @@ def test_overpass_query_kinds():
 
 
 @responses.activate
+def test_overpass_requests_identify_the_app():
+    # Overpass rejects the anonymous default "python-requests" User-Agent with 406.
+    body = json.loads((FIX / "overpass_water.json").read_text())
+    responses.post(URL, json=body)
+    fetch_osm("water", (61.0, -149.1, 62.0, -148.1), requests.Session())
+    ua = responses.calls[0].request.headers["User-Agent"]
+    assert ua.startswith("wildice/") and "python-requests" not in ua
+
+
+@responses.activate
 def test_tile_dedupe():
     body = json.loads((FIX / "overpass_water.json").read_text())
     body["elements"] = body["elements"][:1]

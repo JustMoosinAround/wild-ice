@@ -16,6 +16,9 @@ from wildice.geo import LineIndex, area_acres, interior
 from wildice.models import Lake
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+# Overpass's usage policy asks clients to identify themselves; it answers the
+# anonymous default "python-requests" User-Agent with 406 Not Acceptable.
+USER_AGENT = "wildice/0.1 (personal lake-ice skating tool)"
 TIMEOUT_S = 180
 RETRIES = 3
 NARROW_WARNING = "Lake too narrow for satellite readings"
@@ -63,7 +66,8 @@ def _post(session: requests.Session, query: str) -> dict:
     for attempt in range(RETRIES + 1):
         last = attempt == RETRIES
         try:
-            resp = session.post(OVERPASS_URL, data={"data": query}, timeout=TIMEOUT_S)
+            resp = session.post(OVERPASS_URL, data={"data": query}, timeout=TIMEOUT_S,
+                                headers={"User-Agent": USER_AGENT})
         except (requests.ConnectionError, requests.Timeout):
             if last:
                 raise
