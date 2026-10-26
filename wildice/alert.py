@@ -48,12 +48,19 @@ def send_ntfy(topic: str, title: str, body: str, click: str | None,
     headers = {"Title": title, "Markdown": "yes"}
     if click:
         headers["Click"] = click
+    # The topic is a secret: requests' error text embeds the URL, so report only the
+    # exception class and HTTP status, and raise outside the except block so no
+    # chained exception (with the URL) is attached.
+    detail = None
     try:
         resp = session.post(f"{NTFY_URL}/{topic}", data=body.encode("utf-8"),
                             headers=headers, timeout=TIMEOUT_S)
         resp.raise_for_status()
     except requests.RequestException as exc:
-        raise SourceUnavailable(SOURCE, str(exc)) from exc
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        detail = f"{type(exc).__name__} status={status}"
+    if detail is not None:
+        raise SourceUnavailable(SOURCE, detail)
 
 
 def load_labels(path: Path) -> dict[str, str]:

@@ -117,3 +117,32 @@ def test_load_labels_missing_or_corrupt(tmp_path):
     bad = tmp_path / "bad.json"
     bad.write_text("{not json", encoding="utf-8")
     assert load_labels(bad) == {}
+
+
+SECRET = "s3cr3t-topic-xyz"
+
+
+def _assert_topic_free(err):
+    assert SECRET not in str(err)
+    assert SECRET not in repr(err)
+    for linked in (err.__cause__, err.__context__):
+        assert linked is None or (SECRET not in str(linked) and SECRET not in repr(linked))
+
+
+@responses.activate
+def test_send_ntfy_http_error_does_not_leak_topic():
+    responses.add(responses.POST, f"https://ntfy.sh/{SECRET}", status=500)
+    with pytest.raises(SourceUnavailable) as ei:
+        send_ntfy(SECRET, "x", "y", None, requests.Session())
+    _assert_topic_free(ei.value)
+    assert "status=500" in str(ei.value)
+
+
+@responses.activate
+def test_send_ntfy_connection_error_does_not_leak_topic():
+    responses.add(responses.POST, f"https://ntfy.sh/{SECRET}",
+                  body=requests.ConnectionError(f"boom with url: /{SECRET}"))
+    with pytest.raises(SourceUnavailable) as ei:
+        send_ntfy(SECRET, "x", "y", None, requests.Session())
+    _assert_topic_free(ei.value)
+    assert "ConnectionError" in str(ei.value)
