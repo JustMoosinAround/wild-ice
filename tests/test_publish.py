@@ -58,3 +58,9 @@ def test_history_window(tmp_path):
     days = [x["day"] for x in got["w1"]]
     assert days == sorted(days) and days[-1] == "2025-11-12" and days[0] == "2025-10-30"
     assert load_history(tmp_path / "missing", RUN) == {}
+
+
+def test_status_unnamed_lake_name():
+    unnamed = Lake("w9", None, 34.2, 1, None, 61.0, -149.0, None, None)
+    s = build_status([unnamed], {}, frozenset(), frozenset(), {}, RUN, None)
+    assert s["lakes"]["w9"]["name"] == "Unnamed lake (34 ac)"

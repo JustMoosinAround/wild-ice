@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 
 from wildice.config import Config
+
+log = logging.getLogger(__name__)
 
 
 def load_prefs(cfg: Config, prefs_dir: Path) -> tuple[frozenset[str], frozenset[str]]:
@@ -18,8 +21,9 @@ def load_prefs(cfg: Config, prefs_dir: Path) -> tuple[frozenset[str], frozenset[
         try:
             item = json.loads(f.read_text(encoding="utf-8"))
             lake_id, action = str(item["lake_id"]), item["action"]
-        except (ValueError, KeyError, TypeError):
-            continue  # malformed pref file: ignore
+        except (ValueError, KeyError, TypeError) as e:
+            log.warning("skipping malformed pref file %s: %r", f.name, e)
+            continue
         if action == "pin":
             pinned.add(lake_id)
         elif action == "unpin":
@@ -28,4 +32,6 @@ def load_prefs(cfg: Config, prefs_dir: Path) -> tuple[frozenset[str], frozenset[
             hidden.add(lake_id)
         elif action == "unhide":
             hidden.discard(lake_id)
+        else:
+            log.warning("skipping pref file %s: unknown action %r", f.name, action)
     return frozenset(pinned), frozenset(hidden)
