@@ -92,3 +92,28 @@ test("flush with no creds is a no-op", async () => {
   assert.equal(await flushQueue(s, null, async () => { throw new Error("no"); }), 0);
   assert.equal(queueOf(s).length, 1);
 });
+
+test("401/403/404 signals creds problem and keeps everything queued", async () => {
+  for (const status of [401, 403, 404]) {
+    const s = fakeStorage();
+    enqueue(s, { path: "a.json", content: "{}" });
+    enqueue(s, { path: "b.json", content: "{}" });
+    let calls = 0, signalled = 0;
+    const n = await flushQueue(s, creds, async () => { calls++; return { ok: false, status }; },
+      { onAuthFailed: () => { signalled++; } });
+    assert.equal(n, 0);
+    assert.equal(signalled, 1);
+    assert.equal(calls, 1, "stops after the first auth failure");
+    assert.deepEqual(queueOf(s).map((f) => f.path), ["a.json", "b.json"]);
+  }
+});
+
+test("422 (already exists) is dropped and counted as saved", async () => {
+  const s = fakeStorage();
+  enqueue(s, { path: "a.json", content: "{}" });
+  enqueue(s, { path: "b.json", content: "{}" });
+  const n = await flushQueue(s, creds, async (url) =>
+    url.endsWith("a.json") ? { ok: false, status: 422 } : { ok: true, status: 201 });
+  assert.equal(n, 2);
+  assert.equal(queueOf(s).length, 0);
+});

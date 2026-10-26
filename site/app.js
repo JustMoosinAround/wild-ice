@@ -17,6 +17,7 @@ const store = (() => { try { return window.localStorage; } catch { return null; 
   || { _m: {}, getItem(k) { return this._m[k] ?? null; }, setItem(k, v) { this._m[k] = String(v); }, removeItem(k) { delete this._m[k]; } };
 
 let map;
+let currentId = null;
 let status = { lakes: {} };
 let features = [];
 const layers = new Map(); // id -> {group, feature}
@@ -28,7 +29,20 @@ function pending() {
   try { return JSON.parse(store.getItem(QUEUE_KEY) || "[]").length; } catch { return 0; }
 }
 function flush() {
-  return flushQueue(store, getCreds(), (...a) => fetch(...a)).catch(() => 0);
+  return flushQueue(store, getCreds(), (...a) => fetch(...a), { onAuthFailed }).catch(() => 0);
+}
+
+// Bad token/repo: forget the creds (queue stays) and ask again.
+function onAuthFailed() {
+  store.removeItem(CREDS_KEY);
+  const panel = $("panel");
+  if (panel.hidden) {
+    showMsg("GitHub rejected the token or repo — re-enter it on your next rating.");
+    return;
+  }
+  const id = currentId;
+  if (id && info(id)) renderPanel(id, "GitHub rejected the token or repo — re-enter");
+  credsForm(() => flush().then(() => setStatus(pending() ? pending() + " waiting to upload" : "Saved")));
 }
 
 function showMsg(text) {
@@ -124,6 +138,7 @@ function openLake(id, zoom) {
 }
 
 function renderPanel(id, statusText) {
+  currentId = id;
   const d = info(id);
   const s = STYLE[d.label] || STYLE.unknown;
   const panel = $("panel");
@@ -178,6 +193,12 @@ function renderPanel(id, statusText) {
       d.hidden ? "Unhidden" : "Hidden", (x) => { x.hidden = !x.hidden; }),
   }));
   panel.append(prow);
+  panel.append(el("a", { class: "cop", href: "#", text: "Reset GitHub token", onclick: (e) => {
+    e.preventDefault();
+    store.removeItem(CREDS_KEY);
+    renderPanel(id, "Token cleared");
+    credsForm(() => flush().then(() => setStatus(pending() ? pending() + " waiting to upload" : "Saved")));
+  } }));
   panel.append(el("div", { class: "status", id: "status", text: statusText || (pending() ? pending() + " waiting to upload" : "") }));
   panel.hidden = false;
 }

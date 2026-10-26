@@ -48,7 +48,11 @@ export async function saveFile(file, { token, repo }, fetchFn = fetch) {
     },
     body: JSON.stringify({ message: `wildice: ${file.path}`, content: toBase64(file.content) }),
   });
-  if (!res.ok) throw new Error(`GitHub save failed (${res.status})`);
+  if (!res.ok) {
+    const err = new Error(`GitHub save failed (${res.status})`);
+    err.status = res.status;
+    throw err;
+  }
 }
 
 function readQueue(storage) {
@@ -63,19 +67,34 @@ export function enqueue(storage, file) {
 
 let flushing = false;
 
-export async function flushQueue(storage, creds, fetchFn = fetch) {
+// 422 = file already exists (an earlier PUT landed): treat as saved.
+// 401/403/404 = bad token or repo: stop, keep everything queued, call onAuthFailed.
+export async function flushQueue(storage, creds, fetchFn = fetch, { onAuthFailed } = {}) {
   if (!creds || !creds.token || !creds.repo || flushing) return 0;
   flushing = true;
   try {
     const q = readQueue(storage);
     const failed = [];
     let saved = 0;
-    for (const file of q) {
-      try { await saveFile(file, creds, fetchFn); saved++; } catch { failed.push(file); }
+    let authFailed = false;
+    for (let i = 0; i < q.length; i++) {
+      try {
+        await saveFile(q[i], creds, fetchFn);
+        saved++;
+      } catch (e) {
+        if (e && e.status === 422) { saved++; continue; }
+        if (e && [401, 403, 404].includes(e.status)) {
+          authFailed = true;
+          failed.push(...q.slice(i));
+          break;
+        }
+        failed.push(q[i]);
+      }
     }
     // Keep anything enqueued while we were sending.
     const added = readQueue(storage).slice(q.length);
     storage.setItem(QUEUE_KEY, JSON.stringify(failed.concat(added)));
+    if (authFailed && onAuthFailed) onAuthFailed();
     return saved;
   } finally {
     flushing = false;
