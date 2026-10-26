@@ -32,7 +32,7 @@ imagery:  # placeholders, tuned by backtest
 weather:
   batch_pause_s: 10  # pause between Open-Meteo requests
 site:
-  base_url: "https://<github-user>.github.io/wild-ice"
+  base_url: "https://justmoosinaround.github.io/wild-ice"
 season_start: "10-01"
 pinned: []
 hidden: []
