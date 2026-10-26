@@ -1,0 +1,286 @@
+import json
+import logging
+import shutil
+from datetime import date, timedelta
+from pathlib import Path
+
+import pytest
+import requests
+import responses as responses_lib
+
+from wildice import run_daily
+from wildice.models import S1Obs, S2Obs, SourceUnavailable
+from wildice.run_daily import run
+from wildice.weather import ARCHIVE_URL, FORECAST_URL
+
+REPO = Path(__file__).resolve().parent.parent
+RUN = date(2025, 11, 12)
+SEASON_START = date(2025, 10, 1)
+ENV = {"NTFY_TOPIC_ALERTS": "alerts-topic", "NTFY_TOPIC_OPS": "ops-topic"}
+ALERTS_URL = "https://ntfy.sh/alerts-topic"
+OPS_URL = "https://ntfy.sh/ops-topic"
+POLY = {"type": "Polygon", "coordinates": [[[-149.51, 60.99], [-149.49, 60.99],
+                                             [-149.49, 61.01], [-149.51, 61.01],
+                                             [-149.51, 60.99]]]}
+
+
+def _feature(lake_id, area, interior=POLY):
+    return {"type": "Feature", "geometry": interior,
+            "properties": {"id": lake_id, "name": f"Lake {lake_id}", "area_acres": area,
+                           "road_mi": 0.5, "trail_mi": None, "lat": 61.0, "lon": -149.5,
+                           "warning": None}}
+
+
+@pytest.fixture
+def tmp_repo(tmp_path):
+    shutil.copy(REPO / "config.yaml", tmp_path / "config.yaml")
+    data = tmp_path / "site" / "data"
+    data.mkdir(parents=True)
+    (data / "lakes.geojson").write_text(json.dumps({
+        "type": "FeatureCollection", "features": [_feature("w1", 120.0)]}), encoding="utf-8")
+    return tmp_path
+
+
+def _daily(t_mean, end=RUN):
+    days = [SEASON_START + timedelta(days=i) for i in range((end - SEASON_START).days + 1)]
+    n = len(days)
+    return {"latitude": 61.0, "longitude": -149.5, "daily": {
+        "time": [d.isoformat() for d in days],
+        "temperature_2m_min": [t_mean - 3] * n, "temperature_2m_max": [t_mean + 3] * n,
+        "temperature_2m_mean": [t_mean] * n, "snowfall_sum": [0.0] * n,
+        "rain_sum": [0.0] * n, "wind_gusts_10m_max": [10.0] * n}}
+
+
+@pytest.fixture
+def mocked():
+    with responses_lib.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+        rsps.add(responses_lib.POST, ALERTS_URL, status=200)
+        rsps.add(responses_lib.POST, OPS_URL, status=200)
+        yield rsps
+
+
+def cold_weather(rsps, t_mean=-5.0):
+    for url in (ARCHIVE_URL, FORECAST_URL):
+        rsps.add(responses_lib.GET, url, json=[_daily(t_mean)], status=200)
+
+
+def ntfy_calls(rsps, topic):
+    return sum(1 for c in rsps.calls if c.request.url == f"https://ntfy.sh/{topic}")
+
+
+def ntfy_bodies(rsps, topic):
+    return [c.request.body.decode("utf-8") if isinstance(c.request.body, bytes)
+            else c.request.body
+            for c in rsps.calls if c.request.url == f"https://ntfy.sh/{topic}"]
+
+
+class FakeClient:
+    """Stands in for CopernicusClient (Task 7 methods)."""
+
+    def __init__(self, s2=None, s1=None, fail=None):
+        self.calls = []
+        self.s2 = s2 if s2 is not None else [S2Obs(RUN - timedelta(days=1), 0.95, 0.05, 0.05, 0.02)]
+        self.s1 = s1 if s1 is not None else []
+        self.fail = fail
+
+    def s2_stats(self, geometry, start, end):
+        self.calls.append(("s2", start, end))
+        if self.fail:
+            raise self.fail
+        return list(self.s2)
+
+    def s1_stats(self, geometry, start, end):
+        self.calls.append(("s1", start, end))
+        if self.fail:
+            raise self.fail
+        return list(self.s1)
+
+    def truecolor_png(self, geometry, day):
+        self.calls.append(("png", day, day))
+        return b"\x89PNG fake"
+
+    def baseline_calls(self):
+        return [c for c in self.calls if c[0] == "s1" and c[2] < RUN - timedelta(days=14)]
+
+
+def status_of(root):
+    return json.loads((root / "site/data/status.json").read_text(encoding="utf-8"))
+
+
+def session():
+    return requests.Session()
+
+
+def test_happy_path_writes_status_and_alerts(tmp_repo, mocked):
+    cold_weather(mocked)
+    client = FakeClient()
+    assert run(RUN, tmp_repo, ENV, session(), client) == 0
+    status = status_of(tmp_repo)
+    assert status["run_date"] == "2025-11-12"
+    assert status["stale_since"] is None
+    assert status["lakes"]["w1"]["label"] == "likely_black_ice"
+    assert ntfy_calls(mocked, "alerts-topic") == 1
+    assert ntfy_calls(mocked, "ops-topic") == 0
+    assert (tmp_repo / "site/data/history/2025-11-12.json").exists()
+    labels = json.loads((tmp_repo / "state/labels.json").read_text(encoding="utf-8"))
+    assert labels == {"w1": "likely_black_ice"}
+    usage = json.loads((tmp_repo / "state/usage.json").read_text(encoding="utf-8"))
+    assert usage["month"] == "2025-11"
+
+
+def test_second_run_same_result_no_alert(tmp_repo, mocked):
+    cold_weather(mocked)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    assert ntfy_calls(mocked, "alerts-topic") == 1
+
+
+def test_rerun_same_day_excludes_today_from_history(tmp_repo, mocked):
+    cold_weather(mocked)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    days = [h["day"] for h in status_of(tmp_repo)["lakes"]["w1"]["history"]]
+    assert "2025-11-12" not in days
+
+
+def test_no_candidates_no_push(tmp_repo, mocked):
+    cold_weather(mocked, t_mean=5.0)  # warm: open water everywhere
+    client = FakeClient()
+    assert run(RUN, tmp_repo, ENV, session(), client) == 0
+    assert status_of(tmp_repo)["lakes"]["w1"]["label"] == "open_water"
+    assert ntfy_calls(mocked, "alerts-topic") == 0
+    assert client.calls == []  # not shortlisted
+
+
+PREVIOUS = {"run_date": "2025-11-11", "stale_since": None, "disclaimer": "x",
+            "lakes": {"w1": {"name": "Lake w1", "label": "freezing", "last_clear_day": None}}}
+
+
+def _write_prev(root, prev):
+    (root / "site/data/status.json").write_text(json.dumps(prev), encoding="utf-8")
+
+
+def test_weather_down_marks_stale_and_pings_ops(tmp_repo, mocked, caplog):
+    caplog.set_level(logging.DEBUG)
+    _write_prev(tmp_repo, PREVIOUS)
+    mocked.add(responses_lib.GET, ARCHIVE_URL, status=500)
+    mocked.add(responses_lib.GET, FORECAST_URL, status=500)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 1
+    status = status_of(tmp_repo)
+    assert status["stale_since"] == "2025-11-11"  # previous good run date
+    assert status["lakes"] == PREVIOUS["lakes"]
+    assert ntfy_calls(mocked, "ops-topic") == 1
+    assert ntfy_bodies(mocked, "ops-topic") == ["open-meteo unavailable"]
+    assert ntfy_calls(mocked, "alerts-topic") == 0
+    assert not (tmp_repo / "site/data/history/2025-11-12.json").exists()
+    assert "ops-topic" not in caplog.text and "alerts-topic" not in caplog.text
+
+
+def test_already_stale_keeps_stale_since(tmp_repo, mocked):
+    _write_prev(tmp_repo, {**PREVIOUS, "run_date": "2025-11-11", "stale_since": "2025-11-09"})
+    mocked.add(responses_lib.GET, ARCHIVE_URL, status=500)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 1
+    assert status_of(tmp_repo)["stale_since"] == "2025-11-09"
+
+
+def test_no_previous_status_writes_empty_stale(tmp_repo, mocked):
+    mocked.add(responses_lib.GET, ARCHIVE_URL, status=500)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 1
+    status = status_of(tmp_repo)
+    assert status["lakes"] == {}
+    assert status["stale_since"] == "2025-11-12"
+
+
+def test_copernicus_down_marks_stale(tmp_repo, mocked):
+    _write_prev(tmp_repo, PREVIOUS)
+    cold_weather(mocked)
+    client = FakeClient(fail=SourceUnavailable("copernicus", "boom"))
+    assert run(RUN, tmp_repo, ENV, session(), client) == 1
+    assert status_of(tmp_repo)["stale_since"] == "2025-11-11"
+    assert ntfy_bodies(mocked, "ops-topic") == ["copernicus unavailable"]
+
+
+def test_other_exception_pings_ops_and_reraises(tmp_repo, mocked):
+    cold_weather(mocked)
+    client = FakeClient(fail=RuntimeError("secret detail"))
+    with pytest.raises(RuntimeError):
+        run(RUN, tmp_repo, ENV, session(), client)
+    assert ntfy_bodies(mocked, "ops-topic") == ["RuntimeError"]
+
+
+def test_baseline_cached(tmp_repo, mocked):
+    cold_weather(mocked)
+    first = FakeClient(s1=[S1Obs(SEASON_START - timedelta(days=5), -20.0)])
+    assert run(RUN, tmp_repo, ENV, session(), first) == 0
+    assert len(first.baseline_calls()) == 1
+    baselines = json.loads((tmp_repo / "state/baselines.json").read_text(encoding="utf-8"))
+    assert baselines == {"w1:2025-10-01": -20.0}
+    second = FakeClient()
+    assert run(RUN, tmp_repo, ENV, session(), second) == 0
+    assert second.baseline_calls() == []
+
+
+def test_budget_exhausted_skips_imagery(tmp_repo, mocked):
+    cold_weather(mocked)
+    (tmp_repo / "state").mkdir()
+    (tmp_repo / "state/usage.json").write_text(json.dumps({"month": "2025-11", "used": 9000}),
+                                               encoding="utf-8")
+    client = FakeClient()
+    assert run(RUN, tmp_repo, ENV, session(), client) == 0
+    assert client.calls == []
+    lake = status_of(tmp_repo)["lakes"]["w1"]
+    assert lake["label"] == "unknown"  # thick, snow-free, but no imagery: weather only
+    assert lake["thumb"] is None
+
+
+def test_no_cdse_credentials_runs_weather_only(tmp_repo, mocked):
+    cold_weather(mocked)
+    assert run(RUN, tmp_repo, ENV, session()) == 0
+    assert status_of(tmp_repo)["lakes"]["w1"]["label"] == "unknown"
+
+
+def test_lake_without_interior_gets_no_imagery(tmp_repo, mocked):
+    (tmp_repo / "site/data/lakes.geojson").write_text(json.dumps({
+        "type": "FeatureCollection", "features": [_feature("w1", 120.0, interior=None)]}),
+        encoding="utf-8")
+    cold_weather(mocked)
+    client = FakeClient()
+    assert run(RUN, tmp_repo, ENV, session(), client) == 0
+    assert client.calls == []
+    assert status_of(tmp_repo)["lakes"]["w1"]["label"] == "unknown"
+
+
+def test_thumbnail_written_once_per_clear_day(tmp_repo, mocked):
+    cold_weather(mocked)
+    first = FakeClient()
+    assert run(RUN, tmp_repo, ENV, session(), first) == 0
+    assert [c for c in first.calls if c[0] == "png"] == [("png", RUN - timedelta(days=1),
+                                                          RUN - timedelta(days=1))]
+    assert (tmp_repo / "site/data/thumbs/w1.png").read_bytes() == b"\x89PNG fake"
+    assert status_of(tmp_repo)["lakes"]["w1"]["thumb"] == "thumbs/w1.png"
+    second = FakeClient()
+    assert run(RUN, tmp_repo, ENV, session(), second) == 0
+    assert [c for c in second.calls if c[0] == "png"] == []
+
+
+def test_alert_send_failure_writes_status_pings_ops_keeps_labels(tmp_repo):
+    with responses_lib.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+        cold_weather(rsps)
+        rsps.add(responses_lib.POST, ALERTS_URL, status=503)
+        rsps.add(responses_lib.POST, OPS_URL, status=200)
+        assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 1
+        status = status_of(tmp_repo)
+        assert status["stale_since"] is None
+        assert status["lakes"]["w1"]["label"] == "likely_black_ice"
+        assert ntfy_bodies(rsps, "ops-topic") == ["ntfy unavailable"]
+        assert not (tmp_repo / "state/labels.json").exists()
+    with responses_lib.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+        cold_weather(rsps)
+        rsps.add(responses_lib.POST, ALERTS_URL, status=200)
+        assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+        assert ntfy_calls(rsps, "alerts-topic") == 1  # retried the next run
+
+
+def test_ntfy_session_does_not_retry():
+    s = run_daily.ntfy_session()
+    assert s.get_adapter("https://ntfy.sh").max_retries.total == 0
