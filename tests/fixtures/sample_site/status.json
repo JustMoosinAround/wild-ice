@@ -1,0 +1,362 @@
+{
+  "run_date": "2025-11-14",
+  "stale_since": "2025-11-12",
+  "disclaimer": "Rough estimate only — check ice yourself.",
+  "lakes": {
+    "w101": {
+      "name": "Lake Hood Pond",
+      "label": "open_water",
+      "confidence": "high",
+      "reason": "Open water seen",
+      "thickness_cm": null,
+      "last_clear_day": "2025-11-13",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.18&lng=-149.97&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "thumb": null,
+      "pinned": false,
+      "hidden": false,
+      "warning": null,
+      "history": [
+        {
+          "day": "2025-11-01",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-02",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-03",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-04",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-05",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-06",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-07",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-08",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-09",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-10",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-11",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-12",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-13",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-14",
+          "label": "open_water"
+        }
+      ]
+    },
+    "w102": {
+      "name": "Campbell Lake",
+      "label": "freezing",
+      "confidence": "medium",
+      "reason": "Ice forming, est. thin",
+      "thickness_cm": 4,
+      "last_clear_day": "2025-11-13",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.17&lng=-149.92&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "thumb": null,
+      "pinned": false,
+      "hidden": false,
+      "warning": null,
+      "history": [
+        {
+          "day": "2025-11-01",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-02",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-03",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-04",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-05",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-06",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-07",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-08",
+          "label": "freezing"
+        },
+        {
+          "day": "2025-11-09",
+          "label": "freezing"
+        },
+        {
+          "day": "2025-11-10",
+          "label": "freezing"
+        },
+        {
+          "day": "2025-11-11",
+          "label": "freezing"
+        },
+        {
+          "day": "2025-11-12",
+          "label": "freezing"
+        },
+        {
+          "day": "2025-11-13",
+          "label": "freezing"
+        },
+        {
+          "day": "2025-11-14",
+          "label": "freezing"
+        }
+      ]
+    },
+    "w103": {
+      "name": "Jewel Lake",
+      "label": "likely_black_ice",
+      "confidence": "high",
+      "reason": "Dark clear ice, no snow",
+      "thickness_cm": 14,
+      "last_clear_day": "2025-11-13",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.19&lng=-149.95&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "thumb": null,
+      "pinned": true,
+      "hidden": false,
+      "warning": null,
+      "history": [
+        {
+          "day": "2025-11-01",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-02",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-03",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-04",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-05",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-06",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-07",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-08",
+          "label": "likely_black_ice"
+        },
+        {
+          "day": "2025-11-09",
+          "label": "likely_black_ice"
+        },
+        {
+          "day": "2025-11-10",
+          "label": "likely_black_ice"
+        },
+        {
+          "day": "2025-11-11",
+          "label": "likely_black_ice"
+        },
+        {
+          "day": "2025-11-12",
+          "label": "likely_black_ice"
+        },
+        {
+          "day": "2025-11-13",
+          "label": "likely_black_ice"
+        },
+        {
+          "day": "2025-11-14",
+          "label": "likely_black_ice"
+        }
+      ]
+    },
+    "w104": {
+      "name": "Sand Lake",
+      "label": "snow_covered",
+      "confidence": "medium",
+      "reason": "Snow on ice",
+      "thickness_cm": 12,
+      "last_clear_day": "2025-11-13",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.15&lng=-149.99&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "thumb": null,
+      "pinned": false,
+      "hidden": true,
+      "warning": null,
+      "history": [
+        {
+          "day": "2025-11-01",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-02",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-03",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-04",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-05",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-06",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-07",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-08",
+          "label": "snow_covered"
+        },
+        {
+          "day": "2025-11-09",
+          "label": "snow_covered"
+        },
+        {
+          "day": "2025-11-10",
+          "label": "snow_covered"
+        },
+        {
+          "day": "2025-11-11",
+          "label": "snow_covered"
+        },
+        {
+          "day": "2025-11-12",
+          "label": "snow_covered"
+        },
+        {
+          "day": "2025-11-13",
+          "label": "snow_covered"
+        },
+        {
+          "day": "2025-11-14",
+          "label": "snow_covered"
+        }
+      ]
+    },
+    "w105": {
+      "name": "Unnamed lake (30 ac)",
+      "label": "unknown",
+      "confidence": "low",
+      "reason": "no data",
+      "thickness_cm": null,
+      "last_clear_day": null,
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.25&lng=-149.7&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "thumb": null,
+      "pinned": false,
+      "hidden": false,
+      "warning": "Lake too narrow for satellite readings",
+      "history": [
+        {
+          "day": "2025-11-01",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-02",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-03",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-04",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-05",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-06",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-07",
+          "label": "open_water"
+        },
+        {
+          "day": "2025-11-08",
+          "label": "unknown"
+        },
+        {
+          "day": "2025-11-09",
+          "label": "unknown"
+        },
+        {
+          "day": "2025-11-10",
+          "label": "unknown"
+        },
+        {
+          "day": "2025-11-11",
+          "label": "unknown"
+        },
+        {
+          "day": "2025-11-12",
+          "label": "unknown"
+        },
+        {
+          "day": "2025-11-13",
+          "label": "unknown"
+        },
+        {
+          "day": "2025-11-14",
+          "label": "unknown"
+        }
+      ]
+    }
+  }
+}

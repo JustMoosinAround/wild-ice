@@ -1,0 +1,179 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -149.976,
+              61.177
+            ],
+            [
+              -149.964,
+              61.177
+            ],
+            [
+              -149.964,
+              61.183
+            ],
+            [
+              -149.976,
+              61.183
+            ],
+            [
+              -149.976,
+              61.177
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "id": "w101",
+        "name": "Lake Hood Pond",
+        "area_acres": 40.0,
+        "road_mi": 0.5,
+        "trail_mi": null,
+        "lat": 61.18,
+        "lon": -149.97,
+        "warning": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -149.926,
+              61.167
+            ],
+            [
+              -149.914,
+              61.167
+            ],
+            [
+              -149.914,
+              61.173
+            ],
+            [
+              -149.926,
+              61.173
+            ],
+            [
+              -149.926,
+              61.167
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "id": "w102",
+        "name": "Campbell Lake",
+        "area_acres": 41.0,
+        "road_mi": 0.5,
+        "trail_mi": null,
+        "lat": 61.17,
+        "lon": -149.92,
+        "warning": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -149.956,
+              61.187
+            ],
+            [
+              -149.944,
+              61.187
+            ],
+            [
+              -149.944,
+              61.193
+            ],
+            [
+              -149.956,
+              61.193
+            ],
+            [
+              -149.956,
+              61.187
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "id": "w103",
+        "name": "Jewel Lake",
+        "area_acres": 42.0,
+        "road_mi": 0.5,
+        "trail_mi": null,
+        "lat": 61.19,
+        "lon": -149.95,
+        "warning": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -149.996,
+              61.147
+            ],
+            [
+              -149.984,
+              61.147
+            ],
+            [
+              -149.984,
+              61.153
+            ],
+            [
+              -149.996,
+              61.153
+            ],
+            [
+              -149.996,
+              61.147
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "id": "w104",
+        "name": "Sand Lake",
+        "area_acres": 43.0,
+        "road_mi": 0.5,
+        "trail_mi": null,
+        "lat": 61.15,
+        "lon": -149.99,
+        "warning": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "id": "w105",
+        "name": "Unnamed lake (30 ac)",
+        "area_acres": 44.0,
+        "road_mi": 0.5,
+        "trail_mi": null,
+        "lat": 61.25,
+        "lon": -149.7,
+        "warning": "Lake too narrow for satellite readings"
+      }
+    }
+  ]
+}

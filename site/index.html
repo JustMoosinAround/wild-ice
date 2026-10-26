@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wild Ice</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="banner" hidden></div>
+<header id="bar">
+  <h1>Wild Ice</h1>
+  <label class="toggle"><input type="checkbox" id="only-skate"> Only skateable / freezing</label>
+</header>
+<div id="map"></div>
+<div id="msg" hidden></div>
+<section id="panel" hidden aria-live="polite"></section>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
