@@ -1,0 +1,5 @@
+# Lakes and days you remember, to test the app against. observed is one of:
+# skated | snow | water | rough
+# Example (uncomment and copy):
+#  - {lake_id: w123, day: 2025-12-03, observed: skated}
+observations: []
