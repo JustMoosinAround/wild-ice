@@ -13,6 +13,7 @@ dependencies = [
   "pyproj",
   "PyYAML",
   "osmium>=4.3",
+  "tzdata",  # time-zone data for zoneinfo on Windows
 ]
 
 [project.optional-dependencies]
