@@ -170,6 +170,18 @@ def test_token_failure_raises_source_unavailable(client):
 
 
 @responses.activate
+def test_token_400_is_fatal_not_lake_specific(client):
+    # OAuth endpoints answer most credential errors with 400; that must fail the run,
+    # never be mistaken for a per-lake request error and skipped.
+    from wildice.run_daily import _lake_specific
+    responses.add(responses.POST, TOKEN_URL, status=400, json={"error": "unauthorized_client"})
+    with pytest.raises(SourceUnavailable) as err:
+        client.s2_stats(GEOM, D1, D2)
+    assert err.value.status is None
+    assert not _lake_specific(err.value)
+
+
+@responses.activate
 def test_bad_json_raises_source_unavailable(client):
     add_token()
     responses.add(responses.POST, STATS_URL, json={"unexpected": 1})
@@ -327,12 +339,12 @@ def test_http_error_carries_status_without_secrets(code):
 
 
 @responses.activate
-def test_token_http_error_carries_status():
+def test_token_http_error_has_no_status_and_no_secret():
     c = CopernicusClient("id", "cs-SECRET2", requests.Session())
     responses.add(responses.POST, TOKEN_URL, status=401)
     with pytest.raises(SourceUnavailable) as ei:
         c.s2_stats(GEOM, D1, D2)
-    assert ei.value.status == 401 and "SECRET" not in str(ei.value)
+    assert ei.value.status is None and "SECRET" not in str(ei.value)
 
 
 @responses.activate

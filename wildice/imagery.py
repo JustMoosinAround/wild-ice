@@ -47,11 +47,6 @@ S1_POLARIZATION = "DV"
 EVALSCRIPTS = Path(__file__).parent / "evalscripts"
 
 
-def _status(exc: Exception) -> int | None:
-    resp = getattr(exc, "response", None)
-    return getattr(resp, "status_code", None) if resp is not None else None
-
-
 def _script(name: str) -> str:
     return (EVALSCRIPTS / name).read_text(encoding="utf-8")
 
@@ -129,7 +124,8 @@ class CopernicusClient:
                 token = body["access_token"]
                 ttl = float(body.get("expires_in", 300))
             except (requests.RequestException, ValueError, KeyError, TypeError) as exc:
-                raise SourceUnavailable(SOURCE, f"token: {exc}", status=_status(exc)) from exc
+                # No status: a token failure is never lake-specific, so it always fails the run.
+                raise SourceUnavailable(SOURCE, f"token: {exc}") from exc
             self._token = token
             self._token_expiry = self._clock() + max(0.0, ttl - TOKEN_MARGIN_S)
         return {"Authorization": f"Bearer {self._token}"}
