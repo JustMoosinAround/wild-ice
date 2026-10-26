@@ -40,6 +40,7 @@ jobs:
           CDSE_CLIENT_SECRET: ${{ secrets.CDSE_CLIENT_SECRET }}
           NTFY_TOPIC_ALERTS: ${{ secrets.NTFY_TOPIC_ALERTS }}
           NTFY_TOPIC_OPS: ${{ secrets.NTFY_TOPIC_OPS }}
+          WILDICE_OPS_MARKER: ${{ runner.temp }}/ops_notified
         run: python -m wildice.run_daily
 
       - name: Commit and push data
@@ -56,13 +57,18 @@ jobs:
         id: deploy
         uses: actions/deploy-pages@v4
 
-      # Failures outside the Python job (install, push, deploy); the job pings ops itself.
+      # Fallback ops push: any failed step, including a Python crash outside run()
+      # (import error, bad --date, OOM). Skipped when Python already pinged ops and
+      # left the marker file, so ops gets one push per failed run.
       - name: Notify ops on failure
-        if: failure()
+        if: always() && (failure() || steps.job.outcome == 'failure')
         env:
           NTFY_TOPIC_OPS: ${{ secrets.NTFY_TOPIC_OPS }}
+          WILDICE_OPS_MARKER: ${{ runner.temp }}/ops_notified
         run: |
-          if [ -n "${NTFY_TOPIC_OPS}" ]; then
+          if [ -f "${WILDICE_OPS_MARKER}" ]; then
+            echo "ops already notified by the daily job"
+          elif [ -n "${NTFY_TOPIC_OPS}" ]; then
             curl -fsS -H "Title: Wild ice job failed" \
               -d "workflow ${GITHUB_WORKFLOW} failed (run ${GITHUB_RUN_ID})" \
               "https://ntfy.sh/${NTFY_TOPIC_OPS}" > /dev/null

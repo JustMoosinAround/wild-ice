@@ -284,3 +284,34 @@ def test_alert_send_failure_writes_status_pings_ops_keeps_labels(tmp_repo):
 def test_ntfy_session_does_not_retry():
     s = run_daily.ntfy_session()
     assert s.get_adapter("https://ntfy.sh").max_retries.total == 0
+
+
+def test_ops_ping_writes_marker_when_configured(tmp_repo, mocked, tmp_path):
+    marker = tmp_path / "ops_notified"
+    mocked.add(responses_lib.GET, ARCHIVE_URL, status=500)
+    env = {**ENV, "WILDICE_OPS_MARKER": str(marker)}
+    assert run(RUN, tmp_repo, env, session(), FakeClient()) == 1
+    assert marker.exists()
+
+
+def test_ops_ping_no_marker_when_unset(tmp_repo, mocked, tmp_path):
+    mocked.add(responses_lib.GET, ARCHIVE_URL, status=500)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 1
+    assert not any(p.name == "ops_notified" for p in tmp_path.rglob("*"))
+
+
+def test_failed_ops_ping_writes_no_marker(tmp_repo, tmp_path):
+    marker = tmp_path / "ops_notified"
+    with responses_lib.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+        rsps.add(responses_lib.GET, ARCHIVE_URL, status=500)
+        rsps.add(responses_lib.POST, OPS_URL, status=500)
+        env = {**ENV, "WILDICE_OPS_MARKER": str(marker)}
+        assert run(RUN, tmp_repo, env, session(), FakeClient()) == 1
+    assert not marker.exists()
+
+
+def test_logs_budget_usage(tmp_repo, mocked, caplog):
+    caplog.set_level(logging.INFO)
+    cold_weather(mocked)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    assert "requests used 0/9000" in caplog.text

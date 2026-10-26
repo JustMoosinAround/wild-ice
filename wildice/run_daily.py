@@ -28,6 +28,7 @@ log = logging.getLogger(__name__)
 
 TIMEZONE = "America/Anchorage"
 OPS_TITLE = "Wild ice job failed"
+OPS_MARKER_ENV = "WILDICE_OPS_MARKER"  # file written after a successful ops push
 THUMB_LABELS = (Label.LIKELY_BLACK_ICE, Label.FREEZING)
 REQUESTS_PER_LAKE = 2  # one S2 + one S1 statistics request
 
@@ -60,6 +61,13 @@ def _ping_ops(env: Mapping[str, str], body: str, session: requests.Session) -> N
         alert.send_ntfy(topic, OPS_TITLE, body, None, session)
     except SourceUnavailable as exc:  # message never contains the topic
         log.error("ops push failed: %s", exc)
+        return
+    marker = env.get(OPS_MARKER_ENV)
+    if marker:  # tells the workflow's fallback curl step ops already knows
+        try:
+            Path(marker).write_text("1\n", encoding="utf-8")
+        except OSError as exc:
+            log.warning("could not write ops marker: %s", type(exc).__name__)
 
 
 def _write_stale(site_data: Path, run_date: date) -> None:
@@ -169,6 +177,7 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
         _ping_ops(env, f"{exc.source} unavailable", ntfy)
         return 1
     finally:
+        log.info("imagery requests used %d/%d this month", budget.used, budget.limit)
         budget.save()
         _write_json(baselines_path, baselines)
 
