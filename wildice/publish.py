@@ -36,7 +36,7 @@ def build_status(lakes: list[Lake], scores: dict[str, Score], pinned: frozenset[
             "label": str(label),
             "confidence": str(sc.confidence if sc else Confidence.LOW),
             "reason": sc.reason if sc else "no data",
-            "thickness_cm": sc.thickness_cm if sc else None,
+            "thickness_cm": round(sc.thickness_cm) if sc else None,
             "last_clear_day": sc.last_clear_day.isoformat() if sc and sc.last_clear_day else None,
             "browser_url": browser_url(lake.lat, lake.lon, sc.last_clear_day if sc else None),
             "thumb": f"thumbs/{lake.id}.png",

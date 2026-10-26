@@ -64,3 +64,9 @@ def test_status_unnamed_lake_name():
     unnamed = Lake("w9", None, 34.2, 1, None, 61.0, -149.0, None, None)
     s = build_status([unnamed], {}, frozenset(), frozenset(), {}, RUN, None)
     assert s["lakes"]["w9"]["name"] == "Unnamed lake (34 ac)"
+
+
+def test_thickness_rounded_to_whole_cm():
+    sc = {"w123": Score("w123", Label.FREEZING, Confidence.LOW, "why", 7.6180339, None)}
+    e = build_status([lake], sc, frozenset(), frozenset(), {}, RUN, None)["lakes"]["w123"]
+    assert e["thickness_cm"] == 8 and isinstance(e["thickness_cm"], int)
