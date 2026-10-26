@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tiny hand-written OSM file for tests/test_osm_extract.py.
+     Box used by the tests: south 61.0, west -150.0, north 61.5, east -149.0. -->
+<osm version="0.6" generator="hand">
+  <!-- Lake as a closed way (w100), inside the box -->
+  <node id="1" lat="61.10" lon="-149.80"/>
+  <node id="2" lat="61.10" lon="-149.70"/>
+  <node id="3" lat="61.15" lon="-149.70"/>
+  <node id="4" lat="61.15" lon="-149.80"/>
+  <way id="100">
+    <nd ref="1"/><nd ref="2"/><nd ref="3"/><nd ref="4"/><nd ref="1"/>
+    <tag k="natural" v="water"/><tag k="water" v="lake"/><tag k="name" v="Test Lake"/>
+  </way>
+
+  <!-- Lake as a multipolygon relation (r500) built from two open ways -->
+  <node id="11" lat="61.30" lon="-149.40"/>
+  <node id="12" lat="61.30" lon="-149.30"/>
+  <node id="13" lat="61.35" lon="-149.30"/>
+  <node id="14" lat="61.35" lon="-149.40"/>
+  <way id="201"><nd ref="11"/><nd ref="12"/><nd ref="13"/></way>
+  <way id="202"><nd ref="13"/><nd ref="14"/><nd ref="11"/></way>
+  <relation id="500">
+    <member type="way" ref="201" role="outer"/>
+    <member type="way" ref="202" role="outer"/>
+    <tag k="type" v="multipolygon"/><tag k="natural" v="water"/>
+  </relation>
+
+  <!-- River polygon: natural=water but water=river, must be skipped -->
+  <node id="21" lat="61.20" lon="-149.50"/>
+  <node id="22" lat="61.20" lon="-149.45"/>
+  <node id="23" lat="61.21" lon="-149.45"/>
+  <way id="300">
+    <nd ref="21"/><nd ref="22"/><nd ref="23"/><nd ref="21"/>
+    <tag k="natural" v="water"/><tag k="water" v="river"/>
+  </way>
+
+  <!-- Pond outside the box (north of 61.5), must be skipped -->
+  <node id="31" lat="62.00" lon="-149.80"/>
+  <node id="32" lat="62.00" lon="-149.70"/>
+  <node id="33" lat="62.05" lon="-149.70"/>
+  <way id="301">
+    <nd ref="31"/><nd ref="32"/><nd ref="33"/><nd ref="31"/>
+    <tag k="natural" v="water"/><tag k="water" v="pond"/>
+  </way>
+
+  <!-- Road (w400), footpath (w401), snowmobile track (w402), building (w403, ignored) -->
+  <node id="41" lat="61.09" lon="-149.90"/>
+  <node id="42" lat="61.09" lon="-149.60"/>
+  <node id="43" lat="61.36" lon="-149.90"/>
+  <node id="44" lat="61.36" lon="-149.30"/>
+  <way id="400"><nd ref="41"/><nd ref="42"/><tag k="highway" v="residential"/></way>
+  <way id="401"><nd ref="43"/><nd ref="44"/><tag k="highway" v="footway"/></way>
+  <way id="402"><nd ref="41"/><nd ref="43"/><tag k="snowmobile" v="designated"/></way>
+  <way id="403"><nd ref="42"/><nd ref="44"/><tag k="building" v="yes"/></way>
+</osm>

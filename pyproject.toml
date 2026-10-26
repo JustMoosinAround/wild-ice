@@ -12,11 +12,12 @@ dependencies = [
   "shapely>=2",
   "pyproj",
   "PyYAML",
-  "osm2geojson",
+  "osmium>=4.3",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "responses"]
+# osm2geojson converts the Overpass-format JSON fixtures used by test_catalog.py
+dev = ["pytest", "responses", "osm2geojson"]
 
 [tool.setuptools]
 packages = ["wildice"]

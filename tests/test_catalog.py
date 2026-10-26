@@ -4,17 +4,11 @@ from pathlib import Path
 
 import osm2geojson
 import pytest
-import requests
-import responses
 
-from wildice import catalog
-from wildice.catalog import (
-    build_catalog, fetch_osm, load_catalog, overpass_query, tiles, write_catalog,
-)
+from wildice.catalog import build_catalog, load_catalog, write_catalog
 from wildice.config import load_config
 
 FIX = Path(__file__).parent / "fixtures"
-URL = "https://overpass-api.de/api/interpreter"
 
 
 @pytest.fixture
@@ -92,69 +86,6 @@ def test_no_roads_or_trails_only_pinned(layers, cfg):
     assert [l.id for l in build_catalog(water, [], [], replace(cfg, pinned=("w1001",)))] == ["w1001"]
 
 
-def test_tiles_cover_bbox():
-    ts = tiles((59.3, -152.5, 62.8, -144.0), step=1.0)
-    assert ts[0][0] == 59.3 and max(t[2] for t in ts) == 62.8
-    assert min(t[1] for t in ts) == -152.5 and max(t[3] for t in ts) == -144.0
-    assert len(ts) == 4 * 9
-    assert tiles((61.0, -149.0, 61.5, -148.5)) == [(61.0, -149.0, 61.5, -148.5)]
-
-
-def test_overpass_query_kinds():
-    bbox = (61.0, -149.0, 62.0, -148.0)
-    w = overpass_query("water", bbox)
-    assert '"natural"="water"' in w and "lake|pond|reservoir" in w and '[!"water"]' in w
-    assert "relation" in w and "(61.0,-149.0,62.0,-148.0)" in w and w.rstrip().endswith("out geom;")
-    r = overpass_query("roads", bbox)
-    assert "motorway|trunk|primary|secondary|tertiary|unclassified|residential|service)(_link)?$" in r
-    t = overpass_query("trails", bbox)
-    assert "path|track|footway|bridleway" in t and "yes|designated" in t and "snowmobile" in t
-    assert t.rstrip().endswith("out geom;")
-
-
-@responses.activate
-def test_overpass_requests_identify_the_app():
-    # Overpass rejects the anonymous default "python-requests" User-Agent with 406.
-    body = json.loads((FIX / "overpass_water.json").read_text())
-    responses.post(URL, json=body)
-    fetch_osm("water", (61.0, -149.0, 61.5, -148.5), requests.Session())
-    ua = responses.calls[0].request.headers["User-Agent"]
-    assert ua.startswith("wildice/") and "python-requests" not in ua
-
-
-@responses.activate
-def test_tile_dedupe(monkeypatch):
-    monkeypatch.setattr(catalog.time, "sleep", lambda s: None)
-    body = json.loads((FIX / "overpass_water.json").read_text())
-    body["elements"] = body["elements"][:1]
-    responses.post(URL, json=body)
-    responses.post(URL, json=body)
-    out = fetch_osm("water", (61.0, -149.0, 61.5, -148.0), requests.Session())
-    assert len(responses.calls) == 2
-    assert len(out) == 1
-    assert out[0]["properties"]["id"] == 1001
-
-
-@responses.activate
-def test_fetch_retries_then_succeeds(monkeypatch):
-    monkeypatch.setattr(catalog.time, "sleep", lambda s: None)
-    body = json.loads((FIX / "overpass_roads.json").read_text())
-    responses.post(URL, status=504)
-    responses.post(URL, status=429)
-    responses.post(URL, json=body)
-    out = fetch_osm("roads", (61.0, -149.0, 61.5, -148.5), requests.Session())
-    assert len(responses.calls) == 3 and len(out) == 1
-
-
-@responses.activate
-def test_fetch_gives_up_after_retries(monkeypatch):
-    monkeypatch.setattr(catalog.time, "sleep", lambda s: None)
-    responses.post(URL, status=504)
-    with pytest.raises(requests.HTTPError):
-        fetch_osm("roads", (61.0, -149.0, 61.5, -148.5), requests.Session())
-    assert len(responses.calls) == 4  # first try + 3 retries
-
-
 def test_catalog_roundtrip(tmp_path, layers, cfg):
     lakes = build_catalog(*layers, replace(cfg, pinned=("w1003",)))
     p = tmp_path / "lakes.geojson"
@@ -170,83 +101,3 @@ def test_catalog_roundtrip_null_interior(tmp_path):
     write_catalog(lakes, p)
     assert load_catalog(p) == lakes
 
-
-@pytest.mark.parametrize("remark", [
-    "runtime error: Query timed out in \"query\" at line 3 after 181 seconds.",
-    "runtime error: Query run out of memory using about 2048 MB of RAM.",
-    "Timeout while processing",
-])
-@responses.activate
-def test_fetch_retries_on_error_remark(monkeypatch, remark):
-    monkeypatch.setattr(catalog.time, "sleep", lambda s: None)
-    body = json.loads((FIX / "overpass_roads.json").read_text())
-    responses.post(URL, json={"elements": [], "remark": remark})
-    responses.post(URL, json=body)
-    out = fetch_osm("roads", (61.0, -149.0, 61.5, -148.5), requests.Session())
-    assert len(responses.calls) == 2 and len(out) == 1
-
-
-@responses.activate
-def test_error_remark_gives_up_after_retries(monkeypatch):
-    monkeypatch.setattr(catalog.time, "sleep", lambda s: None)
-    responses.post(URL, json={"elements": [], "remark": "runtime error: out of memory"})
-    with pytest.raises(requests.HTTPError):
-        fetch_osm("roads", (61.0, -149.0, 61.5, -148.5), requests.Session())
-    assert len(responses.calls) == 4
-
-
-@responses.activate
-def test_harmless_remark_is_accepted(monkeypatch):
-    monkeypatch.setattr(catalog.time, "sleep", lambda s: None)
-    body = json.loads((FIX / "overpass_roads.json").read_text())
-    responses.post(URL, json={**body, "remark": "note: partial bbox"})
-    out = fetch_osm("roads", (61.0, -149.0, 61.5, -148.5), requests.Session())
-    assert len(responses.calls) == 1 and len(out) == 1
-
-
-def test_default_tiles_are_half_degree():
-    ts = tiles((59.3, -152.5, 62.8, -144.0))
-    assert len(ts) == 7 * 17
-    assert all(t[2] - t[0] <= 0.5 + 1e-9 and t[3] - t[1] <= 0.5 + 1e-9 for t in ts)
-
-
-@responses.activate
-def test_pause_between_requests(monkeypatch):
-    sleeps = []
-    monkeypatch.setattr(catalog.time, "sleep", sleeps.append)
-    body = json.loads((FIX / "overpass_roads.json").read_text())
-    responses.post(URL, json=body)
-    fetch_osm("roads", (61.0, -149.0, 61.5, -148.0), requests.Session())  # 2 tiles
-    assert len(responses.calls) == 2
-    assert sleeps == [catalog.PAUSE_S]
-
-
-@responses.activate
-def test_backoff_waits_longer_on_502_and_504(monkeypatch):
-    sleeps = []
-    monkeypatch.setattr(catalog.time, "sleep", sleeps.append)
-    body = json.loads((FIX / "overpass_roads.json").read_text())
-    responses.post(URL, status=502)
-    responses.post(URL, status=504)
-    responses.post(URL, json=body)
-    fetch_osm("roads", (61.0, -149.0, 61.5, -148.5), requests.Session())
-    assert sleeps == [30, 60]
-
-
-@responses.activate
-def test_tiles_saved_and_rerun_resumes(monkeypatch, tmp_path):
-    monkeypatch.setattr(catalog.time, "sleep", lambda s: None)
-    body = json.loads((FIX / "overpass_roads.json").read_text())
-    bbox = (61.0, -149.0, 61.5, -148.0)  # 2 tiles
-    responses.post(URL, json=body)
-    responses.post(URL, status=502)  # second tile keeps failing
-    with pytest.raises(requests.HTTPError):
-        fetch_osm("roads", bbox, requests.Session(), cache_dir=tmp_path)
-    assert len(list(tmp_path.glob("roads_*.json"))) == 1
-
-    responses.reset()
-    responses.post(URL, json=body)
-    out = fetch_osm("roads", bbox, requests.Session(), cache_dir=tmp_path)
-    assert len(responses.calls) == 1  # only the missing tile is fetched
-    assert len(out) == 1
-    assert len(list(tmp_path.glob("roads_*.json"))) == 2
