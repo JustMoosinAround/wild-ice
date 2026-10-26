@@ -32,6 +32,7 @@ OPS_TITLE = "Wild ice job failed"
 OPS_MARKER_ENV = "WILDICE_OPS_MARKER"  # file written after a successful ops push
 THUMB_LABELS = (Label.LIKELY_BLACK_ICE, Label.FREEZING)
 REQUESTS_PER_LAKE = 2  # one S2 + one S1 statistics request
+FATAL_CLIENT_STATUS = frozenset({401, 403, 429})  # auth / rate limit: stop the run
 
 
 def days_left_in_month(run_date: date) -> int:
@@ -100,20 +101,31 @@ def _make_client(env: Mapping[str, str], session: requests.Session,
 def _imagery(client, lakes: dict[str, Lake], ids: list[str], ice0: dict, run_date: date,
              cfg: Config, budget: Budget, baselines: dict) -> dict[str, ImageryStats]:
     out: dict[str, ImageryStats] = {}
-    for lake_id in ids:
+    for done, lake_id in enumerate(ids):
         lake = lakes[lake_id]
         freeze_up = ice0[lake_id].freeze_up
         key = f"{lake_id}:{freeze_up.isoformat()}" if freeze_up else None
         need_baseline = key is not None and key not in baselines
         if budget.remaining() < REQUESTS_PER_LAKE + int(need_baseline):
             log.info("request budget exhausted; %d shortlisted lakes skipped",
-                     len(ids) - len(out))
+                     len(ids) - done)
             break
-        if need_baseline:
-            baselines[key] = s1_baseline(client, lake, freeze_up)
-        out[lake_id] = fetch_imagery(client, lake, run_date, cfg,
-                                     baselines.get(key) if key else None)
+        try:
+            if need_baseline:
+                baselines[key] = s1_baseline(client, lake, freeze_up)
+            out[lake_id] = fetch_imagery(client, lake, run_date, cfg,
+                                         baselines.get(key) if key else None)
+        except SourceUnavailable as exc:
+            if not _lake_specific(exc):
+                raise
+            log.warning("imagery for %s skipped: HTTP %s", lake_id, exc.status)
     return out
+
+
+def _lake_specific(exc: SourceUnavailable) -> bool:
+    """A 4xx about this lake's request (bad geometry etc.), not auth or rate limiting."""
+    return (exc.status is not None and 400 <= exc.status < 500
+            and exc.status not in FATAL_CLIENT_STATUS)
 
 
 def _thumbnails(client, lakes: dict[str, Lake], scores: dict[str, Score], prev: dict | None,

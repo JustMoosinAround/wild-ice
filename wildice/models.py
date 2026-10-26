@@ -107,8 +107,12 @@ class Score:
 
 
 class SourceUnavailable(Exception):
-    """An external data source failed after retries."""
+    """An external data source failed after retries.
 
-    def __init__(self, source: str, detail: str = "") -> None:
+    `status` is the HTTP status code when the failure was an HTTP error response.
+    """
+
+    def __init__(self, source: str, detail: str = "", status: int | None = None) -> None:
         super().__init__(f"{source} unavailable" + (f": {detail}" if detail else ""))
         self.source = source
+        self.status = status

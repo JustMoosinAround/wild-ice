@@ -416,3 +416,45 @@ def test_hidden_lake_not_imaged(tmp_repo, mocked):
     assert run(RUN, tmp_repo, ENV, session(), client) == 0
     assert len([c for c in client.calls if c[0] == "s2"]) == 1
     assert status_of(tmp_repo)["lakes"]["w1"]["label"] == "likely_black_ice"
+
+
+class FailFirstLake(FakeClient):
+    """The first lake imaged (the largest) fails with `exc`; the rest succeed."""
+
+    def __init__(self, exc):
+        super().__init__()
+        self.exc = exc
+        self.failed = False
+
+    def s2_stats(self, geometry, start, end):
+        if not self.failed:
+            self.failed = True
+            self.calls.append(("s2", start, end))
+            raise self.exc
+        return super().s2_stats(geometry, start, end)
+
+
+def test_one_lake_client_error_skips_only_that_lake(tmp_repo, mocked, caplog):
+    caplog.set_level(logging.INFO)
+    _two_lakes(tmp_repo)  # w2 is larger, so imaged first
+    cold_weather(mocked)
+    client = FailFirstLake(SourceUnavailable("copernicus", "400 Client Error", status=400))
+    assert run(RUN, tmp_repo, ENV, session(), client) == 0
+    lakes = status_of(tmp_repo)["lakes"]
+    assert lakes["w2"]["label"] == "unknown"  # no imagery for it today
+    assert lakes["w1"]["label"] == "likely_black_ice"
+    assert status_of(tmp_repo)["stale_since"] is None
+    assert ntfy_calls(mocked, "ops-topic") == 0
+    assert "w2" in caplog.text and "400" in caplog.text
+    assert "400 Client Error" not in caplog.text  # id + status only
+
+
+@pytest.mark.parametrize("status", [401, 403, 429, 500, None])
+def test_auth_rate_limit_or_server_error_still_fails_run(tmp_repo, mocked, status):
+    _write_prev(tmp_repo, PREVIOUS)
+    _two_lakes(tmp_repo)
+    cold_weather(mocked)
+    client = FailFirstLake(SourceUnavailable("copernicus", "boom", status=status))
+    assert run(RUN, tmp_repo, ENV, session(), client) == 1
+    assert status_of(tmp_repo)["stale_since"] == "2025-11-11"
+    assert ntfy_bodies(mocked, "ops-topic") == ["copernicus unavailable"]

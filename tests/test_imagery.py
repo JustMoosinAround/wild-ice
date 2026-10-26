@@ -306,3 +306,45 @@ def test_s2_nan_band_on_valid_day_is_skipped(client):
     responses.add(responses.POST, STATS_URL, json=data)
     obs = client.s2_stats(GEOM, D1, D2)
     assert [o.day for o in obs] == [date(2025, 11, 8)]
+
+
+def test_source_unavailable_status_defaults_none():
+    assert SourceUnavailable("copernicus").status is None
+    assert SourceUnavailable("copernicus", "x", status=400).status == 400
+
+
+@pytest.mark.parametrize("code", [400, 404, 422, 401, 403, 429, 500])
+@responses.activate
+def test_http_error_carries_status_without_secrets(code):
+    c = CopernicusClient("id-SECRET1", "cs-SECRET2", requests.Session())  # no retries
+    responses.add(responses.POST, TOKEN_URL, status=200,
+                  json={"access_token": "tok-SECRET3", "expires_in": 600})
+    responses.add(responses.POST, STATS_URL, status=code)
+    with pytest.raises(SourceUnavailable) as ei:
+        c.s2_stats(GEOM, D1, D2)
+    assert ei.value.status == code
+    assert "SECRET" not in str(ei.value)
+
+
+@responses.activate
+def test_token_http_error_carries_status():
+    c = CopernicusClient("id", "cs-SECRET2", requests.Session())
+    responses.add(responses.POST, TOKEN_URL, status=401)
+    with pytest.raises(SourceUnavailable) as ei:
+        c.s2_stats(GEOM, D1, D2)
+    assert ei.value.status == 401 and "SECRET" not in str(ei.value)
+
+
+@responses.activate
+def test_retries_exhausted_has_no_status():
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+    s = requests.Session()
+    s.mount("https://", HTTPAdapter(max_retries=Retry(
+        total=1, backoff_factor=0, status_forcelist=[503], allowed_methods=None)))
+    c = CopernicusClient("id", "secret", s)
+    add_token()
+    responses.add(responses.POST, STATS_URL, status=503)
+    with pytest.raises(SourceUnavailable) as ei:
+        c.s2_stats(GEOM, D1, D2)  # urllib3 retries, then RetryError
+    assert ei.value.status is None
