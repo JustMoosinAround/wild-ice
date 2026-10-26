@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import calendar
 import json
 import logging
 import os
@@ -31,6 +32,11 @@ OPS_TITLE = "Wild ice job failed"
 OPS_MARKER_ENV = "WILDICE_OPS_MARKER"  # file written after a successful ops push
 THUMB_LABELS = (Label.LIKELY_BLACK_ICE, Label.FREEZING)
 REQUESTS_PER_LAKE = 2  # one S2 + one S1 statistics request
+
+
+def days_left_in_month(run_date: date) -> int:
+    """Days remaining in run_date's month, today included."""
+    return calendar.monthrange(run_date.year, run_date.month)[1] - run_date.day + 1
 
 
 def ntfy_session() -> requests.Session:
@@ -156,7 +162,10 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
 
         if client is None:
             client = _make_client(env, session, budget)
-        ids = (shortlist(lake_list, ice0, pinned, cfg, remaining_requests=budget.remaining())
+        # spread what is left of the monthly budget evenly over the rest of the month
+        allowance = budget.remaining() // days_left_in_month(run_date)
+        ids = (shortlist(lake_list, ice0, pinned, cfg, remaining_requests=allowance,
+                         hidden=hidden)
                if client is not None else [])
         imagery = _imagery(client, lakes, ids, ice0, run_date, cfg, budget, baselines)
 

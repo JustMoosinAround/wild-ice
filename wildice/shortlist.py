@@ -17,11 +17,15 @@ def _snowed_over(st: IceState, cfg: Config) -> bool:
 
 
 def shortlist(lakes: list[Lake], ice: dict[str, IceState], pinned: frozenset[str],
-              cfg: Config, remaining_requests: int) -> list[str]:
+              cfg: Config, remaining_requests: int,
+              hidden: frozenset[str] = frozenset()) -> list[str]:
+    """Lake ids to image today, best first, within `remaining_requests` (today's share)."""
     chosen: list[Lake] = []
     for lake in lakes:
         if lake.interior is None:
             continue  # no geometry -> no imagery request possible
+        if lake.id in hidden:
+            continue  # the owner hid it: not worth a request
         if lake.id in pinned:
             chosen.append(lake)
             continue

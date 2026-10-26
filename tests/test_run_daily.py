@@ -377,3 +377,42 @@ def test_weather_fetched_at_largest_lake_in_cell(tmp_repo, mocked):
         q = parse_qs(urlparse(c.request.url).query)
         assert (q["latitude"], q["longitude"]) == (["60.98"], ["-149.47"])
     assert (tmp_repo / "state/weather/61.0_-149.5.json").exists()
+
+
+def test_days_left_in_month_includes_today():
+    assert run_daily.days_left_in_month(date(2025, 11, 12)) == 19
+    assert run_daily.days_left_in_month(date(2025, 11, 30)) == 1
+    assert run_daily.days_left_in_month(date(2025, 12, 1)) == 31
+    assert run_daily.days_left_in_month(date(2028, 2, 1)) == 29
+
+
+def _two_lakes(root):
+    (root / "site/data/lakes.geojson").write_text(json.dumps({
+        "type": "FeatureCollection",
+        "features": [_feature("w1", 120.0), _feature("w2", 300.0)]}), encoding="utf-8")
+
+
+def test_imagery_paced_over_rest_of_month(tmp_repo, mocked):
+    _two_lakes(tmp_repo)
+    (tmp_repo / "state").mkdir()
+    # 38 left on Nov 12 with 19 days to go: 2 requests today -> one lake (the larger)
+    (tmp_repo / "state/usage.json").write_text(
+        json.dumps({"month": "2025-11", "used": 9000 - 38}), encoding="utf-8")
+    cold_weather(mocked)
+    client = FakeClient()
+    assert run(RUN, tmp_repo, ENV, session(), client) == 0
+    assert len([c for c in client.calls if c[0] == "s2"]) == 1
+    lakes = status_of(tmp_repo)["lakes"]
+    assert lakes["w2"]["label"] == "likely_black_ice" and lakes["w1"]["label"] == "unknown"
+
+
+def test_hidden_lake_not_imaged(tmp_repo, mocked):
+    _two_lakes(tmp_repo)
+    (tmp_repo / "prefs").mkdir()
+    (tmp_repo / "prefs/1.json").write_text(json.dumps({"lake_id": "w2", "action": "hide"}),
+                                           encoding="utf-8")
+    cold_weather(mocked)
+    client = FakeClient()
+    assert run(RUN, tmp_repo, ENV, session(), client) == 0
+    assert len([c for c in client.calls if c[0] == "s2"]) == 1
+    assert status_of(tmp_repo)["lakes"]["w1"]["label"] == "likely_black_ice"

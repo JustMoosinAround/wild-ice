@@ -68,3 +68,10 @@ def test_browser_url_has_date():
     assert "toTime=2025-11-11T23:59:59.999Z" in url
     assert url.startswith("https://browser.dataspace.copernicus.eu/?zoom=14&lat=61")
     assert "fromTime" not in browser_url(61.0, -149.0, None)
+
+
+def test_shortlist_excludes_hidden_even_if_pinned():
+    lakes = [mk("a", 500), mk("b", 100), mk("p", 5)]
+    st = {i: ice() for i in "abp"}
+    got = shortlist(lakes, st, frozenset({"p"}), cfg, 100, hidden=frozenset({"a", "p"}))
+    assert got == ["b"]
