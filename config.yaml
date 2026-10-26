@@ -29,6 +29,8 @@ imagery:  # placeholders, tuned by backtest
   # confirm a clearing
   low_sun_start: "11-25"
   low_sun_end: "01-15"
+weather:
+  batch_pause_s: 10  # pause between Open-Meteo requests
 site:
   base_url: "https://<github-user>.github.io/wild-ice"
 season_start: "10-01"

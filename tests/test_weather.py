@@ -18,6 +18,13 @@ FIX = Path(__file__).parent / "fixtures"
 cfg = load_config(Path("config.yaml"))
 
 
+@pytest.fixture(autouse=True)
+def no_real_sleep(monkeypatch):
+    """update_cache pauses between batches by default; never actually wait in tests."""
+    import time
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+
+
 def block(days, mean=None, snow=None):
     n = len(days)
     return {"time": days,
@@ -184,3 +191,140 @@ def test_make_session_retries_post_and_get():
     assert retry.total == 3 and retry.backoff_factor == 2
     assert 503 in retry.status_forcelist and 429 in retry.status_forcelist
     assert retry.allowed_methods >= {"GET", "POST"}
+
+
+# --- per-lake request point (largest lake in each cell) ---
+
+def _lake(id, lat, lon, area):
+    from wildice.models import Lake
+    return Lake(id, None, area, 1, None, lat, lon, None, None)
+
+
+def test_cell_points_use_largest_lake():
+    from wildice.weather import cell_points
+    lakes = [_lake("a", 60.81, -148.79, 40), _lake("b", 60.77, -148.83, 300),
+             _lake("c", 61.02, -149.48, 25)]
+    assert cell_points(lakes) == {(60.8, -148.8): (60.77, -148.83),
+                                  (61.0, -149.5): (61.02, -149.48)}
+
+
+@responses.activate
+def test_update_cache_requests_lake_coordinates_keys_by_cell(tmp_path):
+    cell, point = (60.8, -148.8), (60.7725, -148.7965)
+    responses.add(responses.GET, ARCHIVE_URL, json={"daily": block(["2025-10-01"])})
+    responses.add(responses.GET, FORECAST_URL, json={"daily": block(["2025-10-01"])})
+    out = update_cache(tmp_path, {cell: point}, date(2025, 10, 1), cfg, requests.Session(),
+                       sleep=lambda s: None)
+    assert len(responses.calls) == 2
+    for call in responses.calls:
+        q = parse_qs(urlparse(call.request.url).query)
+        assert q["latitude"] == ["60.7725"] and q["longitude"] == ["-148.7965"]
+    assert list(out) == [cell]
+    assert (tmp_path / "60.8_-148.8.json").exists()
+
+
+# --- rate limits: pause between batches, one slow retry on 429, keep progress ---
+
+def _multi_cb(request):
+    q = parse_qs(urlparse(request.url).query)
+    n = len(q["latitude"][0].split(","))
+    return 200, {}, json.dumps([{"daily": block(["2025-10-01"])} for _ in range(n)])
+
+
+@responses.activate
+def test_fetch_pauses_between_batches():
+    responses.add_callback(responses.GET, FORECAST_URL, callback=_multi_cb,
+                           content_type="application/json")
+    sleeps = []
+    cells = [(60.0 + i * 0.1, -148.0) for i in range(120)]
+    fetch_daily(cells, date(2025, 10, 1), date(2025, 10, 1), requests.Session(),
+                archive=False, pause_s=10, sleep=sleeps.append)
+    assert len(responses.calls) == 3
+    assert sleeps == [10, 10]  # between batches, not before the first
+
+
+@responses.activate
+def test_update_cache_pauses_by_config_between_archive_and_forecast(tmp_path):
+    assert cfg.weather.batch_pause_s == 10
+    responses.add(responses.GET, ARCHIVE_URL, json={"daily": block(["2025-10-01"])})
+    responses.add(responses.GET, FORECAST_URL, json={"daily": block(["2025-10-01"])})
+    sleeps = []
+    update_cache(tmp_path, [(60.8, -148.8)], date(2025, 10, 1), cfg, requests.Session(),
+                 sleep=sleeps.append)
+    assert len(responses.calls) == 2 and sleeps == [10]
+
+
+@responses.activate
+def test_429_waits_then_retries_once():
+    responses.add(responses.GET, FORECAST_URL, status=429)
+    responses.add(responses.GET, FORECAST_URL, json={"daily": block(["2025-10-01"])})
+    sleeps = []
+    out = fetch_daily([(60.8, -148.8)], date(2025, 10, 1), date(2025, 10, 1),
+                      requests.Session(), archive=False, sleep=sleeps.append)
+    assert len(out[(60.8, -148.8)]) == 1
+    assert sleeps == [60] and len(responses.calls) == 2
+
+
+@responses.activate
+def test_429_twice_is_source_unavailable():
+    responses.add(responses.GET, FORECAST_URL, status=429)
+    sleeps = []
+    with pytest.raises(SourceUnavailable):
+        fetch_daily([(60.8, -148.8)], date(2025, 10, 1), date(2025, 10, 1),
+                    requests.Session(), archive=False, sleep=sleeps.append)
+    assert sleeps == [60] and len(responses.calls) == 2
+
+
+def test_retry_error_from_429s_waits_then_retries_once():
+    """make_session's urllib3 Retry turns repeated 429s into a RetryError."""
+    class Resp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"daily": block(["2025-10-01"])}
+
+    class Sess:
+        calls = 0
+
+        def get(self, url, params, timeout):
+            Sess.calls += 1
+            if Sess.calls == 1:
+                raise requests.exceptions.RetryError(
+                    "Max retries exceeded (Caused by ResponseError("
+                    "'too many 429 error responses'))")
+            return Resp()
+
+    sleeps = []
+    out = fetch_daily([(60.8, -148.8)], date(2025, 10, 1), date(2025, 10, 1), Sess(),
+                      archive=False, sleep=sleeps.append)
+    assert len(out[(60.8, -148.8)]) == 1 and sleeps == [60] and Sess.calls == 2
+
+
+@responses.activate
+def test_500_is_not_retried_by_rate_limit_path():
+    responses.add(responses.GET, FORECAST_URL, status=500)
+    sleeps = []
+    with pytest.raises(SourceUnavailable):
+        fetch_daily([(60.8, -148.8)], date(2025, 10, 1), date(2025, 10, 1),
+                    requests.Session(), archive=False, sleep=sleeps.append)
+    assert sleeps == [] and len(responses.calls) == 1
+
+
+@responses.activate
+def test_failed_batch_keeps_earlier_batches_cached(tmp_path, monkeypatch):
+    from wildice import weather
+    monkeypatch.setattr(weather, "BATCH", 1)
+    a, b = (60.8, -148.8), (61.0, -149.5)
+    responses.add(responses.GET, ARCHIVE_URL, json={"daily": block(["2025-10-01"])})
+    responses.add(responses.GET, FORECAST_URL,
+                  json={"daily": block(["2025-10-01", "2025-10-02"], snow=[0.0, 4.0])})
+    responses.add(responses.GET, FORECAST_URL, status=503)
+    with pytest.raises(SourceUnavailable):
+        update_cache(tmp_path, [a, b], date(2025, 10, 2), cfg, requests.Session(),
+                     sleep=lambda s: None)
+    saved_a = json.loads((tmp_path / "60.8_-148.8.json").read_text(encoding="utf-8"))
+    assert [r["day"] for r in saved_a] == ["2025-10-01", "2025-10-02"]
+    assert saved_a[1]["snowfall_cm"] == 4.0  # forecast batch for a was saved
+    saved_b = json.loads((tmp_path / "61.0_-149.5.json").read_text(encoding="utf-8"))
+    assert [r["day"] for r in saved_b] == ["2025-10-01"]  # archive progress kept

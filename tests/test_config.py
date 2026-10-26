@@ -53,3 +53,17 @@ def test_low_sun_key_required(tmp_path):
     p.write_text(text)
     with pytest.raises(ConfigError, match="low_sun_end"):
         load_config(p)
+
+
+def test_weather_batch_pause():
+    assert load_config(Path("config.yaml")).weather.batch_pause_s == 10
+
+
+def test_weather_section_required(tmp_path):
+    import re
+    text = re.sub(r"weather:\n  batch_pause_s:[^\n]*\n", "", Path("config.yaml").read_text())
+    assert "batch_pause_s" not in text
+    p = tmp_path / "c.yaml"
+    p.write_text(text)
+    with pytest.raises(ConfigError, match="weather"):
+        load_config(p)

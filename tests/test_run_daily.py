@@ -31,6 +31,13 @@ def _feature(lake_id, area, interior=POLY):
                            "warning": None}}
 
 
+@pytest.fixture(autouse=True)
+def no_sleep(monkeypatch):
+    """Weather pauses between batches; tests must not actually wait."""
+    import time
+    monkeypatch.setattr(time, "sleep", lambda s: None)
+
+
 @pytest.fixture
 def tmp_repo(tmp_path):
     shutil.copy(REPO / "config.yaml", tmp_path / "config.yaml")
@@ -351,3 +358,22 @@ def test_other_exception_writes_stale_before_ops_ping(tmp_repo, mocked):
     status = status_of(tmp_repo)
     assert status["stale_since"] == "2025-11-11" and status["lakes"] == PREVIOUS["lakes"]
     assert ntfy_bodies(mocked, "ops-topic") == ["RuntimeError"]
+
+
+def test_weather_fetched_at_largest_lake_in_cell(tmp_repo, mocked):
+    from urllib.parse import parse_qs, urlparse
+    small = _feature("w1", 120.0)
+    small["properties"].update(lat=61.02, lon=-149.53)
+    big = _feature("w2", 300.0)
+    big["properties"].update(lat=60.98, lon=-149.47)
+    (tmp_repo / "site/data/lakes.geojson").write_text(json.dumps({
+        "type": "FeatureCollection", "features": [small, big]}), encoding="utf-8")
+    cold_weather(mocked)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    wx_calls = [c for c in mocked.calls
+                if c.request.url.startswith((ARCHIVE_URL, FORECAST_URL))]
+    assert len(wx_calls) == 2
+    for c in wx_calls:
+        q = parse_qs(urlparse(c.request.url).query)
+        assert (q["latitude"], q["longitude"]) == (["60.98"], ["-149.47"])
+    assert (tmp_repo / "state/weather/61.0_-149.5.json").exists()

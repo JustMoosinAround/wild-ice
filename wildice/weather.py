@@ -1,7 +1,13 @@
-"""Daily weather from Open-Meteo, cached per 0.1 degree grid cell."""
+"""Daily weather from Open-Meteo, cached per 0.1 degree grid cell.
+
+Each cell is requested at one real point (the largest lake in it) rather than at the
+rounded cell centre, which can sit on a ridge or in the sea.
+"""
 from __future__ import annotations
 
 import json
+import time
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -18,10 +24,13 @@ SOURCE = "open-meteo"
 BATCH = 50
 TIMEOUT_S = 60
 TIMEZONE = "America/Anchorage"
+RATE_LIMIT_WAIT_S = 60  # after a 429, wait this long and retry once
 DAILY_VARS = ("temperature_2m_min,temperature_2m_max,temperature_2m_mean,"
               "snowfall_sum,rain_sum,wind_gusts_10m_max")
 
 Cell = tuple[float, float]
+Point = tuple[float, float]  # (lat, lon) actually sent to Open-Meteo
+Sleep = Callable[[float], None]
 
 
 def make_session() -> requests.Session:
@@ -45,6 +54,16 @@ def cell_of(lat: float, lon: float) -> Cell:
     return (round(lat, 1), round(lon, 1))
 
 
+def cell_points(lakes: Iterable) -> dict[Cell, Point]:
+    """Request point per cell: the coordinates of the largest lake (by area) in it."""
+    best: dict[Cell, object] = {}
+    for lake in lakes:
+        cell = cell_of(lake.lat, lake.lon)
+        if cell not in best or lake.area_acres > best[cell].area_acres:
+            best[cell] = lake
+    return {cell: (best[cell].lat, best[cell].lon) for cell in sorted(best)}
+
+
 def parse_location(daily: dict) -> list[DayWeather]:
     """Parse one Open-Meteo daily block; days lacking temperatures are dropped."""
     out: list[DayWeather] = []
@@ -66,24 +85,48 @@ def parse_location(daily: dict) -> list[DayWeather]:
     return out
 
 
-def _get(session: requests.Session, url: str, params: dict) -> list[dict]:
-    try:
-        resp = session.get(url, params=params, timeout=TIMEOUT_S)
-        resp.raise_for_status()
-        data = resp.json()
-    except (requests.RequestException, ValueError) as exc:
-        raise SourceUnavailable(SOURCE, str(exc)) from exc
-    return data if isinstance(data, list) else [data]
+def _rate_limited(exc: Exception) -> bool:
+    """A 429 response, or urllib3 giving up after repeated 429s (make_session)."""
+    if isinstance(exc, requests.HTTPError):
+        return exc.response is not None and exc.response.status_code == 429
+    return isinstance(exc, requests.exceptions.RetryError) and "429" in str(exc)
 
 
-def fetch_daily(cells: list[Cell], start: date, end: date, session: requests.Session,
-                archive: bool) -> dict[Cell, list[DayWeather]]:
+def _get(session: requests.Session, url: str, params: dict, sleep: Sleep) -> list[dict]:
+    for attempt in range(2):
+        try:
+            resp = session.get(url, params=params, timeout=TIMEOUT_S)
+            resp.raise_for_status()
+            data = resp.json()
+        except (requests.RequestException, ValueError) as exc:
+            if attempt == 0 and _rate_limited(exc):
+                sleep(RATE_LIMIT_WAIT_S)
+                continue
+            raise SourceUnavailable(SOURCE, str(exc)) from exc
+        return data if isinstance(data, list) else [data]
+    raise AssertionError("unreachable")
+
+
+def fetch_daily(cells: Sequence[Cell], start: date, end: date, session: requests.Session,
+                archive: bool, points: Mapping[Cell, Point] | None = None,
+                pause_s: float = 0.0, sleep: Sleep | None = None,
+                on_batch: Callable[[dict[Cell, list[DayWeather]]], None] | None = None,
+                ) -> dict[Cell, list[DayWeather]]:
+    """Fetch cells in batches, each at `points[cell]` (default: the cell itself).
+
+    Sleeps `pause_s` between batches; `on_batch` sees each batch as soon as it lands.
+    """
+    sleep = sleep or time.sleep
+    cells = list(cells)
     result: dict[Cell, list[DayWeather]] = {}
     for i in range(0, len(cells), BATCH):
+        if i and pause_s > 0:
+            sleep(pause_s)
         batch = cells[i:i + BATCH]
+        pts = [points.get(c, c) if points else c for c in batch]
         params = {
-            "latitude": ",".join(str(c[0]) for c in batch),
-            "longitude": ",".join(str(c[1]) for c in batch),
+            "latitude": ",".join(str(p[0]) for p in pts),
+            "longitude": ",".join(str(p[1]) for p in pts),
             "daily": DAILY_VARS,
             "timezone": TIMEZONE,
         }
@@ -95,15 +138,19 @@ def fetch_daily(cells: list[Cell], start: date, end: date, session: requests.Ses
             url = FORECAST_URL
             params["past_days"] = 14
             params["forecast_days"] = 1
-        locations = _get(session, url, params)
+        locations = _get(session, url, params, sleep)
         if len(locations) != len(batch):
             raise SourceUnavailable(
                 SOURCE, f"expected {len(batch)} locations, got {len(locations)}")
+        got: dict[Cell, list[DayWeather]] = {}
         for cell, loc in zip(batch, locations):
             days = parse_location(loc["daily"])
             if not archive:
                 days = [d for d in days if d.day <= end]
-            result[cell] = days
+            got[cell] = days
+        result.update(got)
+        if on_batch is not None:
+            on_batch(got)
     return result
 
 
@@ -143,26 +190,40 @@ def _is_complete(days: list[DayWeather], start: date, run_date: date) -> bool:
     return (days[-1].day - start).days + 1 == len(days)
 
 
-def update_cache(cache_dir: Path, cells: list[Cell], run_date: date, cfg: Config,
-                 session: requests.Session) -> dict[Cell, list[DayWeather]]:
+def update_cache(cache_dir: Path, cells: Mapping[Cell, Point] | Sequence[Cell],
+                 run_date: date, cfg: Config, session: requests.Session,
+                 sleep: Sleep | None = None) -> dict[Cell, list[DayWeather]]:
+    """Bring every cell's cache up to run_date; `cells` maps cell -> request point
+    (a plain list of cells requests each at its own rounded coordinates).
+
+    Each batch is written to the cache as soon as it arrives, so a failure part-way
+    keeps earlier progress for the next run.
+    """
+    sleep = sleep or time.sleep
+    points = dict(cells) if isinstance(cells, Mapping) else {c: c for c in cells}
+    order = list(points)
     start = season_start(run_date, cfg)
-    cached: dict[Cell, list[DayWeather]] = {}
+    pause = cfg.weather.batch_pause_s
+    current: dict[Cell, list[DayWeather]] = {}
     fresh: list[Cell] = []
-    for cell in cells:
+    for cell in order:
         path = _cache_path(cache_dir, cell)
         days = _load(path) if path.exists() else []
-        days = [d for d in days if d.day >= start]
-        if _is_complete(days, start, run_date):
-            cached[cell] = days
-        else:  # missing, stale, or gappy: backfill from season start
-            cached[cell] = days
-            fresh.append(cell)
-    backfill = fetch_daily(fresh, start, run_date, session, archive=True) if fresh else {}
-    recent = fetch_daily(cells, start, run_date, session, archive=False) if cells else {}
-    out: dict[Cell, list[DayWeather]] = {}
-    for cell in cells:
-        days = _merge(cached.get(cell, []), backfill.get(cell, []), recent[cell])
-        days = [d for d in days if d.day >= start]
-        _save(_cache_path(cache_dir, cell), days)
-        out[cell] = days
-    return out
+        current[cell] = [d for d in days if d.day >= start]
+        if not _is_complete(current[cell], start, run_date):
+            fresh.append(cell)  # missing, stale, or gappy: backfill from season start
+
+    def keep(batch: dict[Cell, list[DayWeather]]) -> None:
+        for cell, days in batch.items():  # later data overwrites earlier
+            current[cell] = [d for d in _merge(current[cell], days) if d.day >= start]
+            _save(_cache_path(cache_dir, cell), current[cell])
+
+    if fresh:
+        fetch_daily(fresh, start, run_date, session, archive=True, points=points,
+                    pause_s=pause, sleep=sleep, on_batch=keep)
+    if order:
+        if fresh and pause > 0:
+            sleep(pause)
+        fetch_daily(order, start, run_date, session, archive=False, points=points,
+                    pause_s=pause, sleep=sleep, on_batch=keep)
+    return {cell: current[cell] for cell in order}

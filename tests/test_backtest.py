@@ -62,8 +62,9 @@ def root(tmp_path):
 def fake_weather(monkeypatch):
     state = {"snow": 0.0, "calls": []}
 
-    def fetch(cells, start, end, session, archive):
+    def fetch(cells, start, end, session, archive, points=None, **kw):
         state["calls"].append((start, end, archive))
+        state["points"] = points
         return {c: _days(end, snow_last=state["snow"]) for c in cells}
 
     monkeypatch.setattr(backtest, "fetch_daily", fetch)
@@ -123,3 +124,16 @@ def test_false_alert_counted():
 def test_miss_counted():
     rows = [_row("skated", Label.UNKNOWN)]
     assert "misses: 1" in summarize(rows)
+
+
+def test_weather_fetched_at_largest_lake_point(root, fake_weather):
+    import json
+    data = root / "site" / "data" / "lakes.geojson"
+    fc = json.loads(data.read_text(encoding="utf-8"))
+    big = json.loads(json.dumps(fc["features"][0]))
+    big["properties"].update(id="w2", area_acres=500.0, lat=60.98, lon=-149.47)
+    fc["features"].append(big)
+    data.write_text(json.dumps(fc), encoding="utf-8")
+    rows = run_backtest(_obs(root, "snow"), root, requests.Session(), None)
+    assert rows[0].error is None
+    assert fake_weather["points"][(61.0, -149.5)] == (60.98, -149.47)

@@ -16,7 +16,7 @@ from wildice.icemodel import run_ice_model
 from wildice.imagery import CopernicusClient, fetch_imagery, s1_baseline
 from wildice.models import Confidence, Label, SourceUnavailable
 from wildice.score import score_lake, valid_s2_classes
-from wildice.weather import cell_of, fetch_daily, make_session, season_start
+from wildice.weather import cell_of, cell_points, fetch_daily, make_session, season_start
 
 log = logging.getLogger(__name__)
 
@@ -51,7 +51,9 @@ def _as_date(value) -> date:
 def run_backtest(obs_path: Path, root: Path, session, client) -> list[Row]:
     root = Path(root)
     cfg = load_config(root / "config.yaml")
-    lakes = {lake.id: lake for lake in load_catalog(root / "site" / "data" / "lakes.geojson")}
+    lake_list = load_catalog(root / "site" / "data" / "lakes.geojson")
+    lakes = {lake.id: lake for lake in lake_list}
+    points = cell_points(lake_list)  # same request point per cell as the daily job
     doc = yaml.safe_load(Path(obs_path).read_text(encoding="utf-8")) or {}
     rows: list[Row] = []
     for item in doc.get("observations") or []:
@@ -71,7 +73,8 @@ def run_backtest(obs_path: Path, root: Path, session, client) -> list[Row]:
             continue
         try:
             cell = cell_of(lake.lat, lake.lon)
-            wx = fetch_daily([cell], season_start(day, cfg), day, session, archive=True)[cell]
+            wx = fetch_daily([cell], season_start(day, cfg), day, session, archive=True,
+                             points=points)[cell]
             wx = [d for d in wx if d.day <= day]
             ice = run_ice_model(wx, cfg)
             img = None

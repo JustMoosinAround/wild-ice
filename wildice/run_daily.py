@@ -22,7 +22,7 @@ from wildice.models import ImageryStats, Label, Lake, Score, SourceUnavailable
 from wildice.prefs import load_prefs
 from wildice.score import score_lake, valid_s2_classes
 from wildice.shortlist import shortlist
-from wildice.weather import cell_of, make_session, update_cache
+from wildice.weather import cell_of, cell_points, make_session, update_cache
 
 log = logging.getLogger(__name__)
 
@@ -150,8 +150,7 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
     prev_status = _read_json(site_data / "status.json")
 
     try:
-        cells = sorted({cell_of(lake.lat, lake.lon) for lake in lake_list})
-        wx = update_cache(state / "weather", cells, run_date, cfg, session)
+        wx = update_cache(state / "weather", cell_points(lake_list), run_date, cfg, session)
         ice0 = {lake.id: run_ice_model(wx[cell_of(lake.lat, lake.lon)], cfg)
                 for lake in lake_list}
 

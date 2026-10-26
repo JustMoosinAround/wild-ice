@@ -60,6 +60,11 @@ class ImageryCfg:
 
 
 @dataclass(frozen=True)
+class WeatherCfg:
+    batch_pause_s: float
+
+
+@dataclass(frozen=True)
 class SiteCfg:
     base_url: str
 
@@ -72,6 +77,7 @@ class Config:
     snow: SnowCfg
     reset: ResetCfg
     imagery: ImageryCfg
+    weather: WeatherCfg
     site: SiteCfg
     season_start: str
     pinned: tuple[str, ...]
@@ -107,7 +113,7 @@ def load_config(path: Path) -> Config:
     if not isinstance(raw, dict):
         raise ConfigError("config is empty or not a mapping")
 
-    missing = [k for k in ("region", "filters", "ice", "snow", "reset", "imagery", "site",
+    missing = [k for k in ("region", "filters", "ice", "snow", "reset", "imagery", "weather", "site",
                            "season_start", "pinned", "hidden") if k not in raw]
     if missing:
         raise ConfigError(f"missing config key(s): {', '.join(missing)}")
@@ -130,6 +136,7 @@ def load_config(path: Path) -> Config:
             snow_ndsi=float, snow_brightness=float, dark_brightness=float,
             s1_frozen_delta_db=float, lookback_days=int, monthly_request_budget=int,
             low_sun_start=_mmdd, low_sun_end=_mmdd)),
+        weather=_section(raw, "weather", WeatherCfg, dict(batch_pause_s=float)),
         site=_section(raw, "site", SiteCfg, dict(base_url=str)),
         season_start=str(_get(raw, "season_start")),
         pinned=tuple(str(x) for x in (_get(raw, "pinned") or [])),
