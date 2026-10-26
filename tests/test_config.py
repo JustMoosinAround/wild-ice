@@ -39,3 +39,17 @@ def test_pinned_ids_are_tuple(tmp_path):
     cfg = load_config(p)
     assert cfg.pinned == ("w1", "r2")
     assert cfg.hidden == ()
+
+
+def test_low_sun_window_keys():
+    cfg = load_config(Path("config.yaml"))
+    assert cfg.imagery.low_sun_start == "11-25"
+    assert cfg.imagery.low_sun_end == "01-15"
+
+
+def test_low_sun_key_required(tmp_path):
+    text = Path("config.yaml").read_text().replace('  low_sun_end: "01-15"\n', "")
+    p = tmp_path / "c.yaml"
+    p.write_text(text)
+    with pytest.raises(ConfigError, match="low_sun_end"):
+        load_config(p)

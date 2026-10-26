@@ -9,6 +9,20 @@ from wildice.config import Config
 from wildice.models import DayWeather, IceState, ResetEvent, ResetKind, SurfaceClass
 
 
+def _mmdd(text: str) -> tuple[int, int]:
+    month, day = (int(x) for x in text.split("-"))
+    return month, day
+
+
+def in_low_sun(day: date, cfg: Config) -> bool:
+    """True if `day` falls in the configured low-sun window (inclusive; may wrap the year)."""
+    start, end = _mmdd(cfg.imagery.low_sun_start), _mmdd(cfg.imagery.low_sun_end)
+    md = (day.month, day.day)
+    if start <= end:
+        return start <= md <= end
+    return md >= start or md <= end
+
+
 def run_ice_model(
     days: Sequence[DayWeather],
     cfg: Config,
@@ -66,7 +80,8 @@ def run_ice_model(
             if surface == SurfaceClass.WHITE:
                 seen_white = True
             reset_kind: ResetKind | None = None
-            if surface == SurfaceClass.DARK and (
+            # low sun makes snow look dark, so a dark image then proves nothing
+            if surface == SurfaceClass.DARK and not in_low_sun(d.day, cfg) and (
                 snow_cm > cfg.snow.cover_cm
                 or seen_white
                 or (last_reset is not None and last_reset.kind == ResetKind.LIKELY)

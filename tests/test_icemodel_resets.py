@@ -109,3 +109,38 @@ def test_freeze_up_after_warm_run_is_not_likely_reset():
 def test_freeze_up_after_rain_is_not_likely_reset():
     s = run_ice_model([wx(0, 1, rain=6), wx(1, -2)], cfg)
     assert s.last_reset == ResetEvent(date(2025, 11, 2), ResetKind.FREEZE_UP)
+
+
+def _cold_from(start, n, snow=None):
+    snow = snow or {}
+    return [DayWeather(start + timedelta(i), -8, -2, -5, snow.get(i, 0.0), 0.0, 0.0)
+            for i in range(n)]
+
+
+def test_low_sun_dark_does_not_confirm_reset():
+    start = date(2025, 11, 20)  # Dec 1 (offset 11) is inside the low-sun window
+    s = run_ice_model(_cold_from(start, 20, snow={5: 3}), cfg,
+                      {date(2025, 12, 1): SurfaceClass.DARK})
+    assert s.last_reset.kind == ResetKind.FREEZE_UP
+    assert s.snow_since_reset_cm == 3
+
+
+def test_dark_just_outside_low_sun_still_confirms():
+    start = date(2025, 11, 10)
+    s = run_ice_model(_cold_from(start, 15, snow={3: 3}), cfg,
+                      {date(2025, 11, 24): SurfaceClass.DARK})
+    assert s.last_reset == ResetEvent(date(2025, 11, 24), ResetKind.CONFIRMED)
+
+
+def test_low_sun_white_still_counts_for_later_dark():
+    start = date(2026, 1, 1)
+    s = run_ice_model(_cold_from(start, 25), cfg,
+                      {date(2026, 1, 10): SurfaceClass.WHITE,
+                       date(2026, 1, 20): SurfaceClass.DARK})
+    assert s.last_reset == ResetEvent(date(2026, 1, 20), ResetKind.CONFIRMED)
+
+
+def test_in_low_sun_helper():
+    from wildice.icemodel import in_low_sun
+    assert in_low_sun(date(2025, 12, 25), cfg) and in_low_sun(date(2026, 1, 15), cfg)
+    assert not in_low_sun(date(2026, 1, 16), cfg) and not in_low_sun(date(2025, 11, 24), cfg)

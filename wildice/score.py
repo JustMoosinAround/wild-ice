@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from wildice.config import Config
+from wildice.icemodel import in_low_sun
 from wildice.models import (
     Confidence, IceState, ImageryStats, Label, Lake, ResetKind, S1Obs, S2Obs, Score, SurfaceClass,
 )
@@ -92,6 +93,16 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
             and ice.last_reset is not None and ice.last_reset.kind is ResetKind.LIKELY):
         conf = Confidence.MEDIUM
 
+    # A dark S2 alone can be open water (radar disagrees) or low-sun shading.
+    caveats: list[str] = []
+    if label is Label.LIKELY_BLACK_ICE:
+        if latest_s1 is not None and s1_frozen(latest_s1, imagery.s1_baseline_db, cfg) is False:
+            caveats.append("radar does not confirm ice")
+        if latest_cls is SurfaceClass.DARK and in_low_sun(last_clear_day, cfg):
+            caveats.append("low sun")
+    if caveats and conf is Confidence.HIGH:
+        conf = Confidence.MEDIUM
+
     parts = [f"~{h:.0f} cm est."]
     if snow > 0:
         if ice.last_reset:
@@ -118,5 +129,6 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
     if ice.possible_resets:
         latest_pr = max(ice.possible_resets, key=lambda e: e.day)
         parts.append(f"possible wind clearing {_fmt(latest_pr.day)}")
+    parts.extend(caveats)
 
     return Score(lake.id, label, conf, "; ".join(parts), h, last_clear_day)

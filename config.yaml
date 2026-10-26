@@ -25,6 +25,10 @@ imagery:  # placeholders, tuned by backtest
   s1_frozen_delta_db: 3.0
   lookback_days: 14
   monthly_request_budget: 9000
+  # low sun (MM-DD, wraps the new year): dark S2 is capped at medium and does not
+  # confirm a clearing
+  low_sun_start: "11-25"
+  low_sun_end: "01-15"
 site:
   base_url: "https://<github-user>.github.io/wild-ice"
 season_start: "10-01"

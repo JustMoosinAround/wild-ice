@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
 import yaml
@@ -54,6 +55,8 @@ class ImageryCfg:
     s1_frozen_delta_db: float
     lookback_days: int
     monthly_request_budget: int
+    low_sun_start: str  # MM-DD
+    low_sun_end: str  # MM-DD, may wrap the new year
 
 
 @dataclass(frozen=True)
@@ -80,6 +83,16 @@ def _get(d: dict, key: str, path: str = ""):
     if not isinstance(d, dict) or key not in d:
         raise ConfigError(f"missing config key: {full}")
     return d[key]
+
+
+def _mmdd(value) -> str:
+    text = str(value)
+    try:
+        month, day = (int(x) for x in text.split("-"))
+        date(2000, month, day)  # leap year: accepts 02-29
+    except (TypeError, ValueError):
+        raise ConfigError(f"expected MM-DD, got {text!r}") from None
+    return text
 
 
 def _section(raw: dict, name: str, cls, casts: dict):
@@ -115,7 +128,8 @@ def load_config(path: Path) -> Config:
         imagery=_section(raw, "imagery", ImageryCfg, dict(
             min_valid_fraction=float, fresh_days=int, shore_buffer_m=float,
             snow_ndsi=float, snow_brightness=float, dark_brightness=float,
-            s1_frozen_delta_db=float, lookback_days=int, monthly_request_budget=int)),
+            s1_frozen_delta_db=float, lookback_days=int, monthly_request_budget=int,
+            low_sun_start=_mmdd, low_sun_end=_mmdd)),
         site=_section(raw, "site", SiteCfg, dict(base_url=str)),
         season_start=str(_get(raw, "season_start")),
         pinned=tuple(str(x) for x in (_get(raw, "pinned") or [])),
