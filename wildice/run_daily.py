@@ -194,17 +194,17 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
     if new:
         topic = env.get("NTFY_TOPIC_ALERTS")
         if not topic:
-            log.warning("alerts topic not configured; %d alert(s) not sent", len(new))
-        else:
-            title, body, click = alert.format_alert(new, lakes, scores, pinned,
-                                                    cfg.site.base_url)
-            try:
-                alert.send_ntfy(topic, title, body, click, ntfy)
-            except SourceUnavailable as exc:
-                log.error("alert push failed: %s", exc)
-                _ping_ops(env, f"{exc.source} unavailable", ntfy)
-                return 1  # labels not saved: tomorrow's run retries the alert
-            log.info("alert sent for %d lake(s)", len(new))
+            log.error("alerts topic not configured; %d alert(s) not sent", len(new))
+            _ping_ops(env, "alerts topic not configured", ntfy)
+            return 1  # labels not saved: the alert goes out once the secret is set
+        title, body, click = alert.format_alert(new, lakes, scores, pinned, cfg.site.base_url)
+        try:
+            alert.send_ntfy(topic, title, body, click, ntfy)
+        except SourceUnavailable as exc:
+            log.error("alert push failed: %s", exc)
+            _ping_ops(env, f"{exc.source} unavailable", ntfy)
+            return 1  # labels not saved: tomorrow's run retries the alert
+        log.info("alert sent for %d lake(s)", len(new))
     alert.save_labels(labels_path, scores)
     return 0
 
@@ -220,6 +220,10 @@ def run(run_date: date, root: Path, env: Mapping[str, str], session: requests.Se
     try:
         return _run(run_date, root, env, session, client, ntfy)
     except Exception as exc:
+        try:  # keep the map honest: the last good labels, marked stale
+            _write_stale(Path(root) / "site" / "data", run_date)
+        except Exception as stale_exc:  # never mask the original failure
+            log.error("could not write stale status: %s", type(stale_exc).__name__)
         _ping_ops(env, type(exc).__name__, ntfy)
         raise
 

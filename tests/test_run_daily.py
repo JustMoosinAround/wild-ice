@@ -315,3 +315,39 @@ def test_logs_budget_usage(tmp_repo, mocked, caplog):
     cold_weather(mocked)
     assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
     assert "requests used 0/9000" in caplog.text
+
+
+def test_missing_alerts_topic_pings_ops_and_keeps_labels(tmp_repo, mocked):
+    cold_weather(mocked)
+    env = {"NTFY_TOPIC_OPS": "ops-topic"}
+    assert run(RUN, tmp_repo, env, session(), FakeClient()) == 1
+    assert ntfy_bodies(mocked, "ops-topic") == ["alerts topic not configured"]
+    assert not (tmp_repo / "state/labels.json").exists()
+    assert status_of(tmp_repo)["lakes"]["w1"]["label"] == "likely_black_ice"
+
+
+def test_missing_alerts_topic_without_new_lakes_is_fine(tmp_repo, mocked):
+    cold_weather(mocked, t_mean=5.0)  # open water: nothing to alert
+    env = {"NTFY_TOPIC_OPS": "ops-topic"}
+    assert run(RUN, tmp_repo, env, session(), FakeClient()) == 0
+    assert ntfy_calls(mocked, "ops-topic") == 0
+
+
+def test_other_exception_writes_stale_before_ops_ping(tmp_repo, mocked):
+    _write_prev(tmp_repo, PREVIOUS)
+    cold_weather(mocked)
+    seen = {}
+    real_ping = run_daily._ping_ops
+
+    def spy(env, body, ntfy):
+        seen["stale_at_ping"] = status_of(tmp_repo).get("stale_since")
+        real_ping(env, body, ntfy)
+
+    import unittest.mock as um
+    with um.patch.object(run_daily, "_ping_ops", spy):
+        with pytest.raises(RuntimeError):
+            run(RUN, tmp_repo, ENV, session(), FakeClient(fail=RuntimeError("x")))
+    assert seen["stale_at_ping"] == "2025-11-11"
+    status = status_of(tmp_repo)
+    assert status["stale_since"] == "2025-11-11" and status["lakes"] == PREVIOUS["lakes"]
+    assert ntfy_bodies(mocked, "ops-topic") == ["RuntimeError"]
