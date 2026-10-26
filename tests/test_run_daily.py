@@ -458,3 +458,81 @@ def test_auth_rate_limit_or_server_error_still_fails_run(tmp_repo, mocked, statu
     assert run(RUN, tmp_repo, ENV, session(), client) == 1
     assert status_of(tmp_repo)["stale_since"] == "2025-11-11"
     assert ntfy_bodies(mocked, "ops-topic") == ["copernicus unavailable"]
+
+
+# --- season S2 history (clearings older than the 14-day lookback) ---
+
+def _season_daily(end, snow_on=None):
+    """Cold days from season start to `end`; `snow_on` = {date: cm}."""
+    snow_on = snow_on or {}
+    days = [SEASON_START + timedelta(days=i) for i in range((end - SEASON_START).days + 1)]
+    n = len(days)
+    return {"latitude": 61.0, "longitude": -149.5, "daily": {
+        "time": [d.isoformat() for d in days],
+        "temperature_2m_min": [-8.0] * n, "temperature_2m_max": [-2.0] * n,
+        "temperature_2m_mean": [-5.0] * n,
+        "snowfall_sum": [snow_on.get(d, 0.0) for d in days],
+        "rain_sum": [0.0] * n, "wind_gusts_10m_max": [10.0] * n}}
+
+
+def _run_with_weather(root, day, client, env=ENV, snow_on=None):
+    with responses_lib.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+        for url in (ARCHIVE_URL, FORECAST_URL):
+            rsps.add(responses_lib.GET, url, json=[_season_daily(day, snow_on)], status=200)
+        rsps.add(responses_lib.POST, ALERTS_URL, status=200)
+        rsps.add(responses_lib.POST, OPS_URL, status=200)
+        return run(day, root, env, session(), client)
+
+
+def _no_december_low_sun(root, pinned="[w1]"):
+    import re
+    text = (root / "config.yaml").read_text(encoding="utf-8")
+    text = re.sub(r'low_sun_start: "[^"]*"', 'low_sun_start: "01-20"', text)
+    text = re.sub(r'low_sun_end: "[^"]*"', 'low_sun_end: "01-25"', text)
+    text = text.replace("pinned: []", f"pinned: {pinned}")
+    (root / "config.yaml").write_text(text, encoding="utf-8")
+
+
+DEC1, DEC5, DEC20 = date(2025, 12, 1), date(2025, 12, 5), date(2025, 12, 20)
+DARK_DEC5 = S2Obs(DEC5, 0.95, 0.05, 0.05, 0.02)
+
+
+@pytest.mark.parametrize("dec20_client", ["none", "no_new_image"])
+def test_clearing_remembered_past_lookback(tmp_repo, dec20_client):
+    """Dec 1 snow 5 cm, Dec 5 dark image -> Dec 20 with no new image: still black ice."""
+    _no_december_low_sun(tmp_repo)  # Dec 5 must not fall in the low-sun window
+    snow = {DEC1: 5.0}
+    assert _run_with_weather(tmp_repo, DEC5, FakeClient(s2=[DARK_DEC5]), snow_on=snow) == 0
+    assert status_of(tmp_repo)["lakes"]["w1"]["label"] == "likely_black_ice"
+    hist = json.loads((tmp_repo / "state/s2_history.json").read_text(encoding="utf-8"))
+    assert hist == {"w1": {"2025-12-05": "dark"}}
+
+    client = None if dec20_client == "none" else FakeClient(s2=[])
+    env = {k: v for k, v in ENV.items()}  # no CDSE creds: weather + history only
+    assert _run_with_weather(tmp_repo, DEC20, client, env=env, snow_on=snow) == 0
+    w1 = status_of(tmp_repo)["lakes"]["w1"]
+    assert w1["label"] == "likely_black_ice"
+    assert w1["last_clear_day"] == "2025-12-05"
+    assert "dark on Dec 5 image" in w1["reason"]
+
+
+def test_s2_history_drops_previous_season(tmp_repo, mocked):
+    cold_weather(mocked)
+    (tmp_repo / "state").mkdir()
+    (tmp_repo / "state/s2_history.json").write_text(json.dumps(
+        {"w1": {"2025-03-01": "dark", "2025-10-20": "white"}, "w9": {"2025-02-01": "grey"}}),
+        encoding="utf-8")
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    hist = json.loads((tmp_repo / "state/s2_history.json").read_text(encoding="utf-8"))
+    assert hist == {"w1": {"2025-10-20": "white", "2025-11-11": "dark"}}
+
+
+def test_corrupt_s2_history_is_ignored(tmp_repo, mocked):
+    cold_weather(mocked)
+    (tmp_repo / "state").mkdir()
+    (tmp_repo / "state/s2_history.json").write_text(
+        json.dumps({"w1": {"bad-date": "dark", "2025-11-01": "purple"}, "w2": 3}),
+        encoding="utf-8")
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    hist = json.loads((tmp_repo / "state/s2_history.json").read_text(encoding="utf-8"))
+    assert hist == {"w1": {"2025-11-11": "dark"}}

@@ -137,3 +137,17 @@ def test_weather_fetched_at_largest_lake_point(root, fake_weather):
     rows = run_backtest(_obs(root, "snow"), root, requests.Session(), None)
     assert rows[0].error is None
     assert fake_weather["points"][(61.0, -149.5)] == (60.98, -149.47)
+
+
+def test_note_when_daily_shortlist_would_skip(root, fake_weather):
+    fake_weather["snow"] = 5.0  # snowed over by weather alone -> not shortlisted
+    rows = run_backtest(_obs(root, "snow"), root, requests.Session(), _dark())
+    assert rows[0].note is not None and "not have imaged" in rows[0].note
+    line = [ln for ln in summarize(rows).splitlines() if ln.startswith("w1")][0]
+    assert rows[0].note in line
+
+
+def test_no_note_when_shortlisted(root, fake_weather):
+    rows = run_backtest(_obs(root, "skated"), root, requests.Session(), _dark())
+    assert rows[0].note is None
+    assert "note" not in summarize(rows)

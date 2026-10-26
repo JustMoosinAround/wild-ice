@@ -197,3 +197,18 @@ def test_low_sun_does_not_touch_snow_label():
     im = ImageryStats((S2Obs(run - timedelta(days=1), *WHITE),), (), None)
     s = score_lake(lake, ice(), im, run, cfg)
     assert (s.label, s.confidence) == (Label.SNOW_COVERED, Confidence.HIGH)
+
+
+def test_season_history_supplies_last_clear_image():
+    hist = {RUN - timedelta(days=15): SurfaceClass.DARK}
+    s = score_lake(lake, ice(), None, RUN, cfg, s2_history=hist)
+    assert (s.label, s.confidence) == (Label.LIKELY_BLACK_ICE, Confidence.MEDIUM)
+    assert s.last_clear_day == RUN - timedelta(days=15)
+    assert f"dark on {RUN - timedelta(days=15):%b} {(RUN - timedelta(days=15)).day} image" \
+        in s.reason
+
+
+def test_todays_imagery_overrides_history_same_day():
+    day = RUN - timedelta(days=1)
+    s = score_lake(lake, ice(), img(1, WHITE), RUN, cfg, s2_history={day: SurfaceClass.DARK})
+    assert s.label is Label.SNOW_COVERED

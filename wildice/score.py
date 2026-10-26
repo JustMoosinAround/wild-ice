@@ -1,6 +1,7 @@
 """Scoring: turn ice-model state plus satellite stats into a user-facing label."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import date, timedelta
 
 from wildice.config import Config
@@ -52,9 +53,11 @@ def s1_frozen(obs: S1Obs, baseline_db: float | None, cfg: Config) -> bool | None
 
 
 def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
-               run_date: date, cfg: Config) -> Score:
+               run_date: date, cfg: Config,
+               s2_history: Mapping[date, SurfaceClass] | None = None) -> Score:
+    """`s2_history` holds this season's earlier valid S2 classes; today's imagery wins."""
     h = ice.thickness_cm
-    classes = valid_s2_classes(imagery, cfg)
+    classes = {**(s2_history or {}), **valid_s2_classes(imagery, cfg)}
     last_clear_day = max(classes) if classes else None
     latest_cls = classes[last_clear_day] if last_clear_day else None
     latest_s1 = max(imagery.s1, key=lambda o: o.day) if imagery and imagery.s1 else None

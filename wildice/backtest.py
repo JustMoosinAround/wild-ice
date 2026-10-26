@@ -15,7 +15,9 @@ from wildice.config import load_config
 from wildice.icemodel import run_ice_model
 from wildice.imagery import CopernicusClient, fetch_imagery, s1_baseline
 from wildice.models import Confidence, Label, SourceUnavailable
+from wildice.prefs import load_prefs
 from wildice.score import score_lake, valid_s2_classes
+from wildice.shortlist import shortlist
 from wildice.weather import cell_of, cell_points, fetch_daily, make_session, season_start
 
 log = logging.getLogger(__name__)
@@ -26,6 +28,7 @@ EXPECTED = {
     "water": {Label.OPEN_WATER, Label.FREEZING},
     "rough": {Label.FREEZING, Label.UNKNOWN, Label.SNOW_COVERED},
 }
+NOT_SHORTLISTED = "daily run would not have imaged it (weather-only shortlist)"
 
 
 @dataclass
@@ -38,6 +41,7 @@ class Row:
     reason: str
     match: bool
     error: str | None = None
+    note: str | None = None
 
 
 def _error_row(lake_id, day, observed, msg: str) -> Row:
@@ -54,6 +58,7 @@ def run_backtest(obs_path: Path, root: Path, session, client) -> list[Row]:
     lake_list = load_catalog(root / "site" / "data" / "lakes.geojson")
     lakes = {lake.id: lake for lake in lake_list}
     points = cell_points(lake_list)  # same request point per cell as the daily job
+    pinned, hidden = load_prefs(cfg, root / "prefs")
     doc = yaml.safe_load(Path(obs_path).read_text(encoding="utf-8")) or {}
     rows: list[Row] = []
     for item in doc.get("observations") or []:
@@ -77,6 +82,9 @@ def run_backtest(obs_path: Path, root: Path, session, client) -> list[Row]:
                              points=points)[cell]
             wx = [d for d in wx if d.day <= day]
             ice = run_ice_model(wx, cfg)
+            imaged = shortlist([lake], {lake.id: ice}, pinned, cfg, remaining_requests=2,
+                               hidden=hidden)
+            note = None if imaged else NOT_SHORTLISTED
             img = None
             if client is not None and lake.interior is not None:
                 base = (s1_baseline(client, lake, ice.freeze_up)
@@ -88,7 +96,7 @@ def run_backtest(obs_path: Path, root: Path, session, client) -> list[Row]:
             rows.append(_error_row(lake_id, day, observed, str(exc)))
             continue
         rows.append(Row(lake_id, day, observed, sc.label, sc.confidence, sc.reason,
-                        sc.label in EXPECTED[observed]))
+                        sc.label in EXPECTED[observed], note=note))
     return rows
 
 
@@ -100,7 +108,8 @@ def summarize(rows: list[Row]) -> str:
             lines.append(f"{r.lake_id:<10} {r.day!s:<10} {r.observed:<8} ERROR: {r.error}")
         else:
             lines.append(f"{r.lake_id:<10} {r.day!s:<10} {r.observed:<8} {r.predicted.value:<17} "
-                         f"{r.confidence.value:<6} {'yes' if r.match else 'NO ':<3} {r.reason}")
+                         f"{r.confidence.value:<6} {'yes' if r.match else 'NO ':<3} {r.reason}"
+                         + (f"  [note: {r.note}]" if r.note else ""))
     false_alerts = sum(r.predicted is Label.LIKELY_BLACK_ICE and r.observed != "skated"
                        for r in ok)
     misses = sum(r.observed == "skated" and r.predicted is not Label.LIKELY_BLACK_ICE

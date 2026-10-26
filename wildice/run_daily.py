@@ -19,11 +19,13 @@ from wildice.catalog import load_catalog
 from wildice.config import Config, load_config
 from wildice.icemodel import run_ice_model
 from wildice.imagery import Budget, CopernicusClient, fetch_imagery, s1_baseline
-from wildice.models import ImageryStats, Label, Lake, Score, SourceUnavailable
+from wildice.models import (
+    ImageryStats, Label, Lake, Score, SourceUnavailable, SurfaceClass,
+)
 from wildice.prefs import load_prefs
 from wildice.score import score_lake, valid_s2_classes
 from wildice.shortlist import shortlist
-from wildice.weather import cell_of, cell_points, make_session, update_cache
+from wildice.weather import cell_of, cell_points, make_session, season_start, update_cache
 
 log = logging.getLogger(__name__)
 
@@ -87,6 +89,36 @@ def _write_stale(site_data: Path, run_date: date) -> None:
         status = publish.build_status([], {}, frozenset(), frozenset(), {}, run_date,
                                       stale_since=run_date)
     _write_json(site_data / "status.json", status)
+
+
+S2History = dict[str, dict[date, SurfaceClass]]
+
+
+def _load_s2_history(path: Path, start: date) -> S2History:
+    """Per-lake valid S2 classes this season; malformed or pre-season entries dropped."""
+    raw = _read_json(path)
+    out: S2History = {}
+    if not isinstance(raw, dict):
+        return out
+    for lake_id, days in raw.items():
+        if not isinstance(days, dict):
+            continue
+        kept: dict[date, SurfaceClass] = {}
+        for day, cls in days.items():
+            try:
+                d, c = date.fromisoformat(str(day)), SurfaceClass(cls)
+            except ValueError:
+                continue
+            if d >= start:
+                kept[d] = c
+        if kept:
+            out[str(lake_id)] = kept
+    return out
+
+
+def _save_s2_history(path: Path, history: S2History) -> None:
+    _write_json(path, {lake_id: {d.isoformat(): str(days[d]) for d in sorted(days)}
+                       for lake_id, days in sorted(history.items()) if days})
 
 
 def _make_client(env: Mapping[str, str], session: requests.Session,
@@ -166,10 +198,14 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
     baselines = _read_json(baselines_path)
     baselines = baselines if isinstance(baselines, dict) else {}
     prev_status = _read_json(site_data / "status.json")
+    s2_history_path = state / "s2_history.json"
+    s2_history = _load_s2_history(s2_history_path, season_start(run_date, cfg))
 
     try:
         wx = update_cache(state / "weather", cell_points(lake_list), run_date, cfg, session)
-        ice0 = {lake.id: run_ice_model(wx[cell_of(lake.lat, lake.lon)], cfg)
+        # earlier clearings this season count before today's imagery is in
+        ice0 = {lake.id: run_ice_model(wx[cell_of(lake.lat, lake.lon)], cfg,
+                                       s2_history.get(lake.id))
                 for lake in lake_list}
 
         if client is None:
@@ -180,14 +216,19 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
                          hidden=hidden)
                if client is not None else [])
         imagery = _imagery(client, lakes, ids, ice0, run_date, cfg, budget, baselines)
+        for lake_id, img in imagery.items():
+            today = valid_s2_classes(img, cfg)
+            if today:
+                s2_history[lake_id] = {**s2_history.get(lake_id, {}), **today}
+        _save_s2_history(s2_history_path, s2_history)
 
         scores: dict[str, Score] = {}
         for lake in lake_list:
             img = imagery.get(lake.id)
-            ice = (run_ice_model(wx[cell_of(lake.lat, lake.lon)], cfg,
-                                 valid_s2_classes(img, cfg))
+            hist = s2_history.get(lake.id)
+            ice = (run_ice_model(wx[cell_of(lake.lat, lake.lon)], cfg, hist)
                    if img is not None else ice0[lake.id])
-            scores[lake.id] = score_lake(lake, ice, img, run_date, cfg)
+            scores[lake.id] = score_lake(lake, ice, img, run_date, cfg, s2_history=hist)
 
         if client is not None:
             _thumbnails(client, lakes, scores, prev_status, site_data / "thumbs", budget)
