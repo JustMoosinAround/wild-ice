@@ -19,6 +19,8 @@ OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 TIMEOUT_S = 180
 RETRIES = 3
 NARROW_WARNING = "Lake too narrow for satellite readings"
+# A 200 response whose "remark" mentions one of these is a failed query.
+ERROR_REMARKS = ("error", "timeout", "out of memory")
 
 Bbox = tuple[float, float, float, float]  # south, west, north, east
 
@@ -71,7 +73,14 @@ def _post(session: requests.Session, query: str) -> dict:
             time.sleep(2 ** attempt * 5)
             continue
         resp.raise_for_status()
-        return resp.json()
+        data = resp.json()
+        remark = str(data.get("remark") or "") if isinstance(data, dict) else ""
+        if any(word in remark.lower() for word in ERROR_REMARKS):
+            if last:
+                raise requests.HTTPError(f"Overpass query failed: {remark}", response=resp)
+            time.sleep(2 ** attempt * 5)
+            continue
+        return data
     raise AssertionError("unreachable")
 
 

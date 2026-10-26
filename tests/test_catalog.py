@@ -158,3 +158,36 @@ def test_catalog_roundtrip_null_interior(tmp_path):
     p = tmp_path / "l.geojson"
     write_catalog(lakes, p)
     assert load_catalog(p) == lakes
+
+
+@pytest.mark.parametrize("remark", [
+    "runtime error: Query timed out in \"query\" at line 3 after 181 seconds.",
+    "runtime error: Query run out of memory using about 2048 MB of RAM.",
+    "Timeout while processing",
+])
+@responses.activate
+def test_fetch_retries_on_error_remark(monkeypatch, remark):
+    monkeypatch.setattr(catalog.time, "sleep", lambda s: None)
+    body = json.loads((FIX / "overpass_roads.json").read_text())
+    responses.post(URL, json={"elements": [], "remark": remark})
+    responses.post(URL, json=body)
+    out = fetch_osm("roads", (61.0, -149.0, 61.5, -148.5), requests.Session())
+    assert len(responses.calls) == 2 and len(out) == 1
+
+
+@responses.activate
+def test_error_remark_gives_up_after_retries(monkeypatch):
+    monkeypatch.setattr(catalog.time, "sleep", lambda s: None)
+    responses.post(URL, json={"elements": [], "remark": "runtime error: out of memory"})
+    with pytest.raises(requests.HTTPError):
+        fetch_osm("roads", (61.0, -149.0, 61.5, -148.5), requests.Session())
+    assert len(responses.calls) == 4
+
+
+@responses.activate
+def test_harmless_remark_is_accepted(monkeypatch):
+    monkeypatch.setattr(catalog.time, "sleep", lambda s: None)
+    body = json.loads((FIX / "overpass_roads.json").read_text())
+    responses.post(URL, json={**body, "remark": "note: partial bbox"})
+    out = fetch_osm("roads", (61.0, -149.0, 61.5, -148.5), requests.Session())
+    assert len(responses.calls) == 1 and len(out) == 1
