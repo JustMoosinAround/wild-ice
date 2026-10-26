@@ -271,3 +271,38 @@ def test_s1_baseline_none_when_empty(client):
     add_token()
     responses.add(responses.POST, STATS_URL, json=fixture("cdse_s2_empty.json"))
     assert s1_baseline(client, make_lake(), date(2025, 11, 20)) is None
+
+
+class _Raw:
+    def __init__(self, history):
+        self.retries = type("R", (), {"history": history})()
+
+
+def test_attempts_counts_retry_history():
+    from types import SimpleNamespace
+    from wildice.imagery import _attempts
+    assert _attempts(SimpleNamespace(raw=_Raw([1, 2]))) == 3
+    assert _attempts(SimpleNamespace(raw=object())) == 1
+    assert _attempts(SimpleNamespace(raw=SimpleNamespace(retries=None))) == 1
+    assert _attempts(SimpleNamespace()) == 1
+
+
+@responses.activate
+def test_failed_call_still_records_one(tmp_path):
+    c = CopernicusClient("id", "secret", requests.Session(),
+                         budget=Budget(tmp_path / "b.json", 100))
+    add_token()
+    responses.add(responses.POST, STATS_URL, status=500)
+    with pytest.raises(SourceUnavailable):
+        c.s2_stats(GEOM, D1, D2)
+    assert c.budget.remaining() == 99
+
+
+@responses.activate
+def test_s2_nan_band_on_valid_day_is_skipped(client):
+    add_token()
+    data = fixture("cdse_s2_stats.json")
+    data["data"][0]["outputs"]["reflectance"]["bands"]["B1"]["stats"]["mean"] = "NaN"
+    responses.add(responses.POST, STATS_URL, json=data)
+    obs = client.s2_stats(GEOM, D1, D2)
+    assert [o.day for o in obs] == [date(2025, 11, 8)]

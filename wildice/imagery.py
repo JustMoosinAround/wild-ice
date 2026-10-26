@@ -36,6 +36,7 @@ PROCESS_URL = "https://sh.dataspace.copernicus.eu/api/v1/process"
 SOURCE = "copernicus"
 CRS_4326 = "http://www.opengis.net/def/crs/EPSG/0/4326"
 TIMEOUT_S = 120
+MAX_RETRIES = 3  # matches weather.make_session Retry(total=3)
 TOKEN_MARGIN_S = 60
 RESOLUTION_DEG = 0.0002  # ~22 m N-S; statistics resolution in CRS units
 THUMB_PX = 256
@@ -48,6 +49,13 @@ EVALSCRIPTS = Path(__file__).parent / "evalscripts"
 
 def _script(name: str) -> str:
     return (EVALSCRIPTS / name).read_text(encoding="utf-8")
+
+
+def _attempts(resp) -> int:
+    """HTTP requests behind one response: 1 + urllib3 retries performed."""
+    retries = getattr(getattr(resp, "raw", None), "retries", None)
+    history = getattr(retries, "history", None)
+    return 1 + len(history) if history else 1
 
 
 class Budget:
@@ -123,14 +131,23 @@ class CopernicusClient:
 
     def _post(self, url: str, body: dict) -> requests.Response:
         headers = self._auth_header()
-        if self.budget is not None:
-            self.budget.record()
         try:
             resp = self.session.post(url, json=body, headers=headers, timeout=TIMEOUT_S)
+        except requests.RequestException as exc:
+            # RetryError means urllib3 exhausted its retries: 1 + MAX_RETRIES requests
+            self._record(MAX_RETRIES + 1 if isinstance(exc, requests.exceptions.RetryError)
+                         else 1)
+            raise SourceUnavailable(SOURCE, str(exc)) from exc
+        self._record(_attempts(resp))
+        try:
             resp.raise_for_status()
         except requests.RequestException as exc:
             raise SourceUnavailable(SOURCE, str(exc)) from exc
         return resp
+
+    def _record(self, n: int) -> None:
+        if self.budget is not None:
+            self.budget.record(max(1, n))
 
     @staticmethod
     def _bounds(geometry: dict) -> dict:
@@ -178,8 +195,10 @@ class CopernicusClient:
                     out.append(S2Obs(self._day(row), 0.0, 0.0, 0.0, 0.0))
                     continue
                 refl = outputs["reflectance"]
-                bands = [round((_mean(refl, b) or 0.0) / valid, 6)
-                         for b in ("B0", "B1", "B2")]
+                means = [_mean(refl, b) for b in ("B0", "B1", "B2")]
+                if any(m is None for m in means):  # NaN band on a valid day
+                    continue
+                bands = [round(m / valid, 6) for m in means]
                 out.append(S2Obs(self._day(row), round(valid, 6), *bands))
         except (KeyError, TypeError, ValueError) as exc:
             raise SourceUnavailable(SOURCE, f"unexpected S2 response: {exc}") from exc
