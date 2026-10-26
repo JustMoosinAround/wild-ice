@@ -1,0 +1,38 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install
+        run: pip install ".[dev]"
+
+      - name: Python tests
+        run: pytest -q
+
+      # Node >= 22 treats a bare directory argument as a file, so pass a glob
+      # (expanded by node itself). Skipped until tests/js/ exists (Task 11).
+      - name: JS tests
+        run: |
+          if [ -d tests/js ]; then
+            node --test "tests/js/*.test.mjs"
+          else
+            echo "no tests/js yet"
+          fi

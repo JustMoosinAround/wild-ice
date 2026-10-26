@@ -1,0 +1,79 @@
+name: daily
+
+on:
+  schedule:
+    - cron: "0 17 * * *"  # 17:00 UTC = 8-9 am Alaska
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: data-writer  # shared with catalog.yml: one job commits to main at a time
+  cancel-in-progress: false
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install .
+
+      # The job pings ops itself and writes a stale status on source failures, so a
+      # failure here must still commit and deploy that status (continue-on-error).
+      - name: Run daily job
+        id: job
+        continue-on-error: true
+        env:
+          CDSE_CLIENT_ID: ${{ secrets.CDSE_CLIENT_ID }}
+          CDSE_CLIENT_SECRET: ${{ secrets.CDSE_CLIENT_SECRET }}
+          NTFY_TOPIC_ALERTS: ${{ secrets.NTFY_TOPIC_ALERTS }}
+          NTFY_TOPIC_OPS: ${{ secrets.NTFY_TOPIC_OPS }}
+          WILDICE_OPS_MARKER: ${{ runner.temp }}/ops_notified
+        run: python -m wildice.run_daily
+
+      - name: Commit and push data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          bash scripts/push_with_retry.sh
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
+
+      # Fallback ops push: any failed step, including a Python crash outside run()
+      # (import error, bad --date, OOM). Skipped when Python already pinged ops and
+      # left the marker file, so ops gets one push per failed run.
+      - name: Notify ops on failure
+        if: always() && (failure() || steps.job.outcome == 'failure')
+        env:
+          NTFY_TOPIC_OPS: ${{ secrets.NTFY_TOPIC_OPS }}
+          WILDICE_OPS_MARKER: ${{ runner.temp }}/ops_notified
+        run: |
+          if [ -f "${WILDICE_OPS_MARKER}" ]; then
+            echo "ops already notified by the daily job"
+          elif [ -n "${NTFY_TOPIC_OPS}" ]; then
+            curl -fsS -H "Title: Wild ice job failed" \
+              -d "workflow ${GITHUB_WORKFLOW} failed (run ${GITHUB_RUN_ID})" \
+              "https://ntfy.sh/${NTFY_TOPIC_OPS}" > /dev/null
+          fi
+
+      - name: Fail if the daily job failed
+        if: steps.job.outcome == 'failure'
+        run: exit 1
