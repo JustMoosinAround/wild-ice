@@ -21,5 +21,8 @@ dev = ["pytest", "responses"]
 [tool.setuptools]
 packages = ["wildice"]
 
+[tool.setuptools.package-data]
+wildice = ["evalscripts/*.js"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
