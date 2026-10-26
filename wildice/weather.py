@@ -26,7 +26,8 @@ Cell = tuple[float, float]
 
 def make_session() -> requests.Session:
     """Session that retries transient failures with backoff."""
-    retry = Retry(total=3, backoff_factor=2, status_forcelist=[429, 500, 502, 503, 504])
+    retry = Retry(total=3, backoff_factor=2, status_forcelist=[429, 500, 502, 503, 504],
+                  allowed_methods=frozenset({"GET", "POST"}))
     session = requests.Session()
     adapter = HTTPAdapter(max_retries=retry)
     session.mount("https://", adapter)

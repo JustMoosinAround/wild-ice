@@ -10,8 +10,8 @@ function setup() {
   return {
     input: [{ bands: ["B03", "B04", "B11", "SCL", "dataMask"] }],
     output: [
-      { id: "reflectance", bands: 3 },
-      { id: "valid", bands: 1 },
+      { id: "reflectance", bands: 3, sampleType: "FLOAT32" },
+      { id: "valid", bands: 1, sampleType: "FLOAT32" },
       { id: "dataMask", bands: 1 }
     ]
   };

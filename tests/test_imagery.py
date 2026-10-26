@@ -72,11 +72,35 @@ def test_s2_no_valid_pixels_gives_zero_valid_fraction(client):
     for out in data["data"][0]["outputs"].values():
         for b in out["bands"].values():
             b["stats"]["mean"] = 0.0
-    data["data"][1]["outputs"]["valid"]["bands"]["B0"]["stats"]["mean"] = "NaN"
     responses.add(responses.POST, STATS_URL, json=data)
     obs = client.s2_stats(GEOM, D1, D2)
-    assert [o.valid_fraction for o in obs] == [0.0, 0.0]
-    assert obs[0].b03 == 0.0
+    assert obs[0] == S2Obs(date(2025, 11, 3), 0.0, 0.0, 0.0, 0.0)
+    assert obs[1].valid_fraction == pytest.approx(0.4)
+
+
+@responses.activate
+def test_s2_nan_intervals_are_skipped(client):
+    add_token()
+    data = fixture("cdse_s2_stats.json")
+    for row in data["data"]:
+        row["outputs"]["valid"]["bands"]["B0"]["stats"]["mean"] = "NaN"
+    responses.add(responses.POST, STATS_URL, json=data)
+    assert client.s2_stats(GEOM, D1, D2) == []
+
+
+@pytest.mark.parametrize("name,ids", [("s1_stats.js", ["vv"]),
+                                      ("s2_stats.js", ["reflectance", "valid"])])
+def test_evalscripts_declare_float32(name, ids):
+    import re
+    text = (Path(__file__).parents[1] / "wildice" / "evalscripts" / name).read_text(
+        encoding="utf-8")
+    for oid in ids:
+        assert re.search(r'id:\s*"%s"[^}]*sampleType:\s*"FLOAT32"' % oid, text), oid
+
+
+def test_s1_polarization_constant():
+    from wildice import imagery
+    assert imagery.S1_POLARIZATION == "DV"
 
 
 @responses.activate

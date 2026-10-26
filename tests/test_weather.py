@@ -176,3 +176,11 @@ def test_cache_middle_gap_triggers_archive(tmp_path):
     out = update_cache(tmp_path, [cell], run, cfg, requests.Session())
     assert any(c.request.url.startswith(ARCHIVE_URL) for c in responses.calls)
     assert len(out[cell]) == 10
+
+
+def test_make_session_retries_post_and_get():
+    from wildice.weather import make_session
+    retry = make_session().get_adapter("https://").max_retries
+    assert retry.total == 3 and retry.backoff_factor == 2
+    assert 503 in retry.status_forcelist and 429 in retry.status_forcelist
+    assert retry.allowed_methods >= {"GET", "POST"}

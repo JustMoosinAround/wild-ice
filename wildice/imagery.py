@@ -40,6 +40,9 @@ TOKEN_MARGIN_S = 60
 RESOLUTION_DEG = 0.0002  # ~22 m N-S; statistics resolution in CRS units
 THUMB_PX = 256
 BASELINE_DAYS = 30
+# VV-only coverage over Southcentral Alaska is unverified: "DV" (dual VV+VH) scenes
+# may not be the only mode acquired there. Confirm at the first live run.
+S1_POLARIZATION = "DV"
 EVALSCRIPTS = Path(__file__).parent / "evalscripts"
 
 
@@ -168,8 +171,10 @@ class CopernicusClient:
         try:
             for row in rows:
                 outputs = row["outputs"]
-                valid = _mean(outputs["valid"]) or 0.0
-                if valid <= 0.0:  # no valid pixels that day
+                valid = _mean(outputs["valid"])
+                if valid is None:  # no data at all that day
+                    continue
+                if valid <= 0.0:  # data present but no valid pixels
                     out.append(S2Obs(self._day(row), 0.0, 0.0, 0.0, 0.0))
                     continue
                 refl = outputs["reflectance"]
@@ -183,7 +188,7 @@ class CopernicusClient:
     def s1_stats(self, geometry: dict, start: date, end: date) -> list[S1Obs]:
         rows = self._statistics(
             "sentinel-1-grd",
-            {"acquisitionMode": "IW", "polarization": "DV", "resolution": "HIGH"},
+            {"acquisitionMode": "IW", "polarization": S1_POLARIZATION, "resolution": "HIGH"},
             _script("s1_stats.js"), geometry, start, end)
         out: list[S1Obs] = []
         try:

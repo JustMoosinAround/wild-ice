@@ -5,7 +5,7 @@ function setup() {
   return {
     input: [{ bands: ["VV", "dataMask"] }],
     output: [
-      { id: "vv", bands: 1 },
+      { id: "vv", bands: 1, sampleType: "FLOAT32" },
       { id: "dataMask", bands: 1 }
     ]
   };
