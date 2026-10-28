@@ -58,6 +58,22 @@ def _attempts(resp) -> int:
     return 1 + len(history) if history else 1
 
 
+def _oauth_reason(exc: Exception) -> str:
+    """The OAuth error code/description from a failed token response, e.g.
+    "invalid_client". The response never contains the client secret."""
+    resp = getattr(exc, "response", None)
+    try:
+        body = resp.json() if resp is not None else None
+    except ValueError:
+        return ""
+    if not isinstance(body, dict) or "error" not in body:
+        return ""
+    reason = str(body["error"])
+    if body.get("error_description"):
+        reason += f" ({body['error_description']})"
+    return f" [{reason[:200]}]"
+
+
 class Budget:
     """Monthly request counter persisted as JSON; resets when the month changes."""
 
@@ -125,7 +141,7 @@ class CopernicusClient:
                 ttl = float(body.get("expires_in", 300))
             except (requests.RequestException, ValueError, KeyError, TypeError) as exc:
                 # No status: a token failure is never lake-specific, so it always fails the run.
-                raise SourceUnavailable(SOURCE, f"token: {exc}") from exc
+                raise SourceUnavailable(SOURCE, f"token: {exc}{_oauth_reason(exc)}") from exc
             self._token = token
             self._token_expiry = self._clock() + max(0.0, ttl - TOKEN_MARGIN_S)
         return {"Authorization": f"Bearer {self._token}"}

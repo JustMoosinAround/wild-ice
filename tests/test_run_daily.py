@@ -555,3 +555,12 @@ def test_last_checked_untouched_without_imagery(tmp_repo, mocked):
     assert run(RUN, tmp_repo, env, session(), None) == 0
     path = tmp_repo / "state/last_checked.json"
     assert not path.exists() or json.loads(path.read_text(encoding="utf-8")) == {}
+
+
+def test_source_failure_log_says_why(tmp_repo, mocked, caplog):
+    caplog.set_level(logging.ERROR)
+    mocked.add(responses_lib.GET, ARCHIVE_URL, status=500)
+    mocked.add(responses_lib.GET, FORECAST_URL, status=500)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 1
+    line = [r.getMessage() for r in caplog.records if "data source failed" in r.getMessage()][0]
+    assert "open-meteo" in line and "500" in line

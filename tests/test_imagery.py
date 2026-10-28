@@ -360,3 +360,16 @@ def test_retries_exhausted_has_no_status():
     with pytest.raises(SourceUnavailable) as ei:
         c.s2_stats(GEOM, D1, D2)  # urllib3 retries, then RetryError
     assert ei.value.status is None
+
+
+@responses.activate
+def test_token_failure_reports_oauth_reason_without_secret():
+    c = CopernicusClient("my-id", "cs-SECRET3", requests.Session())
+    responses.add(responses.POST, TOKEN_URL, status=401, json={
+        "error": "invalid_client",
+        "error_description": "Invalid client or Invalid client credentials"})
+    with pytest.raises(SourceUnavailable) as ei:
+        c.s2_stats(GEOM, D1, D2)
+    text = str(ei.value)
+    assert "401" in text and "invalid_client" in text and "Invalid client credentials" in text
+    assert "SECRET" not in text

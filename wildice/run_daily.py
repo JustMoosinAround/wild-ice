@@ -258,7 +258,10 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
         if client is not None:
             _thumbnails(client, lakes, scores, prev_status, site_data / "thumbs", budget)
     except SourceUnavailable as exc:
-        log.error("data source failed: %s", exc.source)
+        # The detail names the source and the error (status, URL, OAuth reason); it never
+        # contains secrets: credentials travel in request bodies, and ntfy errors are
+        # reduced to type and status before they get here.
+        log.error("data source failed: %s", exc)
         _write_stale(site_data, run_date)
         _ping_ops(env, f"{exc.source} unavailable", ntfy)
         return 1
