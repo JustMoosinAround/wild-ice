@@ -399,3 +399,28 @@ def test_login_failure_hints_at_client_id_shape():
     with pytest.raises(SourceUnavailable) as ei:
         CopernicusClient("sh-abc", "cs-SECRET4", requests.Session()).s2_stats(GEOM, D1, D2)
     assert "starts with 'sh-'" in str(ei.value) and "whitespace" not in str(ei.value)
+
+
+@responses.activate
+def test_expired_token_mid_run_logs_in_again_once(tmp_path):
+    budget = Budget(tmp_path / "usage.json", 100)
+    c = CopernicusClient("sh-id", "secret", requests.Session(), budget=budget)
+    responses.add(responses.POST, TOKEN_URL, json={"access_token": "old", "expires_in": 600})
+    responses.add(responses.POST, TOKEN_URL, json={"access_token": "new", "expires_in": 600})
+    responses.add(responses.POST, STATS_URL, status=401)
+    responses.add(responses.POST, STATS_URL, json=fixture("cdse_s2_empty.json"))
+    assert c.s2_stats(GEOM, D1, D2) == []
+    stats = [x for x in responses.calls if x.request.url == STATS_URL]
+    assert [x.request.headers["Authorization"] for x in stats] == ["Bearer old", "Bearer new"]
+    assert budget.remaining() == 98  # both attempts counted
+
+
+@responses.activate
+def test_second_401_still_fails():
+    c = CopernicusClient("sh-id", "secret", requests.Session())
+    responses.add(responses.POST, TOKEN_URL, json={"access_token": "t", "expires_in": 600})
+    responses.add(responses.POST, STATS_URL, status=401)
+    with pytest.raises(SourceUnavailable) as ei:
+        c.s2_stats(GEOM, D1, D2)
+    assert ei.value.status == 401
+    assert len([x for x in responses.calls if x.request.url == STATS_URL]) == 2

@@ -157,6 +157,19 @@ class CopernicusClient:
         return f" [{shape}{trimmed}]"
 
     def _post(self, url: str, body: dict) -> requests.Response:
+        resp = self._send(url, body)
+        if resp.status_code == 401:
+            # The login pass can expire during a long run (or a slow, retried request):
+            # log in again once and retry before treating it as a failure.
+            self._token = None
+            resp = self._send(url, body)
+        try:
+            resp.raise_for_status()
+        except requests.RequestException as exc:
+            raise SourceUnavailable(SOURCE, str(exc), status=resp.status_code) from exc
+        return resp
+
+    def _send(self, url: str, body: dict) -> requests.Response:
         headers = self._auth_header()
         try:
             resp = self.session.post(url, json=body, headers=headers, timeout=TIMEOUT_S)
@@ -166,10 +179,6 @@ class CopernicusClient:
                          else 1)
             raise SourceUnavailable(SOURCE, str(exc)) from exc
         self._record(_attempts(resp))
-        try:
-            resp.raise_for_status()
-        except requests.RequestException as exc:
-            raise SourceUnavailable(SOURCE, str(exc), status=resp.status_code) from exc
         return resp
 
     def _record(self, n: int) -> None:
