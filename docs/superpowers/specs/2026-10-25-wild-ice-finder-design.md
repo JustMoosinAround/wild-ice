@@ -75,7 +75,7 @@ All thresholds live here so they can be tuned after real outings:
 - `region.bbox`
 - `filters.min_area_acres: 20`, `filters.max_road_miles: 2`, `filters.max_trail_miles: 1`
 - `pinned: [lake ids]`, `hidden: [lake ids]`
-- `ice.alpha: 2.0` (cm per √(°C·day)), `ice.skate_cm: 10`, `ice.open_cm: 2`
+- `ice.ashton_h: 20` (W/m²/K, ice-to-air heat transfer), `ice.skate_cm: 10`, `ice.open_cm: 2`
 - `snow.cover_cm: 2`
 - `reset.rain_mm`, `reset.thaw_days`, `reset.wind_gust_kmh`, `reset.light_snow_cm`
 - `imagery.min_valid_fraction: 0.7`, `imagery.fresh_days: 3`, `imagery.shore_buffer_m`
@@ -127,10 +127,16 @@ backtest (section 7); the initial values are placeholders in config only, not in
 - Daily freezing degree-days: `FDD_day = max(0, 0 − T_mean)` (°C).
 - Thaw days (T_mean > 0) subtract `T_mean` from the running total.
 - Cumulative FDD is never below 0.
-- Thickness estimate: `h_cm = alpha × √(cumulative FDD)`, with `alpha = 2.0`
-  (conservative). About 25 °C·days → ~10 cm.
-- **Freeze-up** = any day `h_cm` rises above 0 after being 0. If the ice
-  model returns to 0 (full melt), the next rise is a new freeze-up.
+- Thickness estimate: Ashton (1989) thin-ice growth,
+  `h = −k/H + √((k/H)² + 2·k·FDD/(ρ·L))` with ice conductivity k = 2.24 W/m/K,
+  density ρ = 917 kg/m³, latent heat L = 334 kJ/kg and `H = ice.ashton_h` = 20.
+  About 25 °C·days → ~10 cm. (Revised 2026-10-28: the earlier Stefan rule
+  `2.0 × √FDD` credited 1.3 cm of ice after one −0.4 °C day, so snow that fell
+  into still-open Ewan Lake was counted as snow on the ice.)
+- **Freeze-up** = the day the estimate first reaches `ice.open_cm` (the lake
+  "catches"). Snow before that falls into open water or onto skim ice and is
+  not counted. The lake stays caught until the estimate returns to 0 (full
+  melt); the next catch is a new freeze-up.
 - Thickness carries through the winter; it does not reset with surface resets.
 
 ### 5.2 Surface and resets

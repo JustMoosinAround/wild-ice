@@ -19,7 +19,7 @@ def test_loads_repo_config():
 
 def test_missing_key_raises(tmp_path):
     p = tmp_path / "c.yaml"
-    p.write_text("ice: {alpha: 2.0}\n")
+    p.write_text("ice: {ashton_h: 20}\n")
     with pytest.raises(ConfigError, match="filters"):
         load_config(p)
 

@@ -102,12 +102,12 @@ def test_reset_clears_possible_and_white_flag():
 
 
 def test_freeze_up_after_warm_run_is_not_likely_reset():
-    s = run_ice_model([wx(0, 1), wx(1, 1), wx(2, -2)], cfg)
+    s = run_ice_model([wx(0, 1), wx(1, 1), wx(2, -5)], cfg)
     assert s.last_reset == ResetEvent(date(2025, 11, 3), ResetKind.FREEZE_UP)
 
 
 def test_freeze_up_after_rain_is_not_likely_reset():
-    s = run_ice_model([wx(0, 1, rain=6), wx(1, -2)], cfg)
+    s = run_ice_model([wx(0, 1, rain=6), wx(1, -5)], cfg)
     assert s.last_reset == ResetEvent(date(2025, 11, 2), ResetKind.FREEZE_UP)
 
 

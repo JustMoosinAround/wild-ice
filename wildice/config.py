@@ -26,7 +26,7 @@ class FiltersCfg:
 
 @dataclass(frozen=True)
 class IceCfg:
-    alpha: float
+    ashton_h: float
     skate_cm: float
     open_cm: float
 
@@ -127,7 +127,7 @@ def load_config(path: Path) -> Config:
         region=RegionCfg(bbox=tuple(float(x) for x in bbox)),
         filters=_section(raw, "filters", FiltersCfg,
                          dict(min_area_acres=float, max_road_miles=float, max_trail_miles=float)),
-        ice=_section(raw, "ice", IceCfg, dict(alpha=float, skate_cm=float, open_cm=float)),
+        ice=_section(raw, "ice", IceCfg, dict(ashton_h=float, skate_cm=float, open_cm=float)),
         snow=_section(raw, "snow", SnowCfg, dict(cover_cm=float)),
         reset=_section(raw, "reset", ResetCfg,
                        dict(rain_mm=float, thaw_days=int, wind_gust_kmh=float, light_snow_cm=float)),

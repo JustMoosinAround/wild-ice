@@ -9,6 +9,25 @@ from wildice.config import Config
 from wildice.models import DayWeather, IceState, ResetEvent, ResetKind, SurfaceClass
 
 
+# Ice properties for Ashton's thin-ice growth formula.
+_K_ICE = 2.24          # thermal conductivity of ice, W/m/K
+_RHO_ICE = 917.0       # density of ice, kg/m^3
+_LATENT = 334000.0     # latent heat of fusion, J/kg
+_SECONDS_PER_DAY = 86400
+
+
+def ashton_thickness_cm(fdd: float, h: float) -> float:
+    """Ice thickness (cm) after `fdd` freezing degree-days (Ashton 1989, Water Resources
+    Research 25(3)). Unlike Stefan's sqrt rule it accounts for the air's limited ability
+    to carry heat away, so thin ice grows slowly: h = -k/H + sqrt((k/H)^2 + 2 k FDD / (rho L)).
+    """
+    if fdd <= 0:
+        return 0.0
+    a = _K_ICE / h
+    b = 2 * _K_ICE * fdd * _SECONDS_PER_DAY / (_RHO_ICE * _LATENT)
+    return max(0.0, (-a + sqrt(a * a + b)) * 100)
+
+
 def _mmdd(text: str) -> tuple[int, int]:
     month, day = (int(x) for x in text.split("-"))
     return month, day
@@ -56,17 +75,20 @@ def run_ice_model(
 
         # 1. thickness / freeze-up
         cum = max(0.0, cum - d.t_mean)
-        prev_thickness = thickness
-        thickness = cfg.ice.alpha * sqrt(cum)
-        frozen = thickness > 0
-        just_froze = frozen and prev_thickness == 0
-        if frozen and prev_thickness == 0:
+        thickness = ashton_thickness_cm(cum, cfg.ice.ashton_h)
+        # The lake "catches" once the ice reaches open_cm; before that, snow lands in
+        # open water or on skim ice and melts, so nothing is tracked yet. It stays caught
+        # until the ice is gone entirely.
+        was_caught = freeze_up is not None
+        frozen = thickness > 0 and (was_caught or thickness >= cfg.ice.open_cm)
+        just_froze = frozen and not was_caught
+        if just_froze:
             freeze_up = d.day
             last_reset = ResetEvent(d.day, ResetKind.FREEZE_UP)
             snow_cm = 0.0
             possible = []
             seen_white = False
-        elif not frozen and prev_thickness > 0:
+        elif not frozen and was_caught:
             # full melt: back to open water, nothing left to track
             freeze_up = None
             last_reset = None

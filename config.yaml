@@ -5,7 +5,9 @@ filters:
   max_road_miles: 2
   max_trail_miles: 1
 ice:
-  alpha: 2.0
+  # Ashton (1989) thin-ice growth: heat transfer from ice to air, W/m^2/K.
+  # 20 fits St. Lawrence River data; calmer lakes grow ice slower (lower value).
+  ashton_h: 20
   skate_cm: 10
   open_cm: 2
 snow:
