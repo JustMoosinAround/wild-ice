@@ -121,6 +121,25 @@ def _save_s2_history(path: Path, history: S2History) -> None:
                        for lake_id, days in sorted(history.items()) if days})
 
 
+def _load_last_checked(path: Path, start: date) -> dict[str, date]:
+    """When each lake last got a satellite request this season."""
+    raw = _read_json(path)
+    out: dict[str, date] = {}
+    if isinstance(raw, dict):
+        for lake_id, day in raw.items():
+            try:
+                d = date.fromisoformat(str(day))
+            except ValueError:
+                continue
+            if d >= start:
+                out[str(lake_id)] = d
+    return out
+
+
+def _save_last_checked(path: Path, checked: dict[str, date]) -> None:
+    _write_json(path, {k: checked[k].isoformat() for k in sorted(checked)})
+
+
 def _make_client(env: Mapping[str, str], session: requests.Session,
                  budget: Budget) -> CopernicusClient | None:
     cid, secret = env.get("CDSE_CLIENT_ID"), env.get("CDSE_CLIENT_SECRET")
@@ -131,7 +150,8 @@ def _make_client(env: Mapping[str, str], session: requests.Session,
 
 
 def _imagery(client, lakes: dict[str, Lake], ids: list[str], ice0: dict, run_date: date,
-             cfg: Config, budget: Budget, baselines: dict) -> dict[str, ImageryStats]:
+             cfg: Config, budget: Budget, baselines: dict,
+             checked: dict[str, date]) -> dict[str, ImageryStats]:
     out: dict[str, ImageryStats] = {}
     for done, lake_id in enumerate(ids):
         lake = lakes[lake_id]
@@ -142,6 +162,7 @@ def _imagery(client, lakes: dict[str, Lake], ids: list[str], ice0: dict, run_dat
             log.info("request budget exhausted; %d shortlisted lakes skipped",
                      len(ids) - done)
             break
+        checked[lake_id] = run_date  # attempted, even if a lake-specific error follows
         try:
             if need_baseline:
                 baselines[key] = s1_baseline(client, lake, freeze_up)
@@ -200,6 +221,8 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
     prev_status = _read_json(site_data / "status.json")
     s2_history_path = state / "s2_history.json"
     s2_history = _load_s2_history(s2_history_path, season_start(run_date, cfg))
+    last_checked_path = state / "last_checked.json"
+    last_checked = _load_last_checked(last_checked_path, season_start(run_date, cfg))
 
     try:
         wx = update_cache(state / "weather", cell_points(lake_list), run_date, cfg, session)
@@ -213,9 +236,11 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
         # spread what is left of the monthly budget evenly over the rest of the month
         allowance = budget.remaining() // days_left_in_month(run_date)
         ids = (shortlist(lake_list, ice0, pinned, cfg, remaining_requests=allowance,
-                         hidden=hidden)
+                         hidden=hidden, last_checked=last_checked)
                if client is not None else [])
-        imagery = _imagery(client, lakes, ids, ice0, run_date, cfg, budget, baselines)
+        imagery = _imagery(client, lakes, ids, ice0, run_date, cfg, budget, baselines,
+                           last_checked)
+        _save_last_checked(last_checked_path, last_checked)
         for lake_id, img in imagery.items():
             today = valid_s2_classes(img, cfg)
             if today:

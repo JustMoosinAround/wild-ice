@@ -33,7 +33,9 @@ def test_missing_nested_key_names_it(tmp_path):
 
 
 def test_pinned_ids_are_tuple(tmp_path):
-    text = Path("config.yaml").read_text().replace("pinned: []", "pinned: [w1, r2]")
+    import re
+    text = re.sub(r"(?ms)^pinned:.*?(?=^hidden:)", "pinned: [w1, r2]\n",
+                  Path("config.yaml").read_text(encoding="utf-8"))
     p = tmp_path / "c.yaml"
     p.write_text(text)
     cfg = load_config(p)

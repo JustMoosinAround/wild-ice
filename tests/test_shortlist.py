@@ -19,10 +19,12 @@ def ice(h=5, snow=0.0, reset=None, last_snow=None, possible=()):
     return IceState(100, h, None, reset, snow, last_snow, tuple(possible))
 
 
-def test_shortlist_skips_open_and_snowed():
-    lakes = [mk("a"), mk("b"), mk("c")]
+def test_shortlist_skips_open_water_but_keeps_snowed_last():
+    # Snowed-over lakes still get satellite checks (wind can clear them),
+    # after the lakes the weather says are clear.
+    lakes = [mk("a"), mk("b", 900), mk("c")]
     st = {"a": ice(h=1), "b": ice(snow=10, last_snow=SNOW_DAY), "c": ice()}
-    assert shortlist(lakes, st, frozenset(), cfg, 100) == ["c"]
+    assert shortlist(lakes, st, frozenset(), cfg, 100) == ["c", "b"]
 
 
 def test_shortlist_keeps_snowed_with_possible_reset():
@@ -33,7 +35,8 @@ def test_shortlist_keeps_snowed_with_possible_reset():
         "b": ice(snow=10, last_snow=SNOW_DAY, reset=ResetEvent(later, ResetKind.CONFIRMED)),
         "c": ice(snow=10, last_snow=SNOW_DAY, possible=(ResetEvent(date(2025, 11, 1), ResetKind.POSSIBLE),)),
     }
-    assert sorted(shortlist(lakes, st, frozenset(), cfg, 100)) == ["a", "b"]
+    got = shortlist(lakes, st, frozenset(), cfg, 100)
+    assert sorted(got[:2]) == ["a", "b"] and got[2] == "c"  # c is still snowed over
 
 
 def test_shortlist_pinned_first_then_area():
@@ -75,3 +78,27 @@ def test_shortlist_excludes_hidden_even_if_pinned():
     st = {i: ice() for i in "abp"}
     got = shortlist(lakes, st, frozenset({"p"}), cfg, 100, hidden=frozenset({"a", "p"}))
     assert got == ["b"]
+
+
+def test_snowed_lakes_rotate_oldest_checked_first():
+    lakes = [mk("old", 10), mk("new", 900), mk("never", 50), mk("clear", 5)]
+    snowed = ice(snow=10, last_snow=SNOW_DAY)
+    st = {"old": snowed, "new": snowed, "never": snowed, "clear": ice()}
+    checked = {"old": date(2025, 11, 2), "new": date(2025, 11, 9)}
+    got = shortlist(lakes, st, frozenset(), cfg, 100, last_checked=checked)
+    assert got == ["clear", "never", "old", "new"]
+
+
+def test_allowance_drops_most_recently_checked_snowed_lakes():
+    lakes = [mk("old"), mk("new"), mk("clear")]
+    snowed = ice(snow=10, last_snow=SNOW_DAY)
+    st = {"old": snowed, "new": snowed, "clear": ice()}
+    checked = {"old": date(2025, 11, 2), "new": date(2025, 11, 9)}
+    got = shortlist(lakes, st, frozenset(), cfg, 4, last_checked=checked)  # room for 2
+    assert got == ["clear", "old"]
+
+
+def test_pinned_snowed_lake_still_first():
+    lakes = [mk("p", 5), mk("c", 900)]
+    st = {"p": ice(snow=10, last_snow=SNOW_DAY), "c": ice()}
+    assert shortlist(lakes, st, frozenset({"p"}), cfg, 100) == ["p", "c"]

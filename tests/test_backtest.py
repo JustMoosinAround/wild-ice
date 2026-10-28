@@ -60,12 +60,12 @@ def root(tmp_path):
 
 @pytest.fixture
 def fake_weather(monkeypatch):
-    state = {"snow": 0.0, "calls": []}
+    state = {"snow": 0.0, "t_mean": -8.0, "calls": []}
 
     def fetch(cells, start, end, session, archive, points=None, **kw):
         state["calls"].append((start, end, archive))
         state["points"] = points
-        return {c: _days(end, snow_last=state["snow"]) for c in cells}
+        return {c: _days(end, t_mean=state["t_mean"], snow_last=state["snow"]) for c in cells}
 
     monkeypatch.setattr(backtest, "fetch_daily", fetch)
     return state
@@ -140,11 +140,17 @@ def test_weather_fetched_at_largest_lake_point(root, fake_weather):
 
 
 def test_note_when_daily_shortlist_would_skip(root, fake_weather):
-    fake_weather["snow"] = 5.0  # snowed over by weather alone -> not shortlisted
-    rows = run_backtest(_obs(root, "snow"), root, requests.Session(), _dark())
+    fake_weather["t_mean"] = 3.0  # never froze -> too little ice to qualify for imaging
+    rows = run_backtest(_obs(root, "water"), root, requests.Session(), _dark())
     assert rows[0].note is not None and "not have imaged" in rows[0].note
     line = [ln for ln in summarize(rows).splitlines() if ln.startswith("w1")][0]
     assert rows[0].note in line
+
+
+def test_no_note_for_snowed_over_lake(root, fake_weather):
+    fake_weather["snow"] = 5.0  # snowed over, but still in the satellite rotation
+    rows = run_backtest(_obs(root, "snow"), root, requests.Session(), _dark())
+    assert rows[0].note is None
 
 
 def test_no_note_when_shortlisted(root, fake_weather):

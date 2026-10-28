@@ -5,7 +5,8 @@ from pathlib import Path
 from wildice.config import load_config
 from wildice.prefs import load_prefs
 
-cfg = load_config(Path("config.yaml"))
+# start from no pins/hides so the tests don't depend on the owner's config
+cfg = replace(load_config(Path("config.yaml")), pinned=(), hidden=())
 
 
 def put(d, name, lake_id, action):

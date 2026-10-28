@@ -28,7 +28,7 @@ EXPECTED = {
     "water": {Label.OPEN_WATER, Label.FREEZING},
     "rough": {Label.FREEZING, Label.UNKNOWN, Label.SNOW_COVERED},
 }
-NOT_SHORTLISTED = "daily run would not have imaged it (weather-only shortlist)"
+NOT_SHORTLISTED = "daily run would not have imaged it (too little ice, hidden or too narrow)"
 
 
 @dataclass

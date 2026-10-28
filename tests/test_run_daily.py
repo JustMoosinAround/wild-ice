@@ -536,3 +536,22 @@ def test_corrupt_s2_history_is_ignored(tmp_repo, mocked):
     assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
     hist = json.loads((tmp_repo / "state/s2_history.json").read_text(encoding="utf-8"))
     assert hist == {"w1": {"2025-11-11": "dark"}}
+
+
+def test_last_checked_records_imaged_lakes_and_drops_old_season(tmp_repo, mocked):
+    cold_weather(mocked)
+    (tmp_repo / "state").mkdir()
+    (tmp_repo / "state/last_checked.json").write_text(
+        json.dumps({"w9": "2025-02-01", "w1": "2025-10-20", "bad": "not-a-date"}),
+        encoding="utf-8")
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    checked = json.loads((tmp_repo / "state/last_checked.json").read_text(encoding="utf-8"))
+    assert checked == {"w1": RUN.isoformat()}
+
+
+def test_last_checked_untouched_without_imagery(tmp_repo, mocked):
+    cold_weather(mocked)
+    env = {k: v for k, v in ENV.items() if not k.startswith("CDSE")}
+    assert run(RUN, tmp_repo, env, session(), None) == 0
+    path = tmp_repo / "state/last_checked.json"
+    assert not path.exists() or json.loads(path.read_text(encoding="utf-8")) == {}
