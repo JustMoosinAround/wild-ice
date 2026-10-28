@@ -119,8 +119,10 @@ class CopernicusClient:
     def __init__(self, client_id: str, client_secret: str, session: requests.Session,
                  budget: Budget | None = None,
                  clock: Callable[[], float] = time.monotonic) -> None:
-        self.client_id = client_id
-        self.client_secret = client_secret
+        # Pasted secrets often carry a stray space or newline, which the login rejects.
+        self._trimmed = client_id != client_id.strip() or client_secret != client_secret.strip()
+        self.client_id = client_id.strip()
+        self.client_secret = client_secret.strip()
         self.session = session
         self.budget = budget
         self._clock = clock
@@ -141,10 +143,18 @@ class CopernicusClient:
                 ttl = float(body.get("expires_in", 300))
             except (requests.RequestException, ValueError, KeyError, TypeError) as exc:
                 # No status: a token failure is never lake-specific, so it always fails the run.
-                raise SourceUnavailable(SOURCE, f"token: {exc}{_oauth_reason(exc)}") from exc
+                raise SourceUnavailable(
+                    SOURCE, f"token: {exc}{_oauth_reason(exc)}{self._credential_hint()}") from exc
             self._token = token
             self._token_expiry = self._clock() + max(0.0, ttl - TOKEN_MARGIN_S)
         return {"Authorization": f"Bearer {self._token}"}
+
+    def _credential_hint(self) -> str:
+        """Non-secret facts about the credentials, to tell a wrong value from a wrong kind."""
+        shape = ("client ID starts with 'sh-'" if self.client_id.startswith("sh-") else
+                 "client ID doesn't start with 'sh-' (Copernicus Data Space OAuth client IDs do)")
+        trimmed = "; surrounding whitespace was trimmed" if self._trimmed else ""
+        return f" [{shape}{trimmed}]"
 
     def _post(self, url: str, body: dict) -> requests.Response:
         headers = self._auth_header()

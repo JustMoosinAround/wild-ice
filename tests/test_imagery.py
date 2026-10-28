@@ -373,3 +373,29 @@ def test_token_failure_reports_oauth_reason_without_secret():
     text = str(ei.value)
     assert "401" in text and "invalid_client" in text and "Invalid client credentials" in text
     assert "SECRET" not in text
+
+
+@responses.activate
+def test_credentials_are_trimmed_before_login():
+    responses.add(responses.POST, TOKEN_URL, status=200,
+                  json={"access_token": "tok", "expires_in": 600})
+    responses.add(responses.POST, STATS_URL, json=fixture("cdse_s2_empty.json"))
+    c = CopernicusClient(" sh-abc\n", "s3cret \n", requests.Session())
+    c.s2_stats(GEOM, D1, D2)
+    body = responses.calls[0].request.body
+    assert "client_id=sh-abc&" in body and body.endswith("client_secret=s3cret")
+
+
+@responses.activate
+def test_login_failure_hints_at_client_id_shape():
+    responses.add(responses.POST, TOKEN_URL, status=401, json={"error": "invalid_client"})
+    with pytest.raises(SourceUnavailable) as ei:
+        CopernicusClient("me@example.com\n", "cs-SECRET4", requests.Session()).s2_stats(GEOM, D1, D2)
+    text = str(ei.value)
+    assert "doesn't start with 'sh-'" in text and "whitespace" in text
+    assert "me@example.com" not in text and "SECRET" not in text
+
+    responses.replace(responses.POST, TOKEN_URL, status=401, json={"error": "invalid_client"})
+    with pytest.raises(SourceUnavailable) as ei:
+        CopernicusClient("sh-abc", "cs-SECRET4", requests.Session()).s2_stats(GEOM, D1, D2)
+    assert "starts with 'sh-'" in str(ei.value) and "whitespace" not in str(ei.value)
