@@ -55,6 +55,8 @@ class ImageryCfg:
     s1_frozen_delta_db: float
     lookback_days: int
     monthly_request_budget: int
+    max_lakes_per_day: int
+    max_minutes_per_run: float
     low_sun_start: str  # MM-DD
     low_sun_end: str  # MM-DD, may wrap the new year
 
@@ -135,6 +137,7 @@ def load_config(path: Path) -> Config:
             min_valid_fraction=float, fresh_days=int, shore_buffer_m=float,
             snow_ndsi=float, snow_brightness=float, dark_brightness=float,
             s1_frozen_delta_db=float, lookback_days=int, monthly_request_budget=int,
+            max_lakes_per_day=int, max_minutes_per_run=float,
             low_sun_start=_mmdd, low_sun_end=_mmdd)),
         weather=_section(raw, "weather", WeatherCfg, dict(batch_pause_s=float)),
         site=_section(raw, "site", SiteCfg, dict(base_url=str)),

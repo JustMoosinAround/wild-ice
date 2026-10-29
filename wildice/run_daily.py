@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import sys
+import time
 from collections.abc import Mapping
 from datetime import date, datetime
 from pathlib import Path
@@ -34,6 +35,7 @@ OPS_TITLE = "Wild ice job failed"
 OPS_MARKER_ENV = "WILDICE_OPS_MARKER"  # file written after a successful ops push
 THUMB_LABELS = (Label.LIKELY_BLACK_ICE, Label.FREEZING)
 REQUESTS_PER_LAKE = 2  # one S2 + one S1 statistics request
+_clock = time.monotonic  # replaced in tests
 FATAL_CLIENT_STATUS = frozenset({401, 403, 429})  # auth / rate limit: stop the run
 
 
@@ -153,7 +155,14 @@ def _imagery(client, lakes: dict[str, Lake], ids: list[str], ice0: dict, run_dat
              cfg: Config, budget: Budget, baselines: dict,
              checked: dict[str, date]) -> dict[str, ImageryStats]:
     out: dict[str, ImageryStats] = {}
+    limit_s = cfg.imagery.max_minutes_per_run * 60
+    started = _clock()
     for done, lake_id in enumerate(ids):
+        if _clock() - started > limit_s:
+            # Stop so the run can save and publish; unchecked lakes go first tomorrow.
+            log.info("imagery time limit reached; %d shortlisted lakes left for tomorrow",
+                     len(ids) - done)
+            break
         lake = lakes[lake_id]
         freeze_up = ice0[lake_id].freeze_up
         key = f"{lake_id}:{freeze_up.isoformat()}" if freeze_up else None
@@ -163,6 +172,7 @@ def _imagery(client, lakes: dict[str, Lake], ids: list[str], ice0: dict, run_dat
                      len(ids) - done)
             break
         checked[lake_id] = run_date  # attempted, even if a lake-specific error follows
+        t0 = _clock()
         try:
             if need_baseline:
                 baselines[key] = s1_baseline(client, lake, freeze_up)
@@ -172,7 +182,16 @@ def _imagery(client, lakes: dict[str, Lake], ids: list[str], ice0: dict, run_dat
             if not _lake_specific(exc):
                 raise
             log.warning("imagery for %s skipped: HTTP %s", lake_id, exc.status)
+        log.info("imagery for %s took %.0f s (%.0f acres)", lake_id, _clock() - t0,
+                 lake.area_acres)
+    if ids:
+        log.info("imaged %d lakes in %.1f min", len(checked_today(checked, run_date)),
+                 (_clock() - started) / 60)
     return out
+
+
+def checked_today(checked: dict[str, date], run_date: date) -> list[str]:
+    return [k for k, v in checked.items() if v == run_date]
 
 
 def _lake_specific(exc: SourceUnavailable) -> bool:
@@ -234,7 +253,8 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
         if client is None:
             client = _make_client(env, session, budget)
         # spread what is left of the monthly budget evenly over the rest of the month
-        allowance = budget.remaining() // days_left_in_month(run_date)
+        allowance = min(budget.remaining() // days_left_in_month(run_date),
+                        cfg.imagery.max_lakes_per_day * REQUESTS_PER_LAKE)
         ids = (shortlist(lake_list, ice0, pinned, cfg, remaining_requests=allowance,
                          hidden=hidden, last_checked=last_checked)
                if client is not None else [])

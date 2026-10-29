@@ -8,7 +8,8 @@ import responses
 
 from wildice.config import load_config
 from wildice.imagery import (
-    PROCESS_URL, STATS_URL, TOKEN_URL, Budget, CopernicusClient, fetch_imagery,
+    PROCESS_URL, RESOLUTION_DEG, STATS_URL, TOKEN_URL, Budget, CopernicusClient,
+    fetch_imagery, resolution_for,
     s1_baseline,
 )
 from wildice.models import Lake, S2Obs, SourceUnavailable
@@ -424,3 +425,27 @@ def test_second_401_still_fails():
         c.s2_stats(GEOM, D1, D2)
     assert ei.value.status == 401
     assert len([x for x in responses.calls if x.request.url == STATS_URL]) == 2
+
+
+
+def _box(w, s_, e, n):
+    return {"type": "Polygon", "coordinates": [[[w, s_], [e, s_], [e, n], [w, n], [w, s_]]]}
+
+
+def test_small_lake_keeps_full_detail():
+    assert resolution_for(_box(-150.0, 61.0, -149.98, 61.01)) == RESOLUTION_DEG
+
+
+def test_big_lake_gets_coarser_pixels():
+    # 1 deg wide x 0.5 deg tall -> at most ~300 pixels across the longer side
+    assert resolution_for(_box(-151.5, 60.0, -150.5, 60.5)) == pytest.approx(1 / 300)
+
+
+@responses.activate
+def test_statistics_request_uses_lake_resolution(client):
+    add_token()
+    responses.add(responses.POST, STATS_URL, json=fixture("cdse_s2_empty.json"))
+    big = _box(-151.5, 60.0, -150.5, 60.5)
+    client.s2_stats(big, D1, D2)
+    body = json.loads(responses.calls[1].request.body)
+    assert body["aggregation"]["resolution"]["x"] == pytest.approx(1 / 300)

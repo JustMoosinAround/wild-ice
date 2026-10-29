@@ -564,3 +564,49 @@ def test_source_failure_log_says_why(tmp_repo, mocked, caplog):
     assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 1
     line = [r.getMessage() for r in caplog.records if "data source failed" in r.getMessage()][0]
     assert "open-meteo" in line and "500" in line
+
+
+
+def _three_lakes(root):
+    (root / "site/data/lakes.geojson").write_text(json.dumps({
+        "type": "FeatureCollection",
+        "features": [_feature("w1", 300.0), _feature("w2", 200.0), _feature("w3", 100.0)]}),
+        encoding="utf-8")
+
+
+def _s2_lakes(client):
+    return sum(1 for c in client.calls if c[0] == "s2")
+
+
+def test_imaging_stops_at_time_limit(tmp_repo, mocked, monkeypatch, caplog):
+    caplog.set_level(logging.INFO)
+    cold_weather(mocked)
+    _three_lakes(tmp_repo)
+    ticks = iter(range(0, 10_000, 20 * 60))  # every clock read is 20 minutes later
+    monkeypatch.setattr(run_daily, "_clock", lambda: next(ticks))
+    client = FakeClient()
+    assert run(RUN, tmp_repo, ENV, session(), client) == 0  # finishes and publishes
+    assert _s2_lakes(client) == 1
+    checked = json.loads((tmp_repo / "state/last_checked.json").read_text(encoding="utf-8"))
+    assert list(checked) == ["w1"]  # w2, w3 go first tomorrow
+    assert "time limit" in caplog.text and "2 shortlisted lakes left" in caplog.text
+    assert status_of(tmp_repo)["stale_since"] is None
+
+
+def test_daily_lake_cap(tmp_repo, mocked):
+    cold_weather(mocked)
+    _three_lakes(tmp_repo)
+    cfg = tmp_repo / "config.yaml"
+    cfg.write_text(cfg.read_text(encoding="utf-8").replace(
+        "max_lakes_per_day: 100", "max_lakes_per_day: 2"), encoding="utf-8")
+    client = FakeClient()
+    assert run(RUN, tmp_repo, ENV, session(), client) == 0
+    assert _s2_lakes(client) == 2
+
+
+def test_imaging_time_is_logged(tmp_repo, mocked, caplog):
+    caplog.set_level(logging.INFO)
+    cold_weather(mocked)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    assert "imagery for w1 took" in caplog.text
+    assert "imaged 1 lakes in" in caplog.text

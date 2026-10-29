@@ -38,7 +38,8 @@ CRS_4326 = "http://www.opengis.net/def/crs/EPSG/0/4326"
 TIMEOUT_S = 120
 MAX_RETRIES = 3  # matches weather.make_session Retry(total=3)
 TOKEN_MARGIN_S = 60
-RESOLUTION_DEG = 0.0002  # ~22 m N-S; statistics resolution in CRS units
+RESOLUTION_DEG = 0.0002  # ~22 m N-S; finest statistics resolution in CRS units
+MAX_PIXELS_ACROSS = 300  # coarser pixels for big lakes keep requests fast
 THUMB_PX = 256
 BASELINE_DAYS = 30
 # VV-only coverage over Southcentral Alaska is unverified: "DV" (dual VV+VH) scenes
@@ -72,6 +73,25 @@ def _oauth_reason(exc: Exception) -> str:
     if body.get("error_description"):
         reason += f" ({body['error_description']})"
     return f" [{reason[:200]}]"
+
+
+def resolution_for(geometry: dict) -> float:
+    """Pixel size (degrees) for a lake: full detail for small lakes, coarser for big ones
+    so the longer side of the lake's bounding box is at most MAX_PIXELS_ACROSS pixels."""
+    xs, ys = [], []
+
+    def walk(coords):
+        if coords and isinstance(coords[0], (int, float)):
+            xs.append(coords[0]); ys.append(coords[1])
+        else:
+            for c in coords:
+                walk(c)
+
+    walk(geometry.get("coordinates", []))
+    if not xs:
+        return RESOLUTION_DEG
+    span = max(max(xs) - min(xs), max(ys) - min(ys))
+    return max(RESOLUTION_DEG, span / MAX_PIXELS_ACROSS)
 
 
 class Budget:
@@ -201,7 +221,7 @@ class CopernicusClient:
                               "to": f"{(end + timedelta(days=1)).isoformat()}T00:00:00Z"},
                 "aggregationInterval": {"of": "P1D"},
                 "evalscript": evalscript,
-                "resolution": {"x": RESOLUTION_DEG, "y": RESOLUTION_DEG},
+                "resolution": {"x": resolution_for(geometry), "y": resolution_for(geometry)},
             },
         }
         resp = self._post(STATS_URL, body)
