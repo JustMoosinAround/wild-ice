@@ -449,3 +449,39 @@ def test_statistics_request_uses_lake_resolution(client):
     client.s2_stats(big, D1, D2)
     body = json.loads(responses.calls[1].request.body)
     assert body["aggregation"]["resolution"]["x"] == pytest.approx(1 / 300)
+
+
+@responses.activate
+def test_stuck_request_gives_up_at_deadline():
+    # A server that keeps a request open (or trickles its answer) must not hold the run.
+    import threading
+    import time as _time
+    add_token()
+    release = threading.Event()
+
+    def slow(request):
+        release.wait(5)
+        return (200, {}, json.dumps(fixture("cdse_s2_stats.json")))
+
+    responses.add_callback(responses.POST, STATS_URL, callback=slow)
+    budget = Budget(Path("no-such-dir/unused.json"), 100)
+    c = CopernicusClient("id", "secret", requests.Session(), budget=budget, deadline_s=0.2)
+    t0 = _time.monotonic()
+    with pytest.raises(SourceUnavailable, match="no answer within") as info:
+        c.s2_stats(GEOM, D1, D2)
+    assert _time.monotonic() - t0 < 1.0
+    assert info.value.status == 408  # lake-specific: skip this lake, keep the run going
+    assert budget.remaining() == 99  # the abandoned request still counts
+    # Let the abandoned request finish inside this test, not during a later one.
+    release.set()
+    for th in threading.enumerate():
+        if th is not threading.current_thread() and th.daemon:
+            th.join(2)
+
+
+@responses.activate
+def test_request_within_deadline_works():
+    add_token()
+    responses.add(responses.POST, STATS_URL, json=fixture("cdse_s2_stats.json"))
+    c = CopernicusClient("id", "secret", requests.Session(), deadline_s=5)
+    assert c.s2_stats(GEOM, D1, D2)

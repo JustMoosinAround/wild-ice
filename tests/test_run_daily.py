@@ -610,3 +610,11 @@ def test_imaging_time_is_logged(tmp_repo, mocked, caplog):
     assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
     assert "imagery for w1 took" in caplog.text
     assert "imaged 1 lakes in" in caplog.text
+
+
+def test_timed_out_request_skips_only_that_lake():
+    from wildice.imagery import TIMED_OUT_STATUS
+    from wildice.models import SourceUnavailable
+    from wildice.run_daily import _lake_specific
+    assert _lake_specific(SourceUnavailable("copernicus", "no answer", status=TIMED_OUT_STATUS))
+    assert not _lake_specific(SourceUnavailable("copernicus", "token", status=None))

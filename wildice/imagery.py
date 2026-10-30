@@ -19,6 +19,7 @@ from __future__ import annotations
 import json
 import math
 import statistics
+import threading
 import time
 from datetime import date, timedelta
 from pathlib import Path
@@ -37,6 +38,10 @@ SOURCE = "copernicus"
 CRS_4326 = "http://www.opengis.net/def/crs/EPSG/0/4326"
 TIMEOUT_S = 120
 MAX_RETRIES = 3  # matches weather.make_session Retry(total=3)
+# Hard cap per request, retries included. The read timeout alone misses a server that
+# trickles its answer: one request hung 42 minutes on 2026-10-29. Normal: 1-4 s.
+REQUEST_DEADLINE_S = 180
+TIMED_OUT_STATUS = 408  # reported as a lake-specific failure: skip the lake, keep going
 TOKEN_MARGIN_S = 60
 RESOLUTION_DEG = 0.0002  # ~22 m N-S; finest statistics resolution in CRS units
 MAX_PIXELS_ACROSS = 300  # coarser pixels for big lakes keep requests fast
@@ -138,7 +143,8 @@ def _mean(output: dict, band: str = "B0") -> float | None:
 class CopernicusClient:
     def __init__(self, client_id: str, client_secret: str, session: requests.Session,
                  budget: Budget | None = None,
-                 clock: Callable[[], float] = time.monotonic) -> None:
+                 clock: Callable[[], float] = time.monotonic,
+                 deadline_s: float = REQUEST_DEADLINE_S) -> None:
         # Pasted secrets often carry a stray space or newline, which the login rejects.
         self._trimmed = client_id != client_id.strip() or client_secret != client_secret.strip()
         self.client_id = client_id.strip()
@@ -146,6 +152,7 @@ class CopernicusClient:
         self.session = session
         self.budget = budget
         self._clock = clock
+        self.deadline_s = deadline_s
         self._token: str | None = None
         self._token_expiry = 0.0
 
@@ -191,8 +198,28 @@ class CopernicusClient:
 
     def _send(self, url: str, body: dict) -> requests.Response:
         headers = self._auth_header()
+        result: dict = {}
+
+        def call() -> None:
+            try:
+                result["resp"] = self.session.post(url, json=body, headers=headers,
+                                                   timeout=TIMEOUT_S)
+            except Exception as exc:  # handed back to the caller below
+                result["exc"] = exc
+
+        # A daemon thread can be abandoned if the server never finishes answering;
+        # it ends on its own when the connection finally closes.
+        worker = threading.Thread(target=call, daemon=True)
+        worker.start()
+        worker.join(self.deadline_s)
+        if worker.is_alive():
+            self._record(1)
+            raise SourceUnavailable(SOURCE, f"no answer within {self.deadline_s:.0f} s",
+                                    status=TIMED_OUT_STATUS)
         try:
-            resp = self.session.post(url, json=body, headers=headers, timeout=TIMEOUT_S)
+            if "exc" in result:
+                raise result["exc"]
+            resp = result["resp"]
         except requests.RequestException as exc:
             # RetryError means urllib3 exhausted its retries: 1 + MAX_RETRIES requests
             self._record(MAX_RETRIES + 1 if isinstance(exc, requests.exceptions.RetryError)
