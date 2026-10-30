@@ -73,7 +73,7 @@ the judgment and get the most tests.
 All thresholds live here so they can be tuned after real outings:
 
 - `region.bbox`
-- `filters.min_area_acres: 20`, `filters.max_road_miles: 2`, `filters.max_trail_miles: 1`
+- `filters.min_area_acres: 50` (raised from 20 on 2026-10-29 to drop small ponds), `filters.max_road_miles: 2`, `filters.max_trail_miles: 1`
 - `pinned: [lake ids]`, `hidden: [lake ids]`
 - `ice.ashton_h: 20` (W/m²/K, ice-to-air heat transfer), `ice.skate_cm: 10`, `ice.open_cm: 2`
 - `snow.cover_cm: 2`

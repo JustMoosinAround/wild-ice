@@ -1,7 +1,7 @@
 region:
   bbox: [59.3, -152.5, 62.8, -144.0]  # south, west, north, east
 filters:
-  min_area_acres: 20
+  min_area_acres: 50
   max_road_miles: 2
   max_trail_miles: 1
 ice:

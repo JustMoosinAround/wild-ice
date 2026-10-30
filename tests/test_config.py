@@ -7,6 +7,7 @@ from wildice.config import ConfigError, load_config
 
 def test_loads_repo_config():
     cfg = load_config(Path("config.yaml"))
+    assert cfg.filters.min_area_acres == 50
     assert cfg.filters.max_road_miles == 2
     assert cfg.filters.max_trail_miles == 1
     assert cfg.ice.skate_cm == 10

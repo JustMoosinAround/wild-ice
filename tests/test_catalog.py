@@ -13,7 +13,9 @@ FIX = Path(__file__).parent / "fixtures"
 
 @pytest.fixture
 def cfg():
-    return load_config(Path(__file__).parent.parent / "config.yaml")
+    # The fixture lakes are 40+ acres, so test with the old 20-acre minimum.
+    c = load_config(Path(__file__).parent.parent / "config.yaml")
+    return replace(c, filters=replace(c.filters, min_area_acres=20))
 
 
 def _feats(kind):
