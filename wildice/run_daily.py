@@ -9,7 +9,7 @@ import os
 import sys
 import time
 from collections.abc import Mapping
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -21,9 +21,10 @@ from wildice.config import Config, load_config
 from wildice.icemodel import run_ice_model
 from wildice.imagery import Budget, CopernicusClient, fetch_imagery, s1_baseline
 from wildice.models import (
-    ImageryStats, Label, Lake, Score, SourceUnavailable, SurfaceClass,
+    ImageryStats, Label, Lake, S1Obs, Score, SourceUnavailable, SurfaceClass,
 )
 from wildice.prefs import load_prefs
+from wildice.scenes import Seen, load_seen, new_sensors, save_seen
 from wildice.score import score_lake, valid_s2_classes
 from wildice.shortlist import shortlist
 from wildice.weather import cell_of, cell_points, make_session, season_start, update_cache
@@ -34,7 +35,7 @@ TIMEZONE = "America/Anchorage"
 OPS_TITLE = "Wild ice job failed"
 OPS_MARKER_ENV = "WILDICE_OPS_MARKER"  # file written after a successful ops push
 THUMB_LABELS = (Label.LIKELY_BLACK_ICE, Label.FREEZING)
-REQUESTS_PER_LAKE = 2  # one S2 + one S1 statistics request
+REQUESTS_PER_LAKE = 2  # at most one S2 + one S1 statistics request
 _clock = time.monotonic  # replaced in tests
 FATAL_CLIENT_STATUS = frozenset({401, 403, 429})  # auth / rate limit: stop the run
 
@@ -123,6 +124,40 @@ def _save_s2_history(path: Path, history: S2History) -> None:
                        for lake_id, days in sorted(history.items()) if days})
 
 
+S1History = dict[str, dict[date, float]]
+
+
+def _load_s1_history(path: Path, start: date) -> S1History:
+    """Per-lake radar readings (VV dB) this season, kept for days with no new pass."""
+    raw = _read_json(path)
+    out: S1History = {}
+    if not isinstance(raw, dict):
+        return out
+    for lake_id, days in raw.items():
+        if not isinstance(days, dict):
+            continue
+        kept: dict[date, float] = {}
+        for day, db in days.items():
+            try:
+                d, v = date.fromisoformat(str(day)), float(db)
+            except (TypeError, ValueError):
+                continue
+            if d >= start:
+                kept[d] = v
+        if kept:
+            out[str(lake_id)] = kept
+    return out
+
+
+def _save_s1_history(path: Path, history: S1History) -> None:
+    _write_json(path, {lake_id: {d.isoformat(): days[d] for d in sorted(days)}
+                       for lake_id, days in sorted(history.items()) if days})
+
+
+def _is_login_failure(exc: SourceUnavailable) -> bool:
+    return exc.status in FATAL_CLIENT_STATUS or "token:" in str(exc)
+
+
 def _load_last_checked(path: Path, start: date) -> dict[str, date]:
     """When each lake last got a satellite request this season."""
     raw = _read_json(path)
@@ -151,9 +186,60 @@ def _make_client(env: Mapping[str, str], session: requests.Session,
     return CopernicusClient(cid, secret, session, budget=budget)
 
 
+def _new_scenes(client, lake_list: list[Lake], seen: Seen, run_date: date, cfg: Config,
+                env: Mapping[str, str], ntfy: requests.Session) -> Seen:
+    """Lakes under a scene newer than their last request; {} if the catalog is down."""
+    start = run_date - timedelta(days=cfg.imagery.lookback_days)
+    try:
+        scenes = client.scenes(cfg.region.bbox, start, run_date)
+    except SourceUnavailable as exc:
+        if _is_login_failure(exc):
+            raise
+        log.error("scene catalog failed: %s; satellite skipped today", exc)
+        _ping_ops(env, "copernicus catalog unavailable; weather-only labels today", ntfy)
+        return {}
+    wanted = new_sensors(lake_list, scenes, seen)
+    log.info("scene catalog: %d scenes, %d lakes with something new", len(scenes),
+             len(wanted))
+    return wanted
+
+
+def _pick(ranked: list[str], wanted: Seen, allowance: int) -> list[str]:
+    """Best-ranked lakes with a new scene, until today's request allowance is used."""
+    ids: list[str] = []
+    cost = 0
+    for lake_id in ranked:
+        if lake_id not in wanted:
+            continue
+        n = len(wanted[lake_id])
+        if cost + n > allowance:
+            break
+        ids.append(lake_id)
+        cost += n
+    return ids
+
+
+def _with_saved_radar(img: ImageryStats | None, saved: dict[date, float],
+                      window_start: date, run_date: date, ice, lake_id: str,
+                      baselines: dict) -> ImageryStats | None:
+    """Today's numbers, plus radar readings from earlier passes still in the window."""
+    s1 = {o.day: o for o in (img.s1 if img else ())}
+    for day, db in saved.items():
+        if window_start <= day <= run_date and day not in s1:
+            s1[day] = S1Obs(day, db)
+    if img is None and not s1:
+        return None
+    key = f"{lake_id}:{ice.freeze_up.isoformat()}" if ice.freeze_up else None
+    baseline = img.s1_baseline_db if img else (baselines.get(key) if key else None)
+    return ImageryStats(s2=img.s2 if img else (),
+                        s1=tuple(s1[d] for d in sorted(s1)),
+                        s1_baseline_db=baseline)
+
+
 def _imagery(client, lakes: dict[str, Lake], ids: list[str], ice0: dict, run_date: date,
              cfg: Config, budget: Budget, baselines: dict,
-             checked: dict[str, date]) -> dict[str, ImageryStats]:
+             checked: dict[str, date], wanted: Seen, seen: Seen) -> dict[str, ImageryStats]:
+    """Request numbers for `ids`, asking each lake only for the sensors in `wanted`."""
     out: dict[str, ImageryStats] = {}
     limit_s = cfg.imagery.max_minutes_per_run * 60
     started = _clock()
@@ -165,19 +251,22 @@ def _imagery(client, lakes: dict[str, Lake], ids: list[str], ice0: dict, run_dat
             break
         lake = lakes[lake_id]
         freeze_up = ice0[lake_id].freeze_up
+        sensors = set(wanted[lake_id])
         key = f"{lake_id}:{freeze_up.isoformat()}" if freeze_up else None
-        need_baseline = key is not None and key not in baselines
-        if budget.remaining() < REQUESTS_PER_LAKE + int(need_baseline):
+        need_baseline = "s1" in sensors and key is not None and key not in baselines
+        if budget.remaining() < len(sensors) + int(need_baseline):
             log.info("request budget exhausted; %d shortlisted lakes skipped",
                      len(ids) - done)
             break
         checked[lake_id] = run_date  # attempted, even if a lake-specific error follows
+        # Attempted counts as seen: a lake that errors waits for the next new scene.
+        seen.setdefault(lake_id, {}).update(wanted[lake_id])
         t0 = _clock()
         try:
             if need_baseline:
                 baselines[key] = s1_baseline(client, lake, freeze_up)
             out[lake_id] = fetch_imagery(client, lake, run_date, cfg,
-                                         baselines.get(key) if key else None)
+                                         baselines.get(key) if key else None, sensors)
         except SourceUnavailable as exc:
             if not _lake_specific(exc):
                 raise
@@ -242,6 +331,10 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
     s2_history = _load_s2_history(s2_history_path, season_start(run_date, cfg))
     last_checked_path = state / "last_checked.json"
     last_checked = _load_last_checked(last_checked_path, season_start(run_date, cfg))
+    seen_path = state / "seen_scenes.json"
+    seen = load_seen(seen_path, season_start(run_date, cfg))
+    s1_history_path = state / "s1_history.json"
+    s1_history = _load_s1_history(s1_history_path, season_start(run_date, cfg))
 
     try:
         wx = update_cache(state / "weather", cell_points(lake_list), run_date, cfg, session)
@@ -255,12 +348,22 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
         # spread what is left of the monthly budget evenly over the rest of the month
         allowance = min(budget.remaining() // days_left_in_month(run_date),
                         cfg.imagery.max_lakes_per_day * REQUESTS_PER_LAKE)
-        ids = (shortlist(lake_list, ice0, pinned, cfg, remaining_requests=allowance,
-                         hidden=hidden, last_checked=last_checked)
-               if client is not None else [])
+        ranked = (shortlist(lake_list, ice0, pinned, cfg,
+                            remaining_requests=REQUESTS_PER_LAKE * len(lake_list),
+                            hidden=hidden, last_checked=last_checked)
+                  if client is not None and allowance > 0 else [])
+        # no lake worth a request today: don't spend one on the catalog either
+        wanted = (_new_scenes(client, lake_list, seen, run_date, cfg, env, ntfy)
+                  if ranked else {})
+        ids = _pick(ranked, wanted, allowance)
         imagery = _imagery(client, lakes, ids, ice0, run_date, cfg, budget, baselines,
-                           last_checked)
+                           last_checked, wanted, seen)
         _save_last_checked(last_checked_path, last_checked)
+        save_seen(seen_path, seen)
+        for lake_id, img in imagery.items():
+            for obs in img.s1:
+                s1_history.setdefault(lake_id, {})[obs.day] = obs.vv_db
+        _save_s1_history(s1_history_path, s1_history)
         for lake_id, img in imagery.items():
             today = valid_s2_classes(img, cfg)
             if today:
@@ -268,11 +371,13 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
         _save_s2_history(s2_history_path, s2_history)
 
         scores: dict[str, Score] = {}
+        window_start = run_date - timedelta(days=cfg.imagery.lookback_days)
         for lake in lake_list:
-            img = imagery.get(lake.id)
             hist = s2_history.get(lake.id)
             ice = (run_ice_model(wx[cell_of(lake.lat, lake.lon)], cfg, hist)
-                   if img is not None else ice0[lake.id])
+                   if lake.id in imagery else ice0[lake.id])
+            img = _with_saved_radar(imagery.get(lake.id), s1_history.get(lake.id, {}),
+                                    window_start, run_date, ice, lake.id, baselines)
             scores[lake.id] = score_lake(lake, ice, img, run_date, cfg, s2_history=hist)
 
         if client is not None:

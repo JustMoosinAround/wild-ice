@@ -12,7 +12,7 @@ from wildice.imagery import (
     fetch_imagery, resolution_for,
     s1_baseline,
 )
-from wildice.models import Lake, S2Obs, SourceUnavailable
+from wildice.models import Lake, S1Obs, S2Obs, SourceUnavailable
 from wildice.weather import make_session
 
 FIX = Path(__file__).parent / "fixtures"
@@ -485,3 +485,84 @@ def test_request_within_deadline_works():
     responses.add(responses.POST, STATS_URL, json=fixture("cdse_s2_stats.json"))
     c = CopernicusClient("id", "secret", requests.Session(), deadline_s=5)
     assert c.s2_stats(GEOM, D1, D2)
+
+
+def _catalog_page(features, next_token=None):
+    page = {"type": "FeatureCollection", "features": features}
+    if next_token is not None:
+        page["context"] = {"next": next_token, "limit": 100, "returned": len(features)}
+    return page
+
+
+def _item(when, polarization=None, west=-150.0):
+    props = {"datetime": when}
+    if polarization:
+        props["s1:polarization"] = polarization
+    return {"id": f"x{when}", "type": "Feature", "properties": props,
+            "geometry": {"type": "Polygon", "coordinates": [[[west, 60.0], [west + 2, 60.0],
+                                                             [west + 2, 62.0], [west, 62.0],
+                                                             [west, 60.0]]]}}
+
+
+@responses.activate
+def test_scenes_reads_both_collections_and_pages():
+    from datetime import datetime, timezone
+    from wildice.imagery import CATALOG_URL
+    add_token()
+    bodies = []
+
+    def answer(request):
+        body = json.loads(request.body)
+        bodies.append(body)
+        if body["collections"] == ["sentinel-2-l2a"]:
+            if "next" not in body:
+                page = _catalog_page([_item("2025-11-10T21:05:00Z")], next_token=1)
+            else:
+                page = _catalog_page([_item("2025-11-12T21:05:00.123Z")])
+        else:
+            page = _catalog_page([_item("2025-11-11T03:00:00Z", "DV"),
+                                  _item("2025-11-11T03:01:00Z", "DH")])  # other mode: skip
+        return (200, {}, json.dumps(page))
+
+    responses.add_callback(responses.POST, CATALOG_URL, callback=answer)
+    budget = Budget(Path("no-such-dir/u.json"), 100)
+    c = CopernicusClient("id", "secret", requests.Session(), budget=budget)
+    got = c.scenes((59.3, -152.5, 62.8, -144.0), date(2025, 10, 29), date(2025, 11, 12))
+    assert [(s.sensor, s.time) for s in got] == [
+        ("s2", datetime(2025, 11, 10, 21, 5, tzinfo=timezone.utc)),
+        ("s2", datetime(2025, 11, 12, 21, 5, 0, 123000, tzinfo=timezone.utc)),
+        ("s1", datetime(2025, 11, 11, 3, 0, tzinfo=timezone.utc)),
+    ]
+    assert got[0].footprint.bounds == (-150.0, 60.0, -148.0, 62.0)
+    first = bodies[0]
+    assert first["bbox"] == [-152.5, 59.3, -144.0, 62.8]  # west, south, east, north
+    assert first["datetime"] == "2025-10-29T00:00:00Z/2025-11-13T23:59:59Z"
+    assert bodies[1]["next"] == 1
+    assert budget.remaining() == 97  # three catalog pages
+
+
+@responses.activate
+def test_scenes_bad_response_is_source_unavailable():
+    from wildice.imagery import CATALOG_URL
+    add_token()
+    responses.add(responses.POST, CATALOG_URL, json={"features": [{"properties": {}}]})
+    c = CopernicusClient("id", "secret", requests.Session())
+    with pytest.raises(SourceUnavailable, match="catalog"):
+        c.scenes((59.3, -152.5, 62.8, -144.0), date(2025, 10, 29), date(2025, 11, 12))
+
+
+def test_fetch_imagery_only_requested_sensors():
+    calls = []
+
+    class C:
+        def s2_stats(self, g, s, e):
+            calls.append("s2")
+            return []
+
+        def s1_stats(self, g, s, e):
+            calls.append("s1")
+            return [S1Obs(D2, -12.0)]
+
+    lake = Lake("w1", "X", 100, 1, None, 61.0, -150.0, GEOM, None)
+    img = fetch_imagery(C(), lake, D2, cfg, None, sensors={"s1"})
+    assert calls == ["s1"] and img.s2 == () and img.s1 == (S1Obs(D2, -12.0),)

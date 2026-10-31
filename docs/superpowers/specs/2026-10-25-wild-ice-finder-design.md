@@ -114,6 +114,15 @@ backtest (section 7); the initial values are placeholders in config only, not in
 4. **Imagery.** For shortlisted lakes, request statistics over the interior for
    the last few days: Sentinel-2 L2A (B03, B04, B08, B11, SCL cloud mask, NDSI)
    and Sentinel-1 GRD VV backscatter.
+   *Added 2026-10-31:* first one Catalog API search over the region
+   (`state/seen_scenes.json` remembers the newest scene each lake was requested
+   for). Only lakes under a newer Sentinel-2 or Sentinel-1 scene get a request,
+   and only for the sensor that has something new. Radar readings are saved in
+   `state/s1_history.json` so days without a new pass keep them. A catalog
+   failure other than login publishes weather-only labels and pings ops. No
+   lake worth imaging (open water everywhere, or allowance used) skips the
+   catalog search too. Each request has a hard 3-minute cap (HTTP 408 → skip
+   that lake).
 5. **Score** (section 5.3–5.4).
 6. **Publish.** Write `data/status.json` (current label, confidence, reason,
    thickness, last clear image date, Copernicus Browser deep link) and append

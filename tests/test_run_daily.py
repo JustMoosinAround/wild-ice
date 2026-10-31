@@ -2,20 +2,24 @@ import json
 import logging
 import shutil
 from datetime import date, timedelta
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 import requests
 import responses as responses_lib
+from shapely.geometry import box
 
 from wildice import run_daily
 from wildice.models import S1Obs, S2Obs, SourceUnavailable
+from wildice.scenes import Scene
 from wildice.run_daily import run
 from wildice.weather import ARCHIVE_URL, FORECAST_URL
 
 REPO = Path(__file__).resolve().parent.parent
 RUN = date(2025, 11, 12)
 SEASON_START = date(2025, 10, 1)
+YESTERDAY_PASS = datetime(2025, 11, 11, 21, 5, tzinfo=timezone.utc)
 ENV = {"NTFY_TOPIC_ALERTS": "alerts-topic", "NTFY_TOPIC_OPS": "ops-topic"}
 ALERTS_URL = "https://ntfy.sh/alerts-topic"
 OPS_URL = "https://ntfy.sh/ops-topic"
@@ -84,11 +88,22 @@ def ntfy_bodies(rsps, topic):
 class FakeClient:
     """Stands in for CopernicusClient (Task 7 methods)."""
 
-    def __init__(self, s2=None, s1=None, fail=None):
+    def __init__(self, s2=None, s1=None, fail=None, scenes=None, scenes_fail=None):
         self.calls = []
         self.s2 = s2 if s2 is not None else [S2Obs(RUN - timedelta(days=1), 0.95, 0.05, 0.05, 0.02)]
         self.s1 = s1 if s1 is not None else []
         self.fail = fail
+        # default: one new photo and one new radar pass over the whole region yesterday
+        self.scene_list = scenes if scenes is not None else [
+            Scene("s2", YESTERDAY_PASS, box(-153, 59, -143, 63)),
+            Scene("s1", YESTERDAY_PASS, box(-153, 59, -143, 63))]
+        self.scenes_fail = scenes_fail
+
+    def scenes(self, bbox, start, end):
+        self.calls.append(("scenes", start, end))
+        if self.scenes_fail:
+            raise self.scenes_fail
+        return list(self.scene_list)
 
     def s2_stats(self, geometry, start, end):
         self.calls.append(("s2", start, end))
@@ -598,7 +613,7 @@ def test_daily_lake_cap(tmp_repo, mocked):
     _three_lakes(tmp_repo)
     cfg = tmp_repo / "config.yaml"
     cfg.write_text(cfg.read_text(encoding="utf-8").replace(
-        "max_lakes_per_day: 100", "max_lakes_per_day: 2"), encoding="utf-8")
+        "max_lakes_per_day: 150", "max_lakes_per_day: 2"), encoding="utf-8")
     client = FakeClient()
     assert run(RUN, tmp_repo, ENV, session(), client) == 0
     assert _s2_lakes(client) == 2
@@ -618,3 +633,71 @@ def test_timed_out_request_skips_only_that_lake():
     from wildice.run_daily import _lake_specific
     assert _lake_specific(SourceUnavailable("copernicus", "no answer", status=TIMED_OUT_STATUS))
     assert not _lake_specific(SourceUnavailable("copernicus", "token", status=None))
+
+
+def _two_lake_repo(tmp_repo):
+    far = {"type": "Polygon", "coordinates": [[[-145.51, 62.49], [-145.49, 62.49],
+                                                [-145.49, 62.51], [-145.51, 62.51],
+                                                [-145.51, 62.49]]]}
+    (tmp_repo / "site/data/lakes.geojson").write_text(json.dumps({
+        "type": "FeatureCollection",
+        "features": [_feature("w1", 120.0), _feature("w2", 300.0, far)]}), encoding="utf-8")
+
+
+def _stats_calls(client):
+    return [c[0] for c in client.calls if c[0] in ("s2", "s1")]
+
+
+def test_only_lakes_under_a_new_scene_are_imaged(tmp_repo, mocked):
+    _two_lake_repo(tmp_repo)
+    cold_weather(mocked)
+    # the pass covers w1 (61.0 N, 149.5 W) but not w2 (62.5 N, 145.5 W)
+    client = FakeClient(scenes=[Scene("s2", YESTERDAY_PASS, box(-150, 60.5, -149, 61.5))])
+    assert run(RUN, tmp_repo, ENV, session(), client) == 0
+    assert _stats_calls(client) == ["s2"]  # w1 only, photo only
+    checked = json.loads((tmp_repo / "state/last_checked.json").read_text(encoding="utf-8"))
+    assert list(checked) == ["w1"]
+
+
+def test_no_new_scene_no_requests_and_label_kept(tmp_repo, mocked):
+    cold_weather(mocked)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    seen = json.loads((tmp_repo / "state/seen_scenes.json").read_text(encoding="utf-8"))
+    assert seen == {"w1": {"s1": "2025-11-11T21:05:00+00:00", "s2": "2025-11-11T21:05:00+00:00"}}
+    again = FakeClient()  # same scenes: nothing new
+    assert run(RUN + timedelta(days=1), tmp_repo, ENV, session(), again) == 0
+    assert _stats_calls(again) == []
+    assert status_of(tmp_repo)["lakes"]["w1"]["label"] == "likely_black_ice"
+
+
+def test_saved_radar_reading_used_on_days_without_new_scene(tmp_repo, mocked):
+    cold_weather(mocked)
+    radar = [S1Obs(RUN - timedelta(days=1), -10.0)]
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient(s2=[], s1=radar)) == 0
+    saved = json.loads((tmp_repo / "state/s1_history.json").read_text(encoding="utf-8"))
+    assert saved == {"w1": {"2025-11-11": -10.0}}
+    assert run(RUN + timedelta(days=1), tmp_repo, ENV, session(),
+               FakeClient(s2=[], s1=[])) == 0
+    # without the saved reading there would be no satellite data at all: low confidence
+    assert status_of(tmp_repo)["lakes"]["w1"]["confidence"] == "medium"
+
+
+def test_catalog_failure_publishes_weather_only_and_pings_ops(tmp_repo, mocked, caplog):
+    cold_weather(mocked)
+    client = FakeClient(scenes_fail=SourceUnavailable("copernicus", "503 Server Error",
+                                                      status=503))
+    assert run(RUN, tmp_repo, ENV, session(), client) == 0
+    assert _stats_calls(client) == []
+    assert status_of(tmp_repo)["stale_since"] is None
+    assert ntfy_calls(mocked, "ops-topic") == 1
+    assert "scene catalog failed" in caplog.text
+
+
+@pytest.mark.parametrize("fail", [
+    SourceUnavailable("copernicus", "401 Unauthorized", status=401),
+    SourceUnavailable("copernicus", "token: 400 Bad Request"),
+])
+def test_catalog_login_failure_still_fails_run(tmp_repo, mocked, fail):
+    cold_weather(mocked)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient(scenes_fail=fail)) == 1
+    assert status_of(tmp_repo)["stale_since"] == "2025-11-12"

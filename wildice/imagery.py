@@ -21,19 +21,25 @@ import math
 import statistics
 import threading
 import time
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Callable
 
 import requests
+from shapely.geometry import shape
 
 from wildice.config import Config
 from wildice.models import ImageryStats, Lake, S1Obs, S2Obs, SourceUnavailable
+from wildice.scenes import SENSORS, Scene
 
 TOKEN_URL = ("https://identity.dataspace.copernicus.eu/auth/realms/CDSE/"
              "protocol/openid-connect/token")
 STATS_URL = "https://sh.dataspace.copernicus.eu/api/v1/statistics"
 PROCESS_URL = "https://sh.dataspace.copernicus.eu/api/v1/process"
+CATALOG_URL = "https://sh.dataspace.copernicus.eu/api/v1/catalog/1.0.0/search"
+CATALOG_COLLECTIONS = {"s2": "sentinel-2-l2a", "s1": "sentinel-1-grd"}
+CATALOG_PAGE_SIZE = 100  # the catalog's maximum
+CATALOG_MAX_PAGES = 50   # a two-week window over the region is a few pages
 SOURCE = "copernicus"
 CRS_4326 = "http://www.opengis.net/def/crs/EPSG/0/4326"
 TIMEOUT_S = 120
@@ -264,6 +270,40 @@ class CopernicusClient:
     def _day(interval: dict) -> date:
         return date.fromisoformat(interval["interval"]["from"][:10])
 
+    def scenes(self, bbox: tuple[float, float, float, float], start: date,
+               end: date) -> list[Scene]:
+        """Sentinel-2 and Sentinel-1 scenes over bbox (south, west, north, east), start..end."""
+        south, west, north, east = bbox
+        out: list[Scene] = []
+        for sensor, collection in CATALOG_COLLECTIONS.items():
+            body: dict = {
+                "bbox": [west, south, east, north],
+                "datetime": f"{start.isoformat()}T00:00:00Z/"
+                            f"{(end + timedelta(days=1)).isoformat()}T23:59:59Z",
+                "collections": [collection],
+                "limit": CATALOG_PAGE_SIZE,
+            }
+            for _ in range(CATALOG_MAX_PAGES):
+                page = self._post(CATALOG_URL, body).json()
+                try:
+                    for item in page["features"]:
+                        props = item["properties"]
+                        mode = props.get("s1:polarization")
+                        if sensor == "s1" and mode is not None and mode != S1_POLARIZATION:
+                            continue  # a mode the radar request can't use
+                        when = datetime.fromisoformat(props["datetime"].replace("Z", "+00:00"))
+                        out.append(Scene(sensor, when, shape(item["geometry"])))
+                    token = (page.get("context") or {}).get("next")
+                except (KeyError, TypeError, ValueError, AttributeError) as exc:
+                    raise SourceUnavailable(
+                        SOURCE, f"unexpected catalog response: {exc!r}") from exc
+                if token is None:
+                    break
+                body = {**body, "next": token}
+            else:
+                raise SourceUnavailable(SOURCE, f"catalog: over {CATALOG_MAX_PAGES} pages")
+        return out
+
     def s2_stats(self, geometry: dict, start: date, end: date) -> list[S2Obs]:
         rows = self._statistics("sentinel-2-l2a", {"mosaickingOrder": "mostRecent"},
                                 _script("s2_stats.js"), geometry, start, end)
@@ -326,13 +366,15 @@ class CopernicusClient:
 
 
 def fetch_imagery(client: CopernicusClient, lake: Lake, run_date: date, cfg: Config,
-                  baseline_db: float | None) -> ImageryStats:
+                  baseline_db: float | None,
+                  sensors: frozenset[str] | set[str] = frozenset(SENSORS)) -> ImageryStats:
+    """Numbers for `lake`, asking only the sensors in `sensors` (the others come back empty)."""
     if lake.interior is None:
         raise ValueError(f"lake {lake.id} has no interior geometry")
     start = run_date - timedelta(days=cfg.imagery.lookback_days)
     return ImageryStats(
-        s2=tuple(client.s2_stats(lake.interior, start, run_date)),
-        s1=tuple(client.s1_stats(lake.interior, start, run_date)),
+        s2=tuple(client.s2_stats(lake.interior, start, run_date)) if "s2" in sensors else (),
+        s1=tuple(client.s1_stats(lake.interior, start, run_date)) if "s1" in sensors else (),
         s1_baseline_db=baseline_db,
     )
 
