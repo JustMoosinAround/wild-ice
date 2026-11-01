@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from wildice.config import load_config
-from wildice.icemodel import ashton_thickness_cm, run_ice_model
+from wildice.icemodel import ashton_thickness_cm, run_ice_model, water_lag_days
 from wildice.models import DayWeather, ResetEvent, ResetKind
 
 cfg = load_config(Path("config.yaml"))
@@ -86,3 +86,40 @@ def test_ewan_lake_october_2026():
     assert s.freeze_up == date(2026, 10, 21)
     assert s.snow_since_reset_cm == pytest.approx(1.7)    # Oct 21 onward; was 24.5 cm
     assert s.snow_since_reset_cm <= cfg.snow.cover_cm     # so not "snow-covered"
+
+
+# --- water temperature lag ---------------------------------------------------
+
+def test_water_lag_grows_with_lake_size():
+    assert water_lag_days(10) == 5            # floor: small ponds track the air
+    assert water_lag_days(1000) == pytest.approx(27, abs=0.1)
+    assert water_lag_days(100000) == 50       # cap
+
+
+def test_warm_water_delays_ice_on_a_small_lake():
+    days = [wx(i, -5) for i in range(20)]
+    no_lag = run_ice_model(days, cfg)
+    small = run_ice_model(days, cfg, area_acres=50)
+    assert small.freeze_up is not None and small.freeze_up > no_lag.freeze_up
+    assert 0 < small.thickness_cm < no_lag.thickness_cm
+    assert small.water_c == 0
+
+
+def test_big_lake_stays_open_through_cold_weeks():
+    s = run_ice_model([wx(i, -4) for i in range(18)], cfg, area_acres=14500)
+    assert s.thickness_cm == 0 and s.freeze_up is None and s.water_c > 0
+
+
+def test_water_warms_again_after_ice_melts():
+    days = [wx(i, -10) for i in range(15)] + [wx(15 + i, 8) for i in range(25)]
+    s = run_ice_model(days, cfg, area_acres=50)
+    assert s.thickness_cm == 0 and s.freeze_up is None and s.water_c > 1
+
+
+def test_trace_has_one_row_per_day():
+    trace = []
+    days = [wx(i, -5) for i in range(10)]
+    s = run_ice_model(days, cfg, area_acres=50, trace=trace)
+    assert [r[0] for r in trace] == [d.day for d in days]
+    assert trace[0][1] < cfg.ice.water_start_c          # cooling from the start value
+    assert trace[-1] == (days[-1].day, s.water_c, s.thickness_cm)

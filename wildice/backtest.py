@@ -81,7 +81,7 @@ def run_backtest(obs_path: Path, root: Path, session, client) -> list[Row]:
             wx = fetch_daily([cell], season_start(day, cfg), day, session, archive=True,
                              points=points)[cell]
             wx = [d for d in wx if d.day <= day]
-            ice = run_ice_model(wx, cfg)
+            ice = run_ice_model(wx, cfg, area_acres=lake.area_acres)
             imaged = shortlist([lake], {lake.id: ice}, pinned, cfg, remaining_requests=2,
                                hidden=hidden)
             note = None if imaged else NOT_SHORTLISTED
@@ -90,7 +90,7 @@ def run_backtest(obs_path: Path, root: Path, session, client) -> list[Row]:
                 base = (s1_baseline(client, lake, ice.freeze_up)
                         if ice.freeze_up is not None else None)
                 img = fetch_imagery(client, lake, day, cfg, base)
-                ice = run_ice_model(wx, cfg, valid_s2_classes(img, cfg))
+                ice = run_ice_model(wx, cfg, valid_s2_classes(img, cfg), lake.area_acres)
             sc = score_lake(lake, ice, img, day, cfg)
         except SourceUnavailable as exc:
             rows.append(_error_row(lake_id, day, observed, str(exc)))

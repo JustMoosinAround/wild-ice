@@ -30,3 +30,32 @@ button.act.sel { outline: 3px solid var(--accent); }
 #panel label { font-size: 14px; display: block; margin-top: 8px; }
 .status { font-size: 14px; min-height: 20px; margin: 4px 0; }
 .star { font-size: 22px; line-height: 22px; color: #facc15; text-shadow: 0 0 2px #0f172a, 0 0 2px #0f172a; }
+
+/* weather chart */
+.wx { margin: 8px 0; position: relative; --air: #2a78d6; --water: #eb6834; --ice: #2a78d6; --snow: #eb6834; }
+.wx-svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.wx-grid { stroke: var(--line); stroke-width: 1; }
+.wx-zero { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.wx-tick { fill: var(--muted); font-size: 10px; }
+.wx-band { fill: var(--air); opacity: .16; }
+.wx-air { fill: none; stroke: var(--air); stroke-width: 2; stroke-linejoin: round; }
+.wx-water { fill: none; stroke: var(--water); stroke-width: 2; stroke-linejoin: round; }
+.wx-ice { fill: none; stroke: var(--ice); stroke-width: 2; stroke-linejoin: round; }
+.wx-snow { fill: var(--snow); opacity: .85; }
+.wx-hair { stroke: var(--fg); stroke-width: 1; opacity: .5; pointer-events: none; }
+.wx-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.wx-key { display: inline-flex; align-items: center; gap: 5px; }
+.wx-key i { display: inline-block; width: 14px; }
+.wx-key .k-air, .wx-key .k-ice { height: 0; border-top: 2px solid var(--air); }
+.wx-key .k-water { height: 0; border-top: 2px solid var(--water); }
+.wx-key .k-band { height: 8px; background: var(--air); opacity: .25; border-radius: 2px; }
+.wx-key .k-snow { height: 8px; width: 6px; background: var(--snow); border-radius: 1.5px; }
+.wx-tip { position: absolute; top: 0; right: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px 8px; font-size: 12px; color: var(--muted); box-shadow: 0 2px 8px rgba(0,0,0,.12); pointer-events: none; }
+.wx-tip b { color: var(--fg); }
+.wx-tip-day { color: var(--fg); font-weight: 600; margin-bottom: 2px; }
+.wx details { font-size: 13px; margin-top: 6px; }
+.wx summary { color: var(--accent); cursor: pointer; padding: 6px 0; }
+.wx-table { border-collapse: collapse; width: 100%; font-size: 12px; font-variant-numeric: tabular-nums; }
+.wx-table th, .wx-table td { text-align: right; padding: 2px 4px; border-bottom: 1px solid var(--line); }
+.wx-table th:first-child, .wx-table td:first-child { text-align: left; }

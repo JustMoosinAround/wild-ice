@@ -142,6 +142,21 @@ backtest (section 7); the initial values are placeholders in config only, not in
   About 25 °C·days → ~10 cm. (Revised 2026-10-28: the earlier Stefan rule
   `2.0 × √FDD` credited 1.3 cm of ice after one −0.4 °C day, so snow that fell
   into still-open Ewan Lake was counted as snow on the ice.)
+- **Water cools first** (added 2026-11-01). Freezing degree-days count only
+  once the lake's water has cooled to 0 °C. Water starts at
+  `ice.water_start_c` (7 °C) on `season_start`, and each day it closes 1/lag
+  of the gap to the day's mean air temperature, so recent days count most.
+  - The lag is `−18 + 15·log10(acres)` days, clamped to 5–50: about 7 days
+    at 50 acres, 27 at 1,000, and 44 at Lake Louise.
+  - Below 4 °C the lag is a quarter of that (minimum 2 days), because cold
+    water stays on top once the lake stops mixing.
+  - Water is held at 0 °C under ice. After a full melt it warms with the
+    air again.
+  - The lag formula was fitted on AKTEMP lake loggers (21 fall seasons,
+    0.2–0.7 °C error). On NWS thickness readings for small Anchorage lakes it
+    matches the old model (6.4 vs 6.2 cm mean error).
+  - The fix: Lake Louise and Crosswind (9–15 thousand acres) were shown with
+    15–17 cm of ice while still open.
 - **Freeze-up** = the day the estimate first reaches `ice.open_cm` (the lake
   "catches"). Snow before that falls into open water or onto skim ice and is
   not counted. The lake stays caught until the estimate returns to 0 (full
@@ -212,6 +227,13 @@ Each label carries a one-line reason, for example:
 - Lake panel: label, confidence, reason, thickness estimate, short history
   (last ~14 days of labels), latest true-color thumbnail, link to Copernicus
   Browser at that lake and image date.
+- Lake panel chart (added 2026-11-01) covers the last 35 days in two panels
+  that share the date axis. The data is in `site/data/series/<lake id>.json`,
+  written by the daily run and fetched when the panel opens.
+  - Top panel, °C: air low–high band, air mean, estimated water temperature.
+  - Bottom panel, cm: estimated ice thickness and daily snowfall.
+  - Hover or tap shows every value for that day, and a "Show numbers" table
+    lists the same values.
 - **Rate this lake:** skated it / snow / water / rough ice. Each rating saves
   lake id, date, rating, optional note.
 - Ratings are saved by calling the GitHub API with a fine-grained personal

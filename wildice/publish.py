@@ -6,9 +6,11 @@ import json
 from datetime import date, timedelta
 from pathlib import Path
 
-from wildice.models import Confidence, Label, Lake, Score
+from wildice.icemodel import TraceRow
+from wildice.models import Confidence, DayWeather, Label, Lake, Score
 
 DISCLAIMER = "Rough estimate only — check ice yourself."
+SERIES_DAYS = 35  # days of weather and model output behind each lake's chart
 
 
 def display_name(lake: Lake) -> str:
@@ -93,3 +95,29 @@ def write_outputs(status: dict, site_data: Path, run_date: date) -> None:
     _write_json(site_data / "status.json", out)
     _write_json(site_data / "history" / f"{run_date.isoformat()}.json",
                 {k: v["label"] for k, v in out["lakes"].items()})
+
+
+def lake_series(weather: list[DayWeather], trace: list[TraceRow],
+                days: int = SERIES_DAYS) -> dict:
+    """The last `days` of a lake's weather plus the model's water and ice estimates."""
+    model = {day: (water, ice) for day, water, ice in trace}
+    rows = [w for w in weather if w.day in model][-days:]
+    return {
+        "day": [w.day.isoformat() for w in rows],
+        "t_min": [round(w.t_min, 1) for w in rows],
+        "t_max": [round(w.t_max, 1) for w in rows],
+        "t_mean": [round(w.t_mean, 1) for w in rows],
+        "snow_cm": [round(w.snowfall_cm, 1) for w in rows],
+        "water_c": [round(model[w.day][0], 1) for w in rows],
+        "ice_cm": [round(model[w.day][1], 1) for w in rows],
+    }
+
+
+def write_series(site_data: Path, series: dict[str, dict]) -> None:
+    """One small file per lake, fetched by the map only when that lake is opened."""
+    out = Path(site_data) / "series"
+    out.mkdir(parents=True, exist_ok=True)
+    for lake_id, data in series.items():
+        with open(out / f"{lake_id}.json", "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(data, fh, separators=(",", ":"))
+            fh.write("\n")

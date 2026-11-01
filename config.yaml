@@ -10,6 +10,10 @@ ice:
   ashton_h: 20
   skate_cm: 10
   open_cm: 2
+  # Lake water temperature on season_start. Water trails the air by a lag that grows
+  # with lake size, so ice starts only once the water has cooled to 0 C. 7 C matches
+  # the Wolverine Lake (Mat-Su) logger on Oct 1.
+  water_start_c: 7
 snow:
   cover_cm: 2
 reset:  # placeholders, tuned by backtest

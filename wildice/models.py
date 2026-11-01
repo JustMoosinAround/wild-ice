@@ -72,6 +72,7 @@ class IceState:
     snow_since_reset_cm: float
     last_snow_day: date | None
     possible_resets: tuple[ResetEvent, ...]
+    water_c: float = 0.0  # estimated surface water temperature (0 under ice)
 
 
 @dataclass(frozen=True)

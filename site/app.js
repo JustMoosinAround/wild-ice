@@ -1,6 +1,7 @@
 import {
   buildRatingFile, buildPrefFile, enqueue, flushQueue, CREDS_KEY, QUEUE_KEY, RATINGS,
 } from "./ratings.js";
+import { renderWeatherChart } from "./chart.js";
 
 const STYLE = {
   open_water: { fill: "#3b82f6", line: "#1d4ed8", text: "Open water" },
@@ -166,6 +167,9 @@ function renderPanel(id, statusText) {
     }
     panel.append(strip);
   }
+  const chart = el("div", { class: "wx-mount" });
+  panel.append(chart);
+  loadChart(id, chart);
   if (d.thumb) panel.append(el("img", { class: "thumb", src: "data/" + d.thumb, alt: d.name + " satellite thumbnail", loading: "lazy" }));
   if (typeof d.browser_url === "string" && d.browser_url.startsWith("https://")) {
     panel.append(el("a", { class: "cop", href: d.browser_url, target: "_blank", rel: "noopener", text: "Open in Copernicus Browser" }));
@@ -201,6 +205,18 @@ function renderPanel(id, statusText) {
   } }));
   panel.append(el("div", { class: "status", id: "status", text: statusText || (pending() ? pending() + " waiting to upload" : "") }));
   panel.hidden = false;
+}
+
+// Weather chart data is one small file per lake, fetched when its panel opens.
+const seriesCache = new Map();
+function loadChart(id, mount) {
+  if (!seriesCache.has(id)) {
+    seriesCache.set(id, fetch("data/series/" + encodeURIComponent(id) + ".json")
+      .then((r) => (r.ok ? r.json() : null)).catch(() => null));
+  }
+  seriesCache.get(id).then((s) => {
+    if (s && s.day && mount.isConnected) renderWeatherChart(s, mount);
+  });
 }
 
 function setStatus(t) {

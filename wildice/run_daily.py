@@ -339,8 +339,10 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
     try:
         wx = update_cache(state / "weather", cell_points(lake_list), run_date, cfg, session)
         # earlier clearings this season count before today's imagery is in
+        traces: dict[str, list] = {lake.id: [] for lake in lake_list}
         ice0 = {lake.id: run_ice_model(wx[cell_of(lake.lat, lake.lon)], cfg,
-                                       s2_history.get(lake.id))
+                                       s2_history.get(lake.id), lake.area_acres,
+                                       traces[lake.id])
                 for lake in lake_list}
 
         if client is None:
@@ -374,7 +376,7 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
         window_start = run_date - timedelta(days=cfg.imagery.lookback_days)
         for lake in lake_list:
             hist = s2_history.get(lake.id)
-            ice = (run_ice_model(wx[cell_of(lake.lat, lake.lon)], cfg, hist)
+            ice = (run_ice_model(wx[cell_of(lake.lat, lake.lon)], cfg, hist, lake.area_acres)
                    if lake.id in imagery else ice0[lake.id])
             img = _with_saved_radar(imagery.get(lake.id), s1_history.get(lake.id, {}),
                                     window_start, run_date, ice, lake.id, baselines)
@@ -401,6 +403,9 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
     status = publish.build_status(lake_list, scores, pinned, hidden, history, run_date,
                                   stale_since=None)
     publish.write_outputs(status, site_data, run_date)
+    publish.write_series(site_data, {
+        lake.id: publish.lake_series(wx[cell_of(lake.lat, lake.lon)], traces[lake.id])
+        for lake in lake_list})
     log.info("wrote status for %d lakes (%d with imagery)", len(scores), len(imagery))
 
     labels_path = state / "labels.json"

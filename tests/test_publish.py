@@ -70,3 +70,16 @@ def test_thickness_rounded_to_whole_cm():
     sc = {"w123": Score("w123", Label.FREEZING, Confidence.LOW, "why", 7.6180339, None)}
     e = build_status([lake], sc, frozenset(), frozenset(), {}, RUN, None)["lakes"]["w123"]
     assert e["thickness_cm"] == 8 and isinstance(e["thickness_cm"], int)
+
+
+def test_lake_series_keeps_last_days_and_matches_model_rows():
+    from datetime import date, timedelta
+    from wildice.models import DayWeather
+    from wildice.publish import lake_series
+    d0 = date(2025, 10, 1)
+    wx = [DayWeather(d0 + timedelta(i), -6.04, 1.0, -2.5, 0.25, 0.0, 10.0) for i in range(40)]
+    trace = [(d0 + timedelta(i), 3.33, float(i)) for i in range(1, 40)]  # day 0 missing
+    s = lake_series(wx, trace, days=35)
+    assert s["day"][0] == (d0 + timedelta(5)).isoformat() and len(s["day"]) == 35
+    assert s["t_min"][0] == -6.0 and s["snow_cm"][0] == 0.2 and s["water_c"][0] == 3.3
+    assert s["ice_cm"][-1] == 39.0

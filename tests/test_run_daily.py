@@ -236,7 +236,8 @@ def test_baseline_cached(tmp_repo, mocked):
     assert run(RUN, tmp_repo, ENV, session(), first) == 0
     assert len(first.baseline_calls()) == 1
     baselines = json.loads((tmp_repo / "state/baselines.json").read_text(encoding="utf-8"))
-    assert baselines == {"w1:2025-10-01": -20.0}
+    # freeze-up waits for the 7 C water to cool, five days into the cold
+    assert baselines == {"w1:2025-10-06": -20.0}
     second = FakeClient()
     assert run(RUN, tmp_repo, ENV, session(), second) == 0
     assert second.baseline_calls() == []
@@ -701,3 +702,12 @@ def test_catalog_login_failure_still_fails_run(tmp_repo, mocked, fail):
     cold_weather(mocked)
     assert run(RUN, tmp_repo, ENV, session(), FakeClient(scenes_fail=fail)) == 1
     assert status_of(tmp_repo)["stale_since"] == "2025-11-12"
+
+
+def test_chart_series_written_per_lake(tmp_repo, mocked):
+    cold_weather(mocked)
+    assert run(RUN, tmp_repo, ENV, session()) == 0
+    s = json.loads((tmp_repo / "site/data/series/w1.json").read_text(encoding="utf-8"))
+    assert s["day"][-1] == RUN.isoformat() and len(s["day"]) == 35
+    assert {len(v) for v in s.values()} == {35}
+    assert s["t_mean"][-1] == -5.0 and s["water_c"][-1] == 0.0 and s["ice_cm"][-1] > 10
