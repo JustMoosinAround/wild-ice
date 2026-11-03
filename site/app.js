@@ -165,15 +165,24 @@ function renderPanel(id, statusText) {
     panel.append(el("p", { class: "est", text: "est. " + d.thickness_cm + " cm" }));
     panel.append(el("p", { class: "disc", text: status.disclaimer || "Rough estimate only — check ice yourself." }));
   }
-  if (d.history && d.history.length) {
-    const strip = el("div", { class: "strip", "aria-label": "Last 14 days" });
-    for (const h of d.history.slice(-14)) {
+  // Daily color history, oldest first. Published history stops at yesterday, so add today.
+  const days = (d.history || []).filter((h) => h.day !== status.run_date);
+  if (status.run_date) days.push({ day: status.run_date, label: d.label });
+  if (days.length > 1) {
+    const recent = days.slice(-14);
+    panel.append(el("p", { class: "strip-head", text: "Color each day" }));
+    const strip = el("div", { class: "strip", "aria-label": "Lake color each day, oldest first" });
+    recent.forEach((h, i) => {
       const hs = STYLE[h.label] || STYLE.unknown;
-      const c = el("span", { title: h.day + ": " + hs.text });
+      const c = el("span", { title: shortDay(h.day) + ": " + hs.text });
       c.style.background = hs.fill;
+      c.style.borderColor = hs.line;
+      if (i === recent.length - 1) c.className = "today";
       strip.append(c);
-    }
+    });
     panel.append(strip);
+    panel.append(el("div", { class: "strip-ends" },
+      el("span", { text: shortDay(recent[0].day) }), el("span", { text: "Today" })));
   }
   const chart = el("div", { class: "wx-mount" });
   panel.append(chart);
@@ -279,6 +288,11 @@ function showBanner() {
   } else {
     b.hidden = true;
   }
+}
+
+function shortDay(iso) {
+  const [y, m, dd] = iso.split("-").map(Number);
+  return new Date(y, m - 1, dd).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function addKey() {

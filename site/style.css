@@ -18,8 +18,11 @@ body { display: flex; flex-direction: column; font: 16px/1.4 system-ui, sans-ser
 .est { font-size: 18px; font-weight: 600; margin: 8px 0 0; }
 .disc { font-size: 13px; color: var(--muted); margin: 0 0 8px; }
 .warn { font-size: 13px; color: #92400e; }
-.strip { display: flex; gap: 2px; margin: 8px 0; }
+.strip-head { font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+.strip { display: flex; gap: 2px; margin: 0; }
 .strip span { flex: 1; height: 14px; border-radius: 2px; border: 1px solid #94a3b8; }
+.strip span.today { height: 18px; margin-top: -2px; border-width: 2px; }
+.strip-ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin: 2px 0 8px; }
 .thumb { width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin: 8px 0; }
 a.cop { display: block; padding: 12px 0; color: var(--accent); }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
