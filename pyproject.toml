@@ -19,6 +19,8 @@ dependencies = [
 [project.optional-dependencies]
 # osm2geojson converts the Overpass-format JSON fixtures used by test_catalog.py
 dev = ["pytest", "responses", "osm2geojson"]
+# reads .fit activity files for `python -m wildice.skatelog`
+skatelog = ["fitdecode"]
 
 [tool.setuptools]
 packages = ["wildice"]
