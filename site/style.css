@@ -31,6 +31,19 @@ button.act.sel { outline: 3px solid var(--accent); }
 .status { font-size: 14px; min-height: 20px; margin: 4px 0; }
 .star { font-size: 22px; line-height: 22px; color: #facc15; text-shadow: 0 0 2px #0f172a, 0 0 2px #0f172a; }
 
+/* map key */
+.key { background: var(--bg); border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.25); padding: 4px 10px;
+  font-size: 13px; line-height: 1.3; max-width: min(260px, calc(100vw - 2 * var(--gutter))); }
+.key summary { cursor: pointer; font-weight: 600; min-height: 36px; display: flex; align-items: center; gap: 6px; list-style: none; }
+.key summary::-webkit-details-marker { display: none; }
+.key summary::before { content: "▸"; font-size: 12px; color: var(--muted); }
+.key[open] summary::before { content: "▾"; }
+.key-row { display: flex; align-items: flex-start; gap: 8px; margin: 6px 0; }
+.key-row span { color: var(--muted); }
+.key-row b { color: var(--fg); }
+.key .sw { flex: none; width: 20px; height: 14px; margin-top: 2px; border: 1.5px solid; border-radius: 3px; }
+.key .star { flex: none; width: 20px; text-align: center; font-style: normal; font-size: 18px; line-height: 18px; }
+
 /* weather chart */
 .wx { margin: 8px 0; position: relative; --air: #2a78d6; --water: #eb6834; --ice: #2a78d6; --snow: #eb6834; }
 .wx-svg { width: 100%; height: auto; display: block; touch-action: pan-y; }

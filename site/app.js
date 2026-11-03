@@ -10,6 +10,14 @@ const STYLE = {
   snow_covered: { fill: "#f8fafc", line: "#6b7280", text: "Snow covered" },
   unknown: { fill: "#9ca3af", line: "#6b7280", text: "Unknown" },
 };
+// Map key, best skating first.
+const KEY = [
+  ["likely_black_ice", "Thick enough to skate, little snow, and a satellite sees ice"],
+  ["freezing", "Ice forming, still too thin to skate"],
+  ["unknown", "Thick enough, but no clear satellite look yet"],
+  ["snow_covered", "Snow on the ice"],
+  ["open_water", "No ice yet"],
+];
 const SKATE_LABELS = new Set(["likely_black_ice", "freezing"]);
 const RATING_TEXT = { skated: "Skated", snow: "Snow", water: "Water", rough: "Rough" };
 
@@ -273,6 +281,42 @@ function showBanner() {
   }
 }
 
+function addKey() {
+  const KEY_OPEN = "wildice.keyOpen";
+  const ctl = L.control({ position: "bottomleft" });
+  ctl.onAdd = () => {
+    const box = el("details", { class: "key" });
+    let open = null;
+    try { open = store.getItem(KEY_OPEN); } catch { /* storage blocked */ }
+    box.open = open === null ? window.innerWidth >= 700 : open === "1";
+    box.addEventListener("toggle", () => {
+      try { store.setItem(KEY_OPEN, box.open ? "1" : "0"); } catch { /* storage blocked */ }
+    });
+    box.append(el("summary", { text: "Key" }));
+    for (const [label, desc] of KEY) {
+      const s = STYLE[label];
+      const sw = el("i", { class: "sw" });
+      sw.style.background = s.fill;
+      sw.style.borderColor = s.line;
+      if (label === "likely_black_ice") sw.style.borderWidth = "3px";
+      const row = el("div", { class: "key-row" });
+      row.append(sw, el("span", {}, el("b", { text: s.text }), el("br"), desc));
+      box.append(row);
+    }
+    const star = el("div", { class: "key-row" });
+    star.append(el("i", { class: "star", text: "★" }), el("span", { text: "Pinned lake" }));
+    const faded = el("div", { class: "key-row" });
+    const fsw = el("i", { class: "sw" });
+    fsw.style.cssText = "background:#3b82f6;border-color:#1d4ed8;opacity:.3";
+    faded.append(fsw, el("span", { text: "Faded: hidden lake" }));
+    box.append(star, faded);
+    L.DomEvent.disableClickPropagation(box);
+    L.DomEvent.disableScrollPropagation(box);
+    return box;
+  };
+  ctl.addTo(map);
+}
+
 function routeHash() {
   const m = location.hash.match(/^#lake=(.+)$/);
   if (!m) return;
@@ -294,6 +338,7 @@ async function main() {
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19, attribution: "&copy; OpenStreetMap contributors",
   }).addTo(map);
+  addKey();
   $("only-skate").addEventListener("change", applyFilter);
   window.addEventListener("hashchange", routeHash);
   window.addEventListener("online", flush);
