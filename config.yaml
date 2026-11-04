@@ -31,7 +31,7 @@ imagery:  # placeholders, tuned by backtest
   shore_buffer_m: 30
   snow_ndsi: 0.4
   snow_brightness: 0.3
-  dark_brightness: 0.12
+  dark_brightness: 0.125
   s1_frozen_delta_db: 3.0
   lookback_days: 14
   monthly_request_budget: 9000
