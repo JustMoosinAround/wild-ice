@@ -11,6 +11,10 @@ lake, then asks Copernicus for Sentinel-2 numbers on that lake for a week either
 Writes, next to the repo (both gitignored, never commit them):
   skate_reference.local.md  table of trips, clear-sky looks and Copernicus Browser links
   backtest.local.yaml       each IceSkate trip added once as `observed: skated`
+
+A watch can save a skate as a hike or run that was retyped on Strava later, and the
+export keeps the watch's type. List those file ids (the `i123` part) under `ice_skate:`
+in skate_overrides.local.yaml (gitignored) and they are treated as IceSkate.
 """
 from __future__ import annotations
 
@@ -46,6 +50,7 @@ MAX_GAP_S = 300          # longer gaps between points (pauses, lost signal) are 
 WINDOW_DAYS = 7          # satellite looks this many days either side of the trip
 SKATE_ACTIVITIES = {"IceSkate"}  # file-name types logged to the backtest as skated
 _NAME = re.compile(r"^(\d{4}-\d{2}-\d{2})_([A-Za-z]+)_")
+_ID = re.compile(r"^\d{4}-\d{2}-\d{2}_[A-Za-z]+_([^._]+)\.")
 _SEMI = 180.0 / 2 ** 31  # FIT semicircles to degrees
 
 Point = tuple[float, float, datetime]  # lat, lon, UTC time
@@ -77,6 +82,21 @@ def parse_name(name: str) -> tuple[date, str] | None:
         return date.fromisoformat(m[1]), m[2]
     except ValueError:
         return None
+
+
+def file_id(name: str) -> str | None:
+    """The activity id in a file name, e.g. `i123` in `2025-02-08_Hike_i123.fit.gz`."""
+    m = _ID.match(name)
+    return m[1] if m else None
+
+
+def load_skate_ids(path: Path) -> set[str]:
+    """File ids listed under `ice_skate:` in the overrides file; empty if it is missing."""
+    path = Path(path)
+    if not path.exists():
+        return set()
+    doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    return {str(i) for i in doc.get("ice_skate") or []}
 
 
 def _open_bytes(path: Path) -> bytes:
@@ -181,8 +201,11 @@ def _local_day(points: list[Point], lake: Lake, shapes) -> date:
     return points[0][2].astimezone(LOCAL_TZ).date()
 
 
-def find_trips(folder: Path, lakes: list[Lake]) -> tuple[list[Trip], list[str]]:
-    """Winter tracks that spent enough time on a catalog lake, and files that failed."""
+def find_trips(folder: Path, lakes: list[Lake], skate_ids: set[str] = frozenset()
+               ) -> tuple[list[Trip], list[str]]:
+    """Winter tracks that spent enough time on a catalog lake, and files that failed.
+
+    Files whose id is in `skate_ids` count as IceSkate whatever their name says."""
     shapes = _lake_shapes(lakes)
     trips: list[Trip] = []
     skipped: list[str] = []
@@ -201,7 +224,8 @@ def find_trips(folder: Path, lakes: list[Lake]) -> tuple[list[Trip], list[str]]:
         if m is None:
             continue
         lake, minutes, share = m
-        trips.append(Trip(_local_day(points, lake, shapes), lake, parsed[1], minutes, share,
+        activity = "IceSkate" if file_id(path.name) in skate_ids else parsed[1]
+        trips.append(Trip(_local_day(points, lake, shapes), lake, activity, minutes, share,
                           path.name))
     return trips, skipped
 
@@ -293,8 +317,10 @@ def main(argv: list[str] | None = None) -> int:
     root = Path.cwd()
     cfg = load_config(root / "config.yaml")
     lakes = load_catalog(root / "site" / "data" / "lakes.geojson")
-    trips, skipped = find_trips(Path(args[0]).expanduser(), lakes)
-    print(f"found {len(trips)} trips on catalog lakes")
+    skate_ids = load_skate_ids(root / "skate_overrides.local.yaml")
+    trips, skipped = find_trips(Path(args[0]).expanduser(), lakes, skate_ids)
+    print(f"found {len(trips)} trips on catalog lakes "
+          f"({sum(t.activity in SKATE_ACTIVITIES for t in trips)} skating)")
     for s in skipped:
         print(f"  skipped {s}")
 

@@ -82,6 +82,28 @@ def test_find_trips_skips_summer_and_unknown_files(tmp_path):
     assert skipped == []
 
 
+def test_find_trips_applies_skate_overrides(tmp_path):
+    # the watch saved a skate as a hike; it was retyped on Strava afterwards
+    _write(tmp_path, "2025-02-08_Hike_i7.gpx", _gpx(_loop_on_lake(30)))
+    _write(tmp_path, "2025-02-09_Hike_i8.gpx", _gpx(_loop_on_lake(30, start=T0 + timedelta(days=1))))
+    trips, _ = skatelog.find_trips(tmp_path, [LAKE], skate_ids={"i7"})
+    assert sorted((t.day, t.activity) for t in trips) == [
+        (date(2025, 2, 8), "IceSkate"), (date(2025, 2, 9), "Hike")]
+
+
+def test_load_skate_ids(tmp_path):
+    p = tmp_path / "skate_overrides.local.yaml"
+    assert skatelog.load_skate_ids(p) == set()
+    p.write_text("ice_skate:\n  - i7  # 2025-02-08 Test Lake\n  - 8\n")
+    assert skatelog.load_skate_ids(p) == {"i7", "8"}
+
+
+def test_file_id():
+    assert skatelog.file_id("2025-02-08_Hike_i194830179.fit.gz") == "i194830179"
+    assert skatelog.file_id("2025-02-08_Hike_i1.gpx") == "i1"
+    assert skatelog.file_id("Lunch_Workout.gpx") is None
+
+
 def test_find_trips_reports_unreadable_files(tmp_path):
     _write(tmp_path, "2025-02-08_IceSkate_i1.gpx", "<not xml")
     trips, skipped = skatelog.find_trips(tmp_path, [LAKE])
