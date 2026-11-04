@@ -22,6 +22,7 @@ class FiltersCfg:
     min_area_acres: float
     max_road_miles: float
     max_trail_miles: float
+    min_area_acres_at_road: float
 
 
 @dataclass(frozen=True)
@@ -129,7 +130,8 @@ def load_config(path: Path) -> Config:
     return Config(
         region=RegionCfg(bbox=tuple(float(x) for x in bbox)),
         filters=_section(raw, "filters", FiltersCfg,
-                         dict(min_area_acres=float, max_road_miles=float, max_trail_miles=float)),
+                         dict(min_area_acres=float, max_road_miles=float, max_trail_miles=float,
+                              min_area_acres_at_road=float)),
         ice=_section(raw, "ice", IceCfg, dict(ashton_h=float, skate_cm=float, open_cm=float,
                                                          water_start_c=float)),
         snow=_section(raw, "snow", SnowCfg, dict(cover_cm=float)),

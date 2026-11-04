@@ -5,7 +5,7 @@ from pathlib import Path
 import osm2geojson
 import pytest
 
-from wildice.catalog import build_catalog, load_catalog, write_catalog
+from wildice.catalog import build_catalog, load_catalog, min_acres_near_road, write_catalog
 from wildice.config import load_config
 
 FIX = Path(__file__).parent / "fixtures"
@@ -13,9 +13,9 @@ FIX = Path(__file__).parent / "fixtures"
 
 @pytest.fixture
 def cfg():
-    # The fixture lakes are 40+ acres, so test with the old 20-acre minimum.
+    # The fixture lakes are 40+ acres, so test with the old flat 20-acre minimum.
     c = load_config(Path(__file__).parent.parent / "config.yaml")
-    return replace(c, filters=replace(c.filters, min_area_acres=20))
+    return replace(c, filters=replace(c.filters, min_area_acres=20, min_area_acres_at_road=20))
 
 
 def _feats(kind):
@@ -103,3 +103,33 @@ def test_catalog_roundtrip_null_interior(tmp_path):
     write_catalog(lakes, p)
     assert load_catalog(p) == lakes
 
+
+
+def test_min_acres_slides_with_road_distance(cfg):
+    f = replace(cfg.filters, min_area_acres=50, min_area_acres_at_road=5, max_road_miles=2)
+    assert min_acres_near_road(0.0, f) == pytest.approx(5)
+    assert min_acres_near_road(1.0, f) == pytest.approx(27.5)
+    assert min_acres_near_road(2.0, f) == pytest.approx(50)
+    assert min_acres_near_road(5.0, f) == pytest.approx(50)
+
+
+def _square(lake_id, lon0, side_deg):
+    # side_deg of latitude; longitude side doubled for ~square at 61 N
+    ring = [[lon0, 61.0], [lon0 + 2 * side_deg, 61.0], [lon0 + 2 * side_deg, 61.0 + side_deg],
+            [lon0, 61.0 + side_deg], [lon0, 61.0]]
+    return {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [ring]},
+            "properties": {"type": "way", "id": lake_id, "tags": {"natural": "water"}}}
+
+
+def test_small_lake_kept_only_when_close_to_road(cfg):
+    c = replace(cfg, filters=replace(cfg.filters, min_area_acres=50, min_area_acres_at_road=5))
+    roads = _feats("roads")
+    road_lon = -149.0  # the fixture road runs north-south along this line
+    small_near = _square(21, road_lon + 0.0002, 0.0018)   # ~10 acres, beside the road
+    by_road = {l.id for l in build_catalog([small_near], roads, [], c)}
+    assert by_road == {"w21"}, by_road
+    lake = build_catalog([small_near], roads, [], c)[0]
+    assert 8 < lake.area_acres < 20 and lake.road_mi < 0.3
+    # same lake far from any road is dropped
+    small_far = _square(22, -148.80, 0.0018)
+    assert build_catalog([small_far], roads, [], c) == []

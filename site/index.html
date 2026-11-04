@@ -12,6 +12,11 @@
 <header id="bar">
   <h1>Wild Ice</h1>
   <label class="toggle"><input type="checkbox" id="only-skate"> Only skateable / freezing</label>
+  <div class="search" role="search">
+    <input id="q" type="search" placeholder="Find a lake" autocomplete="off" enterkeyhint="search"
+      aria-label="Find a lake by name" role="combobox" aria-expanded="false" aria-controls="results" aria-autocomplete="list">
+    <ul id="results" role="listbox" hidden></ul>
+  </div>
 </header>
 <div id="map"></div>
 <div id="msg" hidden></div>

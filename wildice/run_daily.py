@@ -24,6 +24,7 @@ from wildice.models import (
     ImageryStats, Label, Lake, S1Obs, Score, SourceUnavailable, SurfaceClass,
 )
 from wildice.prefs import load_prefs
+from wildice.reports import apply_report, ice_with_report, load_reports
 from wildice.scenes import Seen, load_seen, new_sensors, save_seen
 from wildice.score import score_lake, valid_s2_classes
 from wildice.shortlist import shortlist
@@ -321,6 +322,7 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
     lake_list = load_catalog(site_data / "lakes.geojson")
     lakes = {lake.id: lake for lake in lake_list}
     pinned, hidden = load_prefs(cfg, root / "prefs")
+    reports = load_reports(root / "ratings", run_date, season_start(run_date, cfg))
     budget = Budget(state / "usage.json", cfg.imagery.monthly_request_budget,
                     today=lambda: run_date)
     baselines_path = state / "baselines.json"
@@ -340,9 +342,9 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
         wx = update_cache(state / "weather", cell_points(lake_list), run_date, cfg, session)
         # earlier clearings this season count before today's imagery is in
         traces: dict[str, list] = {lake.id: [] for lake in lake_list}
-        ice0 = {lake.id: run_ice_model(wx[cell_of(lake.lat, lake.lon)], cfg,
-                                       s2_history.get(lake.id), lake.area_acres,
-                                       traces[lake.id])
+        ice0 = {lake.id: ice_with_report(wx[cell_of(lake.lat, lake.lon)], cfg,
+                                         s2_history.get(lake.id), lake.area_acres,
+                                         reports.get(lake.id), traces[lake.id])
                 for lake in lake_list}
 
         if client is None:
@@ -376,11 +378,14 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
         window_start = run_date - timedelta(days=cfg.imagery.lookback_days)
         for lake in lake_list:
             hist = s2_history.get(lake.id)
-            ice = (run_ice_model(wx[cell_of(lake.lat, lake.lon)], cfg, hist, lake.area_acres)
+            rep = reports.get(lake.id)
+            ice = (ice_with_report(wx[cell_of(lake.lat, lake.lon)], cfg, hist, lake.area_acres,
+                                   rep)
                    if lake.id in imagery else ice0[lake.id])
             img = _with_saved_radar(imagery.get(lake.id), s1_history.get(lake.id, {}),
                                     window_start, run_date, ice, lake.id, baselines)
-            scores[lake.id] = score_lake(lake, ice, img, run_date, cfg, s2_history=hist)
+            sc = score_lake(lake, ice, img, run_date, cfg, s2_history=hist)
+            scores[lake.id] = apply_report(sc, rep, ice, hist or {}, run_date, cfg)
 
         if client is not None:
             _thumbnails(client, lakes, scores, prev_status, site_data / "thumbs", budget)

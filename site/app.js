@@ -1,7 +1,8 @@
 import {
-  buildRatingFile, buildPrefFile, enqueue, flushQueue, CREDS_KEY, QUEUE_KEY, RATINGS,
+  buildRatingFile, buildPrefFile, enqueue, flushQueue, CREDS_KEY, QUEUE_KEY,
 } from "./ratings.js";
 import { renderWeatherChart } from "./chart.js";
+import { searchLakes } from "./search.js";
 
 const STYLE = {
   open_water: { fill: "#3b82f6", line: "#1d4ed8", text: "Open water" },
@@ -19,7 +20,16 @@ const KEY = [
   ["open_water", "No ice yet"],
 ];
 const SKATE_LABELS = new Set(["likely_black_ice", "freezing"]);
-const RATING_TEXT = { skated: "Skated", snow: "Snow", water: "Water", rough: "Rough" };
+// "How was it?" choices: map color they set right away (rough keeps the current one).
+const REPORT = {
+  skated: { text: "Skateable", label: "likely_black_ice" },
+  water: { text: "Open water", label: "open_water" },
+  snow: { text: "Snow on ice", label: "snow_covered" },
+  rough: { text: "Rough ice", label: null },
+};
+const REPORTED_KEY = "wildice.reported"; // lake id -> {day, rating, note}, until the next daily run
+const UNDO_MS = 5000;
+let pendingReport = null; // {id, rating, note, timer, before}
 
 const $ = (id) => document.getElementById(id);
 const store = (() => { try { return window.localStorage; } catch { return null; } })()
@@ -135,15 +145,127 @@ function zoomTo(id) {
 }
 
 function closePanel() {
+  commitReport();
   $("panel").hidden = true;
   if (location.hash.startsWith("#lake=")) history.replaceState(null, "", location.pathname + location.search);
 }
 
 function openLake(id, zoom) {
   if (!info(id)) return;
+  if (pendingReport && pendingReport.id !== id) commitReport();
   if (zoom) zoomTo(id);
   history.replaceState(null, "", "#lake=" + encodeURIComponent(id));
   renderPanel(id);
+}
+
+function todayLocal() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Anchorage", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+}
+
+function readReported() {
+  try { return JSON.parse(store.getItem(REPORTED_KEY) || "{}") || {}; } catch { return {}; }
+}
+
+// Show my own reports until a daily run newer than the report has picked them up.
+function applyReported(id, rep) {
+  const d = info(id);
+  if (!d || !rep) return;
+  const r = REPORT[rep.rating];
+  if (r && r.label) d.label = r.label;
+  if (rep.rating === "water") d.thickness_cm = 0;
+  d.reported = rep;
+}
+
+function overlayReported() {
+  const all = readReported();
+  for (const [id, rep] of Object.entries(all)) {
+    if (status.run_date && rep.day < status.run_date) { delete all[id]; continue; }
+    applyReported(id, rep);
+  }
+  try { store.setItem(REPORTED_KEY, JSON.stringify(all)); } catch { /* storage blocked */ }
+}
+
+function reportSection(id) {
+  const d = info(id);
+  const box = el("div", { class: "report" });
+  const p = pendingReport && pendingReport.id === id ? pendingReport : null;
+  if (p) {
+    const what = REPORT[p.rating].text;
+    if (p.timer) {
+      box.append(el("p", { class: "report-msg", text: "Reporting " + what + " for today" }),
+        el("div", { class: "row" },
+          el("button", { class: "act", text: "Undo", onclick: undoReport }),
+          el("button", { class: "act", text: "Add note", onclick: () => {
+            clearTimeout(p.timer); p.timer = null; p.noting = true; renderPanel(id);
+          } })));
+    } else if (p.noting) {
+      const note = el("input", { type: "text", placeholder: "What did you see?", "aria-label": "Note", maxlength: "200" });
+      const form = el("form", { class: "report-note" }, note,
+        el("button", { class: "act", type: "submit", text: "Send" }));
+      form.addEventListener("submit", (e) => { e.preventDefault(); p.note = note.value.trim(); commitReport(); });
+      box.append(el("p", { class: "report-msg", text: what + " - add a note" }), form);
+      setTimeout(() => note.focus(), 0);
+    }
+    return box;
+  }
+  const mine = d.reported && d.reported.day === todayLocal() ? d.reported : null;
+  box.append(el("p", { class: "report-head", text: mine
+    ? "You reported " + REPORT[mine.rating].text.toLowerCase() + " today. Changed?"
+    : "How is it? Tap to report" }));
+  const grid = el("div", { class: "report-grid" });
+  for (const [r, c] of Object.entries(REPORT)) {
+    const sw = el("i", { class: "sw" });
+    const st = STYLE[c.label || "unknown"];
+    sw.style.background = st.fill;
+    sw.style.borderColor = st.line;
+    grid.append(el("button", {
+      class: "act rep" + (mine && mine.rating === r ? " sel" : ""), type: "button",
+      onclick: () => startReport(id, r),
+    }, sw, c.text));
+  }
+  box.append(grid);
+  return box;
+}
+
+function startReport(id, rating) {
+  if (pendingReport) commitReport();
+  const d = info(id);
+  pendingReport = { id, rating, note: "", before: { label: d.label, reported: d.reported, thickness_cm: d.thickness_cm } };
+  applyReported(id, { day: todayLocal(), rating, note: "" });
+  build();
+  pendingReport.timer = setTimeout(commitReport, UNDO_MS);
+  renderPanel(id);
+}
+
+function undoReport() {
+  const p = pendingReport;
+  if (!p) return;
+  clearTimeout(p.timer);
+  pendingReport = null;
+  const d = info(p.id);
+  d.label = p.before.label;
+  d.reported = p.before.reported;
+  d.thickness_cm = p.before.thickness_cm;
+  build();
+  renderPanel(p.id, "Report undone");
+}
+
+// Save the pending report (also called when the panel closes or another lake opens).
+function commitReport() {
+  const p = pendingReport;
+  if (!p) return;
+  clearTimeout(p.timer);
+  pendingReport = null;
+  const rep = { day: todayLocal(), rating: p.rating, note: p.note };
+  const all = readReported();
+  all[p.id] = rep;
+  try { store.setItem(REPORTED_KEY, JSON.stringify(all)); } catch { /* storage blocked */ }
+  applyReported(p.id, rep);
+  const show = currentId === p.id && !$("panel").hidden;
+  act(p.id, () => buildRatingFile(p.id, p.rating, p.note, new Date()),
+    "Reported " + REPORT[p.rating].text.toLowerCase(), null, show);
 }
 
 function renderPanel(id, statusText) {
@@ -161,6 +283,7 @@ function renderPanel(id, statusText) {
   panel.append(el("div", {}, chip, el("span", { class: "meta", text: "  " + d.confidence + " confidence" })));
   panel.append(el("p", { class: "meta", text: d.reason }));
   if (d.warning) panel.append(el("p", { class: "warn", text: d.warning }));
+  panel.append(reportSection(id));
   if (d.thickness_cm != null) {
     panel.append(el("p", { class: "est", text: "est. " + d.thickness_cm + " cm" }));
     panel.append(el("p", { class: "disc", text: status.disclaimer || "Rough estimate only — check ice yourself." }));
@@ -191,16 +314,6 @@ function renderPanel(id, statusText) {
   if (typeof d.browser_url === "string" && d.browser_url.startsWith("https://")) {
     panel.append(el("a", { class: "cop", href: d.browser_url, target: "_blank", rel: "noopener", text: "Open in Copernicus Browser" }));
   }
-
-  const note = el("input", { type: "text", placeholder: "Optional note", "aria-label": "Note", maxlength: "200" });
-  const row = el("div", { class: "row" });
-  for (const r of RATINGS) {
-    row.append(el("button", {
-      class: "act", text: RATING_TEXT[r],
-      onclick: () => act(id, () => buildRatingFile(id, r, note.value.trim(), new Date()), "Rated: " + RATING_TEXT[r]),
-    }));
-  }
-  panel.append(el("p", { class: "meta", text: "How was it?" }), row, note);
 
   const prow = el("div", { class: "row" });
   prow.append(el("button", {
@@ -261,16 +374,18 @@ function credsForm(onDone) {
 }
 
 // Queue a file, apply an optimistic local change, then try to upload.
-async function act(id, makeFile, doneText, mutate) {
+async function act(id, makeFile, doneText, mutate, show = true) {
   let file;
   try { file = makeFile(); } catch (e) { setStatus(e.message); return; }
   enqueue(store, file);
   if (mutate) { mutate(info(id)); build(); }
   const go = async () => {
-    renderPanel(id, "Saving...");
+    if (show) renderPanel(id, "Saving...");
     await flush();
     const left = pending();
-    setStatus(left ? doneText + " - " + left + " waiting to upload (will retry)" : doneText + " - saved");
+    if (show && currentId === id) {
+      setStatus(left ? doneText + " - " + left + " waiting to upload (will retry)" : doneText + " - saved");
+    }
   };
   if (!getCreds()) {
     renderPanel(id, doneText + " - queued");
@@ -293,6 +408,59 @@ function showBanner() {
 function shortDay(iso) {
   const [y, m, dd] = iso.split("-").map(Number);
   return new Date(y, m - 1, dd).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function setupSearch() {
+  const input = $("q");
+  const list = $("results");
+  let hits = [];
+  let active = 0;
+  const close = () => { list.hidden = true; list.replaceChildren(); input.setAttribute("aria-expanded", "false"); };
+  const choose = (id) => {
+    input.value = "";
+    close();
+    input.blur();
+    if (!visible(id)) { $("only-skate").checked = false; applyFilter(); }
+    openLake(id, true);
+  };
+  const draw = () => {
+    list.replaceChildren();
+    if (!hits.length) {
+      list.append(el("li", { class: "none", text: "No lake by that name" }));
+    }
+    hits.forEach((h, i) => {
+      const d = info(h.id);
+      const st = STYLE[d.label] || STYLE.unknown;
+      const sw = el("i", { class: "sw" });
+      sw.style.background = st.fill;
+      sw.style.borderColor = st.line;
+      const li = el("li", { role: "option", id: "opt-" + i, "aria-selected": String(i === active) },
+        sw, el("span", { class: "nm", text: (d.pinned ? "★ " : "") + d.name }),
+        el("span", { class: "sub", text: st.text }));
+      li.addEventListener("mousedown", (e) => { e.preventDefault(); choose(h.id); });
+      list.append(li);
+    });
+    list.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+    input.setAttribute("aria-activedescendant", hits.length ? "opt-" + active : "");
+  };
+  const sizes = {};
+  for (const f of features) sizes[f.properties.id] = f.properties.area_acres;
+  input.addEventListener("input", () => {
+    const pool = {};
+    for (const [id, d] of Object.entries(status.lakes)) pool[id] = { name: d.name, area_acres: sizes[id] };
+    hits = searchLakes(pool, input.value);
+    active = 0;
+    if (input.value.trim()) draw(); else close();
+  });
+  input.addEventListener("keydown", (e) => {
+    if (list.hidden) return;
+    if (e.key === "ArrowDown") { active = Math.min(active + 1, hits.length - 1); draw(); e.preventDefault(); }
+    else if (e.key === "ArrowUp") { active = Math.max(active - 1, 0); draw(); e.preventDefault(); }
+    else if (e.key === "Enter" && hits[active]) { choose(hits[active].id); e.preventDefault(); }
+    else if (e.key === "Escape") close();
+  });
+  input.addEventListener("blur", close);
 }
 
 function addKey() {
@@ -355,6 +523,7 @@ async function main() {
   addKey();
   $("only-skate").addEventListener("change", applyFilter);
   window.addEventListener("hashchange", routeHash);
+  window.addEventListener("pagehide", commitReport); // don't lose a report in its undo window
   window.addEventListener("online", flush);
   flush();
   try {
@@ -364,7 +533,9 @@ async function main() {
     return;
   }
   showBanner();
+  overlayReported();
   build();
+  setupSearch();
   routeHash();
 }
 

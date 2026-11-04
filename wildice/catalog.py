@@ -36,6 +36,12 @@ def _plain(geom) -> dict:
     return json.loads(json.dumps(mapping(geom)))
 
 
+def min_acres_near_road(road_mi: float, f) -> float:
+    """Smallest lake kept at this distance from a road: grows linearly with distance."""
+    frac = min(1.0, max(0.0, road_mi / f.max_road_miles)) if f.max_road_miles > 0 else 1.0
+    return f.min_area_acres_at_road + (f.min_area_acres - f.min_area_acres_at_road) * frac
+
+
 def build_catalog(water: list[dict], roads: list[dict], trails: list[dict],
                   cfg: Config) -> list[Lake]:
     road_idx = LineIndex(_line_geoms(roads))
@@ -50,13 +56,16 @@ def build_catalog(water: list[dict], roads: list[dict], trails: list[dict],
         lake_id = _lake_id(feat)
         is_pinned = lake_id in pinned
         acres = area_acres(geom)
-        if acres < f.min_area_acres and not is_pinned:
+        smallest = min(f.min_area_acres, f.min_area_acres_at_road)
+        if acres < smallest and not is_pinned:
             continue
         road = road_idx.nearest_miles(geom)
         trail = trail_idx.nearest_miles(geom)
-        near = (road is not None and road <= f.max_road_miles) or \
-               (trail is not None and trail <= f.max_trail_miles)
-        if not near and not is_pinned:
+        near_road = (road is not None and road <= f.max_road_miles
+                     and acres >= min_acres_near_road(road, f))
+        near_trail = (trail is not None and trail <= f.max_trail_miles
+                      and acres >= f.min_area_acres)
+        if not (near_road or near_trail) and not is_pinned:
             continue
         inner = interior(geom, cfg.imagery.shore_buffer_m)
         if inner is None and not is_pinned:

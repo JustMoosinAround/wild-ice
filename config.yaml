@@ -1,7 +1,11 @@
 region:
   bbox: [59.3, -152.5, 62.8, -144.0]  # south, west, north, east
 filters:
+  # Smallest lake kept. Beside a road a small pond is worth a quick look, so the minimum
+  # slides from min_area_acres_at_road (0 mi) up to min_area_acres (max_road_miles).
+  # Trail-only lakes need min_area_acres.
   min_area_acres: 50
+  min_area_acres_at_road: 5
   max_road_miles: 2
   max_trail_miles: 1
 ice:

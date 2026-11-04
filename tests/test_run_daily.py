@@ -711,3 +711,18 @@ def test_chart_series_written_per_lake(tmp_repo, mocked):
     assert s["day"][-1] == RUN.isoformat() and len(s["day"]) == 35
     assert {len(v) for v in s.values()} == {35}
     assert s["t_mean"][-1] == -5.0 and s["water_c"][-1] == 0.0 and s["ice_cm"][-1] > 10
+
+
+def test_open_water_report_overrides_black_ice_and_alert(tmp_repo, mocked):
+    (tmp_repo / "ratings").mkdir()
+    (tmp_repo / "ratings/x-w1.json").write_text(json.dumps(
+        {"lake_id": "w1", "day": RUN.isoformat(), "rating": "water", "note": "wide open"}),
+        encoding="utf-8")
+    cold_weather(mocked)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    lake = status_of(tmp_repo)["lakes"]["w1"]
+    assert lake["label"] == "open_water"
+    assert lake["reason"].startswith("You reported open water on Nov 12")
+    assert ntfy_calls(mocked, "alerts-topic") == 0
+    series = json.loads((tmp_repo / f"site/data/series/w1.json").read_text(encoding="utf-8"))
+    assert series["ice_cm"][-1] == 0.0
