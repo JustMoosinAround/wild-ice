@@ -128,12 +128,44 @@ def test_merge_backtest_adds_once_and_keeps_existing(tmp_path):
     p.write_text(yaml.safe_dump({"observations": [
         {"lake_id": "w9", "day": "2024-12-01", "observed": "snow"}]}))
     trip = skatelog.Trip(date(2025, 2, 8), LAKE, "IceSkate", 30.0, 1.0, "f")
-    assert skatelog.merge_backtest(p, [trip, trip]) == 1
-    assert skatelog.merge_backtest(p, [trip]) == 0
+    assert skatelog.merge_backtest(p, [trip, trip]) == (1, 0)
+    assert skatelog.merge_backtest(p, [trip]) == (0, 0)
     obs = yaml.safe_load(p.read_text())["observations"]
     assert {"lake_id": "w9", "day": "2024-12-01", "observed": "snow"} in obs
     assert {"lake_id": "w1", "day": "2025-02-08", "observed": "skated"} in obs
     assert len(obs) == 2
+
+
+def test_merge_backtest_only_adds_skating_trips(tmp_path):
+    p = tmp_path / "backtest.local.yaml"
+    walk = skatelog.Trip(date(2025, 2, 8), LAKE, "Walk", 30.0, 1.0, "f")
+    ski = skatelog.Trip(date(2025, 2, 9), LAKE, "NordicSki", 30.0, 1.0, "g")
+    assert skatelog.merge_backtest(p, [walk, ski]) == (0, 0)
+    assert yaml.safe_load(p.read_text())["observations"] == []
+
+
+def test_merge_backtest_drops_skated_rows_from_non_skating_trips(tmp_path):
+    # older versions logged every lake trip as skated
+    p = tmp_path / "backtest.local.yaml"
+    p.write_text(yaml.safe_dump({"observations": [
+        {"lake_id": "w1", "day": "2025-02-08", "observed": "skated"},  # walk only
+        {"lake_id": "w1", "day": "2025-02-09", "observed": "skated"},  # walk and skate
+        {"lake_id": "w1", "day": "2025-02-10", "observed": "snow"},    # walk, hand-written
+        {"lake_id": "w9", "day": "2025-02-08", "observed": "skated"},  # no track
+    ]}))
+    trips = [
+        skatelog.Trip(date(2025, 2, 8), LAKE, "Walk", 30.0, 1.0, "a"),
+        skatelog.Trip(date(2025, 2, 9), LAKE, "Walk", 30.0, 1.0, "b"),
+        skatelog.Trip(date(2025, 2, 9), LAKE, "IceSkate", 30.0, 1.0, "c"),
+        skatelog.Trip(date(2025, 2, 10), LAKE, "Walk", 30.0, 1.0, "d"),
+    ]
+    assert skatelog.merge_backtest(p, trips) == (0, 1)
+    obs = yaml.safe_load(p.read_text())["observations"]
+    assert obs == [
+        {"lake_id": "w1", "day": "2025-02-09", "observed": "skated"},
+        {"lake_id": "w1", "day": "2025-02-10", "observed": "snow"},
+        {"lake_id": "w9", "day": "2025-02-08", "observed": "skated"},
+    ]
 
 
 def test_reference_table_has_links_and_classes():

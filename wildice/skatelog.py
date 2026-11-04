@@ -10,7 +10,7 @@ lake, then asks Copernicus for Sentinel-2 numbers on that lake for a week either
 
 Writes, next to the repo (both gitignored, never commit them):
   skate_reference.local.md  table of trips, clear-sky looks and Copernicus Browser links
-  backtest.local.yaml       each trip added once as `observed: skated`
+  backtest.local.yaml       each IceSkate trip added once as `observed: skated`
 """
 from __future__ import annotations
 
@@ -44,6 +44,7 @@ MIN_MINUTES = 10         # time on one lake for a trip to count
 MIN_SHARE = 0.3          # ...and this share of the moving time (walk in, skate, walk out)
 MAX_GAP_S = 300          # longer gaps between points (pauses, lost signal) are not counted
 WINDOW_DAYS = 7          # satellite looks this many days either side of the trip
+SKATE_ACTIVITIES = {"IceSkate"}  # file-name types logged to the backtest as skated
 _NAME = re.compile(r"^(\d{4}-\d{2}-\d{2})_([A-Za-z]+)_")
 _SEMI = 180.0 / 2 ** 31  # FIT semicircles to degrees
 
@@ -220,14 +221,25 @@ def nearby_looks(client, trip: Trip, cfg: Config) -> list[Look]:
     return sorted(looks, key=lambda lk: lk.day)
 
 
-def merge_backtest(path: Path, trips: list[Trip]) -> int:
-    """Add each (lake, day) once as skated; returns how many were new."""
+def merge_backtest(path: Path, trips: list[Trip]) -> tuple[int, int]:
+    """Add each skating (lake, day) once as skated; returns (added, removed).
+
+    Other trips on a lake (walks, skis) say nothing about skateable ice. Older
+    versions logged them as skated, so those rows are removed again."""
     path = Path(path)
     doc = (yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else None) or {}
     obs = list(doc.get("observations") or [])
+    skates = [t for t in trips if t.activity in SKATE_ACTIVITIES]
+    skate_keys = {(t.lake.id, t.day.isoformat()) for t in skates}
+    other_keys = {(t.lake.id, t.day.isoformat()) for t in trips} - skate_keys
+    kept = [o for o in obs
+            if not (o.get("observed") == "skated"
+                    and (str(o.get("lake_id")), str(o.get("day"))) in other_keys)]
+    removed = len(obs) - len(kept)
+    obs = kept
     have = {(str(o.get("lake_id")), str(o.get("day"))) for o in obs}
     added = 0
-    for t in trips:
+    for t in skates:
         key = (t.lake.id, t.day.isoformat())
         if key in have:
             continue
@@ -237,7 +249,7 @@ def merge_backtest(path: Path, trips: list[Trip]) -> int:
     doc["observations"] = obs
     path.write_text("# Personal skating log. Gitignored: never commit.\n"
                     + yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
-    return added
+    return added, removed
 
 
 def reference_markdown(rows: list[tuple[Trip, list[Look] | None, str | None]]) -> str:
@@ -313,8 +325,9 @@ def main(argv: list[str] | None = None) -> int:
 
     out = root / "skate_reference.local.md"
     out.write_text(reference_markdown(rows), encoding="utf-8")
-    added = merge_backtest(root / "backtest.local.yaml", trips)
-    print(f"wrote {out.name}; added {added} new skated days to backtest.local.yaml")
+    added, removed = merge_backtest(root / "backtest.local.yaml", trips)
+    print(f"wrote {out.name}; backtest.local.yaml: added {added} skated days, "
+          f"removed {removed} logged from non-skating trips")
     return 0
 
 
