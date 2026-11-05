@@ -17,9 +17,13 @@ def display_name(lake: Lake) -> str:
     return lake.name or f"Unnamed lake ({lake.area_acres:.0f} ac)"
 
 
-def browser_url(lat: float, lon: float, day: date | None) -> str:
+BROWSER_DATASETS = {"s2": "S2_L2A_CDAS", "ls": "CDAS_L8_L9_LOTL1"}
+
+
+def browser_url(lat: float, lon: float, day: date | None, sensor: str = "s2") -> str:
     url = (f"https://browser.dataspace.copernicus.eu/?zoom=14&lat={lat}&lng={lon}"
-           "&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR")
+           f"&themeId=DEFAULT-THEME&datasetId={BROWSER_DATASETS[sensor]}"
+           "&layerId=1_TRUE_COLOR")
     if day is not None:
         url += (f"&dateMode=SINGLE&fromTime={day.isoformat()}T00:00:00.000Z"
                 f"&toTime={day.isoformat()}T23:59:59.999Z")
@@ -40,7 +44,8 @@ def build_status(lakes: list[Lake], scores: dict[str, Score], pinned: frozenset[
             "reason": sc.reason if sc else "no data",
             "thickness_cm": round(sc.thickness_cm) if sc else None,
             "last_clear_day": sc.last_clear_day.isoformat() if sc and sc.last_clear_day else None,
-            "browser_url": browser_url(lake.lat, lake.lon, sc.last_clear_day if sc else None),
+            "browser_url": browser_url(lake.lat, lake.lon, sc.last_clear_day if sc else None,
+                                       sc.last_clear_sensor if sc else "s2"),
             "thumb": f"thumbs/{lake.id}.png",
             "pinned": lake.id in pinned,
             "hidden": lake.id in hidden,

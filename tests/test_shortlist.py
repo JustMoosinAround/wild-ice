@@ -71,6 +71,12 @@ def test_browser_url_has_date():
     assert "toTime=2025-11-11T23:59:59.999Z" in url
     assert url.startswith("https://browser.dataspace.copernicus.eu/?zoom=14&lat=61")
     assert "fromTime" not in browser_url(61.0, -149.0, None)
+    assert "datasetId=S2_L2A_CDAS" in url
+
+
+def test_browser_url_for_landsat():
+    url = browser_url(61.0, -149.0, date(2025, 11, 11), "ls")
+    assert "datasetId=CDAS_L8_L9_LOTL1" in url and "layerId=1_TRUE_COLOR" in url
 
 
 def test_shortlist_excludes_hidden_even_if_pinned():

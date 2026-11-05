@@ -3,10 +3,13 @@ from pathlib import Path
 
 from wildice.config import load_config
 from wildice.models import (
-    Confidence, IceState, ImageryStats, Label, Lake, ResetEvent, ResetKind, S1Obs, S2Obs,
+    Confidence, IceState, ImageryStats, Label, Lake, LSObs, ResetEvent, ResetKind, S1Obs, S2Obs,
     SurfaceClass,
 )
-from wildice.score import classify_s2, s1_frozen, score_lake, valid_s2_classes
+from wildice.score import (
+    classify_ls, classify_s2, optical_classes, s1_frozen, score_lake, valid_ls_classes,
+    valid_s2_classes,
+)
 
 cfg = load_config(Path("config.yaml"))
 RUN = date(2026, 2, 10)  # outside the low-sun window
@@ -212,3 +215,65 @@ def test_todays_imagery_overrides_history_same_day():
     day = RUN - timedelta(days=1)
     s = score_lake(lake, ice(), img(1, WHITE), RUN, cfg, s2_history={day: SurfaceClass.DARK})
     assert s.label is Label.SNOW_COVERED
+
+
+# Landsat 8-9 -----------------------------------------------------------------
+
+def ls(days_ago, g, r, sw, temp_c, valid=.9):
+    return LSObs(RUN - timedelta(days=days_ago), valid, g, r, sw, temp_c)
+
+
+def test_classify_ls():
+    assert classify_ls(ls(0, .5, .5, .05, -12), cfg) is SurfaceClass.WHITE
+    assert classify_ls(ls(0, .1, .09, .01, -6), cfg) is SurfaceClass.DARK
+    assert classify_ls(ls(0, .1, .09, .01, 3), cfg) is SurfaceClass.WATER  # above freezing
+    assert classify_ls(ls(0, .25, .25, .1, -5), cfg) is SurfaceClass.GREY
+    assert classify_ls(ls(0, .1, .09, .01, -6, valid=.5), cfg) is None  # cloudy
+
+
+def test_ls_snow_threshold_is_its_own():
+    # 0.32 is below Sentinel-2's snow brightness but above Landsat's
+    assert classify_ls(ls(0, .32, .32, .02, -10), cfg) is SurfaceClass.WHITE
+
+
+def test_landsat_dark_look_gives_black_ice_and_names_landsat():
+    im = ImageryStats((), (), None, (ls(1, .1, .09, .01, -6),))
+    sc = score_lake(lake, ice(h=12), im, RUN, cfg)
+    assert sc.label is Label.LIKELY_BLACK_ICE
+    assert sc.last_clear_day == RUN - timedelta(days=1) and sc.last_clear_sensor == "ls"
+    assert "Landsat image" in sc.reason
+
+
+def test_recent_warm_dark_landsat_look_is_open_water():
+    im = ImageryStats((), (), None, (ls(2, .1, .09, .01, 3),))
+    sc = score_lake(lake, ice(h=12), im, RUN, cfg)
+    assert sc.label is Label.OPEN_WATER
+    assert "open water (above freezing)" in sc.reason
+
+
+def test_old_open_water_look_does_not_block_ice():
+    old = {RUN - timedelta(days=30): SurfaceClass.WATER}
+    sc = score_lake(lake, ice(h=12), None, RUN, cfg, ls_history=old)
+    assert sc.label is not Label.OPEN_WATER
+
+
+def test_sentinel2_wins_a_day_both_cameras_saw():
+    im = ImageryStats((S2Obs(RUN - timedelta(days=1), *WHITE),), (), None,
+                      (ls(1, .1, .09, .01, -6),))
+    sc = score_lake(lake, ice(h=12), im, RUN, cfg)
+    assert sc.label is Label.SNOW_COVERED and sc.last_clear_sensor == "s2"
+
+
+def test_newer_landsat_look_beats_older_sentinel2():
+    im = ImageryStats((S2Obs(RUN - timedelta(days=4), *WHITE),), (), None,
+                      (ls(1, .1, .09, .01, -6),))
+    sc = score_lake(lake, ice(h=12), im, RUN, cfg)
+    assert sc.label is Label.LIKELY_BLACK_ICE and sc.last_clear_sensor == "ls"
+
+
+def test_valid_ls_classes_and_optical_merge():
+    im = ImageryStats((), (), None, (ls(0, .1, .09, .01, -6), ls(1, .1, .09, .01, -6, valid=.1)))
+    assert valid_ls_classes(im, cfg) == {D: SurfaceClass.DARK}
+    assert optical_classes({D: SurfaceClass.WHITE}, {D: SurfaceClass.DARK,
+                                                     D - timedelta(1): SurfaceClass.GREY}) == {
+        D: SurfaceClass.WHITE, D - timedelta(1): SurfaceClass.GREY}

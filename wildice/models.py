@@ -24,6 +24,7 @@ class SurfaceClass(StrEnum):
     WHITE = "white"
     DARK = "dark"
     GREY = "grey"
+    WATER = "water"  # dark and above freezing on Landsat's thermal band
 
 
 class ResetKind(StrEnum):
@@ -85,6 +86,17 @@ class S2Obs:
 
 
 @dataclass(frozen=True)
+class LSObs:
+    """Landsat 8-9 look: top-of-atmosphere reflectance and thermal surface temperature."""
+    day: date
+    valid_fraction: float
+    b03: float  # green
+    b04: float  # red
+    b06: float  # shortwave infrared (1.6 um)
+    temp_c: float  # band 10 brightness temperature
+
+
+@dataclass(frozen=True)
 class S1Obs:
     day: date
     vv_db: float
@@ -95,6 +107,7 @@ class ImageryStats:
     s2: tuple[S2Obs, ...]
     s1: tuple[S1Obs, ...]
     s1_baseline_db: float | None
+    ls: tuple[LSObs, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -105,6 +118,7 @@ class Score:
     reason: str
     thickness_cm: float
     last_clear_day: date | None
+    last_clear_sensor: str = "s2"  # which camera gave last_clear_day: "s2" or "ls"
 
 
 class SourceUnavailable(Exception):

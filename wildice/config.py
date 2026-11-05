@@ -61,6 +61,9 @@ class ImageryCfg:
     max_minutes_per_run: float
     low_sun_start: str  # MM-DD
     low_sun_end: str  # MM-DD, may wrap the new year
+    ls_snow_brightness: float  # Landsat's own thresholds (top-of-atmosphere reflectance)
+    ls_dark_brightness: float
+    ls_open_water_c: float  # a dark Landsat look at or above this is open water
 
 
 @dataclass(frozen=True)
@@ -142,7 +145,8 @@ def load_config(path: Path) -> Config:
             snow_ndsi=float, snow_brightness=float, dark_brightness=float,
             s1_frozen_delta_db=float, lookback_days=int, monthly_request_budget=int,
             max_lakes_per_day=int, max_minutes_per_run=float,
-            low_sun_start=_mmdd, low_sun_end=_mmdd)),
+            low_sun_start=_mmdd, low_sun_end=_mmdd,
+            ls_snow_brightness=float, ls_dark_brightness=float, ls_open_water_c=float)),
         weather=_section(raw, "weather", WeatherCfg, dict(batch_pause_s=float)),
         site=_section(raw, "site", SiteCfg, dict(base_url=str)),
         season_start=str(_get(raw, "season_start")),

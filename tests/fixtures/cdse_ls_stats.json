@@ -1,0 +1,245 @@
+{
+  "data": [
+    {
+      "interval": {
+        "from": "2025-11-03T00:00:00Z",
+        "to": "2025-11-04T00:00:00Z"
+      },
+      "outputs": {
+        "valid": {
+          "bands": {
+            "B0": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 0.9,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            }
+          }
+        },
+        "surface": {
+          "bands": {
+            "B0": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 0.09,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            },
+            "B1": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 0.081,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            },
+            "B2": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 0.009,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            },
+            "B3": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 239.67000000000002,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            }
+          }
+        },
+        "dataMask": {
+          "bands": {
+            "B0": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 1.0,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "interval": {
+        "from": "2025-11-06T00:00:00Z",
+        "to": "2025-11-07T00:00:00Z"
+      },
+      "outputs": {
+        "valid": {
+          "bands": {
+            "B0": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 0.8,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            }
+          }
+        },
+        "surface": {
+          "bands": {
+            "B0": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 0.08,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            },
+            "B1": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 0.072,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            },
+            "B2": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 0.008,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            },
+            "B3": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 220.92,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            }
+          }
+        },
+        "dataMask": {
+          "bands": {
+            "B0": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 1.0,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "interval": {
+        "from": "2025-11-09T00:00:00Z",
+        "to": "2025-11-10T00:00:00Z"
+      },
+      "outputs": {
+        "valid": {
+          "bands": {
+            "B0": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 0.0,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            }
+          }
+        },
+        "surface": {
+          "bands": {
+            "B0": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 0.0,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            },
+            "B1": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 0.0,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            },
+            "B2": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 0.0,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            },
+            "B3": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 0.0,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            }
+          }
+        },
+        "dataMask": {
+          "bands": {
+            "B0": {
+              "stats": {
+                "min": 0.0,
+                "max": 1.0,
+                "mean": 1.0,
+                "stDev": 0.01,
+                "sampleCount": 40000,
+                "noDataCount": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "status": "OK"
+}

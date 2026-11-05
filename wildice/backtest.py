@@ -16,7 +16,7 @@ from wildice.icemodel import run_ice_model
 from wildice.imagery import CopernicusClient, fetch_imagery, s1_baseline
 from wildice.models import Confidence, Label, SourceUnavailable
 from wildice.prefs import load_prefs
-from wildice.score import score_lake, valid_s2_classes
+from wildice.score import optical_classes, score_lake, valid_ls_classes, valid_s2_classes
 from wildice.shortlist import shortlist
 from wildice.weather import cell_of, cell_points, fetch_daily, make_session, season_start
 
@@ -90,7 +90,9 @@ def run_backtest(obs_path: Path, root: Path, session, client) -> list[Row]:
                 base = (s1_baseline(client, lake, ice.freeze_up)
                         if ice.freeze_up is not None else None)
                 img = fetch_imagery(client, lake, day, cfg, base)
-                ice = run_ice_model(wx, cfg, valid_s2_classes(img, cfg), lake.area_acres)
+                ice = run_ice_model(wx, cfg, optical_classes(valid_s2_classes(img, cfg),
+                                                             valid_ls_classes(img, cfg)),
+                                    lake.area_acres)
             sc = score_lake(lake, ice, img, day, cfg)
         except SourceUnavailable as exc:
             rows.append(_error_row(lake_id, day, observed, str(exc)))

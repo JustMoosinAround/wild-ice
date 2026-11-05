@@ -6,7 +6,8 @@ Run on your own computer (your tracks and Copernicus login stay there):
 
 Reads every Oct-Apr activity file (.gpx / .fit, optionally .gz) named like
 `2025-02-08_IceSkate_i123.fit.gz`, keeps tracks that spend enough time on a catalog
-lake, then asks Copernicus for Sentinel-2 numbers on that lake for a week either side.
+lake, then asks Copernicus for Sentinel-2 and Landsat numbers on that lake for a week
+either side.
 
 Writes, next to the repo (both gitignored, never commit them):
   skate_reference.local.md  table of trips, clear-sky looks and Copernicus Browser links
@@ -39,7 +40,7 @@ from wildice.config import Config, load_config
 from wildice.geo import _project, _TO_AK
 from wildice.models import Lake, SourceUnavailable, SurfaceClass
 from wildice.publish import browser_url
-from wildice.score import classify_s2
+from wildice.score import classify_ls, classify_s2
 
 LOCAL_TZ = ZoneInfo("America/Anchorage")
 WINTER_MONTHS = {10, 11, 12, 1, 2, 3, 4}
@@ -72,6 +73,8 @@ class Look:
     cls: SurfaceClass
     brightness: float
     ndsi: float
+    sensor: str = "s2"           # "s2" Sentinel-2 or "ls" Landsat 8-9
+    temp_c: float | None = None  # Landsat surface temperature
 
 
 def parse_name(name: str) -> tuple[date, str] | None:
@@ -231,7 +234,8 @@ def find_trips(folder: Path, lakes: list[Lake], skate_ids: set[str] = frozenset(
 
 
 def nearby_looks(client, trip: Trip, cfg: Config) -> list[Look]:
-    """Clear Sentinel-2 looks at the lake within WINDOW_DAYS of the trip, oldest first."""
+    """Clear Sentinel-2 and Landsat looks at the lake within WINDOW_DAYS of the trip,
+    oldest first."""
     start = trip.day - timedelta(days=WINDOW_DAYS)
     end = trip.day + timedelta(days=WINDOW_DAYS)
     looks = []
@@ -242,7 +246,15 @@ def nearby_looks(client, trip: Trip, cfg: Config) -> list[Look]:
         denom = obs.b03 + obs.b11
         looks.append(Look(obs.day, cls, round((obs.b03 + obs.b04) / 2, 3),
                           round((obs.b03 - obs.b11) / denom, 3) if denom else 0.0))
-    return sorted(looks, key=lambda lk: lk.day)
+    for lobs in client.ls_stats(trip.lake.interior, start, end):
+        cls = classify_ls(lobs, cfg)
+        if cls is None:
+            continue
+        denom = lobs.b03 + lobs.b06
+        looks.append(Look(lobs.day, cls, round((lobs.b03 + lobs.b04) / 2, 3),
+                          round((lobs.b03 - lobs.b06) / denom, 3) if denom else 0.0,
+                          "ls", lobs.temp_c))
+    return sorted(looks, key=lambda lk: (lk.day, lk.sensor))
 
 
 def merge_backtest(path: Path, trips: list[Trip]) -> tuple[int, int]:
@@ -280,9 +292,9 @@ def reference_markdown(rows: list[tuple[Trip, list[Look] | None, str | None]]) -
     lines = [
         "# Skating reference (private, do not commit)",
         "",
-        f"Clear Sentinel-2 looks within {WINDOW_DAYS} days of each trip. "
+        f"Clear Sentinel-2 and Landsat looks within {WINDOW_DAYS} days of each trip. "
         "Brightness is the mean visible reflectance (dark ice is low); "
-        "NDSI is high for snow.",
+        "NDSI is high for snow. Landsat looks add the surface temperature.",
         "",
         "| Day | Lake | Activity | Min on lake | Clear looks |",
         "|---|---|---|---|---|",
@@ -295,8 +307,11 @@ def reference_markdown(rows: list[tuple[Trip, list[Look] | None, str | None]]) -
             cell = "none (cloudy or no imagery)"
         else:
             cell = "<br>".join(
-                f"[{lk.day.isoformat()}]({browser_url(trip.lake.lat, trip.lake.lon, lk.day)}) "
-                f"{lk.cls.value} (brightness {lk.brightness:.3f}, NDSI {lk.ndsi:.2f})"
+                f"[{lk.day.isoformat()}]"
+                f"({browser_url(trip.lake.lat, trip.lake.lon, lk.day, lk.sensor)}) "
+                + ("Landsat " if lk.sensor == "ls" else "")
+                + f"{lk.cls.value} (brightness {lk.brightness:.3f}, NDSI {lk.ndsi:.2f}"
+                + (f", {lk.temp_c:+.0f} °C" if lk.temp_c is not None else "") + ")"
                 for lk in looks)
         lines.append(f"| {trip.day.isoformat()} | {name} ({trip.lake.id}) | {trip.activity} "
                      f"| {trip.minutes:.0f} | {cell} |")

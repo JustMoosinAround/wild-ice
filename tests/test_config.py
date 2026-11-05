@@ -71,3 +71,10 @@ def test_weather_section_required(tmp_path):
     p.write_text(text)
     with pytest.raises(ConfigError, match="weather"):
         load_config(p)
+
+
+def test_landsat_keys():
+    cfg = load_config(Path("config.yaml"))
+    assert cfg.imagery.ls_dark_brightness == 0.15
+    assert cfg.imagery.ls_snow_brightness == 0.30
+    assert cfg.imagery.ls_open_water_c == 1.5

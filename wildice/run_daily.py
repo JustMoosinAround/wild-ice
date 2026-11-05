@@ -26,7 +26,7 @@ from wildice.models import (
 from wildice.prefs import load_prefs
 from wildice.reports import apply_report, ice_with_report, load_reports
 from wildice.scenes import Seen, load_seen, new_sensors, save_seen
-from wildice.score import score_lake, valid_s2_classes
+from wildice.score import optical_classes, score_lake, valid_ls_classes, valid_s2_classes
 from wildice.shortlist import shortlist
 from wildice.weather import cell_of, cell_points, make_session, season_start, update_cache
 
@@ -36,7 +36,7 @@ TIMEZONE = "America/Anchorage"
 OPS_TITLE = "Wild ice job failed"
 OPS_MARKER_ENV = "WILDICE_OPS_MARKER"  # file written after a successful ops push
 THUMB_LABELS = (Label.LIKELY_BLACK_ICE, Label.FREEZING)
-REQUESTS_PER_LAKE = 2  # at most one S2 + one S1 statistics request
+REQUESTS_PER_LAKE = 3  # at most one S2 + one S1 + one Landsat statistics request
 _clock = time.monotonic  # replaced in tests
 FATAL_CLIENT_STATUS = frozenset({401, 403, 429})  # auth / rate limit: stop the run
 
@@ -95,11 +95,11 @@ def _write_stale(site_data: Path, run_date: date) -> None:
     _write_json(site_data / "status.json", status)
 
 
-S2History = dict[str, dict[date, SurfaceClass]]
+S2History = dict[str, dict[date, SurfaceClass]]  # also used for Landsat classes
 
 
 def _load_s2_history(path: Path, start: date) -> S2History:
-    """Per-lake valid S2 classes this season; malformed or pre-season entries dropped."""
+    """Per-lake valid camera classes this season; malformed or pre-season entries dropped."""
     raw = _read_json(path)
     out: S2History = {}
     if not isinstance(raw, dict):
@@ -305,7 +305,7 @@ def _thumbnails(client, lakes: dict[str, Lake], scores: dict[str, Score], prev: 
             log.info("request budget exhausted; skipping thumbnails")
             return
         try:
-            png = client.truecolor_png(lake.interior, sc.last_clear_day)
+            png = client.truecolor_png(lake.interior, sc.last_clear_day, sc.last_clear_sensor)
         except SourceUnavailable as exc:  # cosmetic: keep the run going
             log.warning("thumbnail for %s failed: %s", lake_id, exc)
             return
@@ -331,6 +331,8 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
     prev_status = _read_json(site_data / "status.json")
     s2_history_path = state / "s2_history.json"
     s2_history = _load_s2_history(s2_history_path, season_start(run_date, cfg))
+    ls_history_path = state / "ls_history.json"
+    ls_history = _load_s2_history(ls_history_path, season_start(run_date, cfg))
     last_checked_path = state / "last_checked.json"
     last_checked = _load_last_checked(last_checked_path, season_start(run_date, cfg))
     seen_path = state / "seen_scenes.json"
@@ -343,7 +345,9 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
         # earlier clearings this season count before today's imagery is in
         traces: dict[str, list] = {lake.id: [] for lake in lake_list}
         ice0 = {lake.id: ice_with_report(wx[cell_of(lake.lat, lake.lon)], cfg,
-                                         s2_history.get(lake.id), lake.area_acres,
+                                         optical_classes(s2_history.get(lake.id),
+                                                         ls_history.get(lake.id)),
+                                         lake.area_acres,
                                          reports.get(lake.id), traces[lake.id])
                 for lake in lake_list}
 
@@ -373,19 +377,25 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
             if today:
                 s2_history[lake_id] = {**s2_history.get(lake_id, {}), **today}
         _save_s2_history(s2_history_path, s2_history)
+        for lake_id, img in imagery.items():
+            today = valid_ls_classes(img, cfg)
+            if today:
+                ls_history[lake_id] = {**ls_history.get(lake_id, {}), **today}
+        _save_s2_history(ls_history_path, ls_history)
 
         scores: dict[str, Score] = {}
         window_start = run_date - timedelta(days=cfg.imagery.lookback_days)
         for lake in lake_list:
-            hist = s2_history.get(lake.id)
+            hist = optical_classes(s2_history.get(lake.id), ls_history.get(lake.id))
             rep = reports.get(lake.id)
             ice = (ice_with_report(wx[cell_of(lake.lat, lake.lon)], cfg, hist, lake.area_acres,
                                    rep)
                    if lake.id in imagery else ice0[lake.id])
             img = _with_saved_radar(imagery.get(lake.id), s1_history.get(lake.id, {}),
                                     window_start, run_date, ice, lake.id, baselines)
-            sc = score_lake(lake, ice, img, run_date, cfg, s2_history=hist)
-            scores[lake.id] = apply_report(sc, rep, ice, hist or {}, run_date, cfg)
+            sc = score_lake(lake, ice, img, run_date, cfg, s2_history=s2_history.get(lake.id),
+                            ls_history=ls_history.get(lake.id))
+            scores[lake.id] = apply_report(sc, rep, ice, hist, run_date, cfg)
 
         if client is not None:
             _thumbnails(client, lakes, scores, prev_status, site_data / "thumbs", budget)

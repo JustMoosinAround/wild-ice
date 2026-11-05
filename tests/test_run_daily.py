@@ -11,7 +11,7 @@ import responses as responses_lib
 from shapely.geometry import box
 
 from wildice import run_daily
-from wildice.models import S1Obs, S2Obs, SourceUnavailable
+from wildice.models import LSObs, S1Obs, S2Obs, SourceUnavailable
 from wildice.scenes import Scene
 from wildice.run_daily import run
 from wildice.weather import ARCHIVE_URL, FORECAST_URL
@@ -88,15 +88,18 @@ def ntfy_bodies(rsps, topic):
 class FakeClient:
     """Stands in for CopernicusClient (Task 7 methods)."""
 
-    def __init__(self, s2=None, s1=None, fail=None, scenes=None, scenes_fail=None):
+    def __init__(self, s2=None, s1=None, fail=None, scenes=None, scenes_fail=None, ls=None):
         self.calls = []
         self.s2 = s2 if s2 is not None else [S2Obs(RUN - timedelta(days=1), 0.95, 0.05, 0.05, 0.02)]
         self.s1 = s1 if s1 is not None else []
+        self.ls = ls if ls is not None else []
         self.fail = fail
-        # default: one new photo and one new radar pass over the whole region yesterday
+        # default: one new photo from each camera and one radar pass over the whole
+        # region yesterday
         self.scene_list = scenes if scenes is not None else [
             Scene("s2", YESTERDAY_PASS, box(-153, 59, -143, 63)),
-            Scene("s1", YESTERDAY_PASS, box(-153, 59, -143, 63))]
+            Scene("s1", YESTERDAY_PASS, box(-153, 59, -143, 63)),
+            Scene("ls", YESTERDAY_PASS, box(-153, 59, -143, 63))]
         self.scenes_fail = scenes_fail
 
     def scenes(self, bbox, start, end):
@@ -117,8 +120,15 @@ class FakeClient:
             raise self.fail
         return list(self.s1)
 
-    def truecolor_png(self, geometry, day):
+    def ls_stats(self, geometry, start, end):
+        self.calls.append(("ls", start, end))
+        if self.fail:
+            raise self.fail
+        return list(self.ls)
+
+    def truecolor_png(self, geometry, day, sensor="s2"):
         self.calls.append(("png", day, day))
+        self.png_sensors = getattr(self, "png_sensors", []) + [sensor]
         return b"\x89PNG fake"
 
     def baseline_calls(self):
@@ -411,9 +421,9 @@ def _two_lakes(root):
 def test_imagery_paced_over_rest_of_month(tmp_repo, mocked):
     _two_lakes(tmp_repo)
     (tmp_repo / "state").mkdir()
-    # 38 left on Nov 12 with 19 days to go: 2 requests today -> one lake (the larger)
+    # 57 left on Nov 12 with 19 days to go: 3 requests today -> one lake (the larger)
     (tmp_repo / "state/usage.json").write_text(
-        json.dumps({"month": "2025-11", "used": 9000 - 38}), encoding="utf-8")
+        json.dumps({"month": "2025-11", "used": 9000 - 57}), encoding="utf-8")
     cold_weather(mocked)
     client = FakeClient()
     assert run(RUN, tmp_repo, ENV, session(), client) == 0
@@ -664,7 +674,8 @@ def test_no_new_scene_no_requests_and_label_kept(tmp_repo, mocked):
     cold_weather(mocked)
     assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
     seen = json.loads((tmp_repo / "state/seen_scenes.json").read_text(encoding="utf-8"))
-    assert seen == {"w1": {"s1": "2025-11-11T21:05:00+00:00", "s2": "2025-11-11T21:05:00+00:00"}}
+    assert seen == {"w1": {"ls": "2025-11-11T21:05:00+00:00", "s1": "2025-11-11T21:05:00+00:00",
+                           "s2": "2025-11-11T21:05:00+00:00"}}
     again = FakeClient()  # same scenes: nothing new
     assert run(RUN + timedelta(days=1), tmp_repo, ENV, session(), again) == 0
     assert _stats_calls(again) == []
@@ -726,3 +737,24 @@ def test_open_water_report_overrides_black_ice_and_alert(tmp_repo, mocked):
     assert ntfy_calls(mocked, "alerts-topic") == 0
     series = json.loads((tmp_repo / f"site/data/series/w1.json").read_text(encoding="utf-8"))
     assert series["ice_cm"][-1] == 0.0
+
+
+def test_landsat_look_saved_scored_and_thumbnailed(tmp_repo, mocked):
+    cold_weather(mocked)
+    day = RUN - timedelta(days=1)
+    client = FakeClient(s2=[], ls=[LSObs(day, 0.95, 0.09, 0.08, 0.01, -6.0)])
+    assert run(RUN, tmp_repo, ENV, session(), client) == 0
+    hist = json.loads((tmp_repo / "state/ls_history.json").read_text(encoding="utf-8"))
+    assert hist == {"w1": {day.isoformat(): "dark"}}
+    lake = status_of(tmp_repo)["lakes"]["w1"]
+    assert lake["label"] == "likely_black_ice"
+    assert "Landsat image" in lake["reason"]
+    assert "datasetId=CDAS_L8_L9_LOTL1" in lake["browser_url"]
+    assert client.png_sensors == ["ls"]
+
+
+def test_landsat_open_water_look_labels_open_water(tmp_repo, mocked):
+    cold_weather(mocked)
+    client = FakeClient(s2=[], ls=[LSObs(RUN - timedelta(days=1), 0.95, 0.09, 0.08, 0.01, 3.0)])
+    assert run(RUN, tmp_repo, ENV, session(), client) == 0
+    assert status_of(tmp_repo)["lakes"]["w1"]["label"] == "open_water"

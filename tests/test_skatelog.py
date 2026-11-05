@@ -6,7 +6,7 @@ import yaml
 
 from wildice import skatelog
 from wildice.config import load_config
-from wildice.models import Lake, S2Obs, SurfaceClass
+from wildice.models import Lake, LSObs, S2Obs, SurfaceClass
 
 REPO = Path(__file__).resolve().parent.parent
 CFG = load_config(REPO / "config.yaml")
@@ -119,9 +119,13 @@ def test_find_trips_uses_local_alaska_date(tmp_path):
 
 
 class FakeClient:
-    def __init__(self, s2):
+    def __init__(self, s2, ls=()):
         self.s2 = s2
+        self.ls = list(ls)
         self.calls = []
+
+    def ls_stats(self, geometry, start, end):
+        return [o for o in self.ls if start <= o.day <= end]
 
     def s2_stats(self, geometry, start, end):
         self.calls.append((start, end))
@@ -197,3 +201,15 @@ def test_reference_table_has_links_and_classes():
     text = skatelog.reference_markdown([(trip, looks, None)])
     assert "Test Lake" in text and "2025-02-08" in text and "dark" in text
     assert "browser.dataspace.copernicus.eu" in text and "2025-02-06" in text
+
+
+def test_nearby_looks_include_landsat_with_temperature():
+    day = date(2025, 2, 8)
+    client = FakeClient([], ls=[LSObs(day - timedelta(days=1), 0.95, 0.09, 0.08, 0.01, -6.0),
+                                LSObs(day + timedelta(days=2), 0.2, 0.5, 0.5, 0.05, -9.0)])
+    trip = skatelog.Trip(day, LAKE, "IceSkate", 30.0, 1.0, "f")
+    looks = skatelog.nearby_looks(client, trip, CFG)
+    assert [(lk.day, lk.cls, lk.sensor, lk.temp_c) for lk in looks] == [
+        (day - timedelta(days=1), SurfaceClass.DARK, "ls", -6.0)]
+    text = skatelog.reference_markdown([(trip, looks, None)])
+    assert "Landsat dark" in text and "-6 °C" in text and "CDAS_L8_L9_LOTL1" in text

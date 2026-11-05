@@ -32,6 +32,10 @@ class FakeClient:
         self.calls.append(("s1", start, end))
         return []
 
+    def ls_stats(self, geometry, start, end):
+        self.calls.append(("ls", start, end))
+        return []
+
 
 def _days(end, t_mean=-8.0, snow_last=0.0):
     out = []

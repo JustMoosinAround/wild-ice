@@ -12,7 +12,7 @@ from wildice.imagery import (
     fetch_imagery, resolution_for,
     s1_baseline,
 )
-from wildice.models import Lake, S1Obs, S2Obs, SourceUnavailable
+from wildice.models import Lake, LSObs, S1Obs, S2Obs, SourceUnavailable
 from wildice.weather import make_session
 
 FIX = Path(__file__).parent / "fixtures"
@@ -90,7 +90,8 @@ def test_s2_nan_intervals_are_skipped(client):
 
 
 @pytest.mark.parametrize("name,ids", [("s1_stats.js", ["vv"]),
-                                      ("s2_stats.js", ["reflectance", "valid"])])
+                                      ("s2_stats.js", ["reflectance", "valid"]),
+                                      ("ls_stats.js", ["surface", "valid"])])
 def test_evalscripts_declare_float32(name, ids):
     import re
     text = (Path(__file__).parents[1] / "wildice" / "evalscripts" / name).read_text(
@@ -258,10 +259,12 @@ def test_fetch_imagery_window_and_assembly(client):
     add_token()
     responses.add(responses.POST, STATS_URL, json=fixture("cdse_s2_stats.json"))
     responses.add(responses.POST, STATS_URL, json=fixture("cdse_s1_stats.json"))
+    responses.add(responses.POST, STATS_URL, json=fixture("cdse_ls_stats.json"))
     run = date(2025, 11, 14)
     stats = fetch_imagery(client, make_lake(), run, cfg, -18.5)
     assert len(stats.s2) == 2 and isinstance(stats.s2, tuple)
     assert len(stats.s1) == 2 and isinstance(stats.s1, tuple)
+    assert len(stats.ls) == 3 and isinstance(stats.ls, tuple)
     assert stats.s1_baseline_db == -18.5
     tr = json.loads(responses.calls[1].request.body)["aggregation"]["timeRange"]
     assert tr["from"] == "2025-10-31T00:00:00Z"  # 14 days back
@@ -519,6 +522,8 @@ def test_scenes_reads_both_collections_and_pages():
                 page = _catalog_page([_item("2025-11-10T21:05:00Z")], next_token=1)
             else:
                 page = _catalog_page([_item("2025-11-12T21:05:00.123Z")])
+        elif body["collections"] == ["landsat-ot-l1"]:
+            page = _catalog_page([_item("2025-11-12T21:02:00Z")])
         else:
             page = _catalog_page([_item("2025-11-11T03:00:00Z", "DV"),
                                   _item("2025-11-11T03:01:00Z", "DH")])  # other mode: skip
@@ -532,13 +537,14 @@ def test_scenes_reads_both_collections_and_pages():
         ("s2", datetime(2025, 11, 10, 21, 5, tzinfo=timezone.utc)),
         ("s2", datetime(2025, 11, 12, 21, 5, 0, 123000, tzinfo=timezone.utc)),
         ("s1", datetime(2025, 11, 11, 3, 0, tzinfo=timezone.utc)),
+        ("ls", datetime(2025, 11, 12, 21, 2, tzinfo=timezone.utc)),
     ]
     assert got[0].footprint.bounds == (-150.0, 60.0, -148.0, 62.0)
     first = bodies[0]
     assert first["bbox"] == [-152.5, 59.3, -144.0, 62.8]  # west, south, east, north
     assert first["datetime"] == "2025-10-29T00:00:00Z/2025-11-13T23:59:59Z"
     assert bodies[1]["next"] == 1
-    assert budget.remaining() == 97  # three catalog pages
+    assert budget.remaining() == 96  # four catalog pages
 
 
 @responses.activate
@@ -566,3 +572,26 @@ def test_fetch_imagery_only_requested_sensors():
     lake = Lake("w1", "X", 100, 1, None, 61.0, -150.0, GEOM, None)
     img = fetch_imagery(C(), lake, D2, cfg, None, sensors={"s1"})
     assert calls == ["s1"] and img.s2 == () and img.s1 == (S1Obs(D2, -12.0),)
+
+
+@responses.activate
+def test_ls_parse(client):
+    add_token()
+    responses.add(responses.POST, STATS_URL, json=fixture("cdse_ls_stats.json"))
+    obs = client.ls_stats(GEOM, D1, D2)
+    assert obs[0] == LSObs(date(2025, 11, 3), 0.9, 0.1, 0.09, 0.01, -6.85)
+    assert obs[1].temp_c == pytest.approx(3.0)
+    assert obs[2] == LSObs(date(2025, 11, 9), 0.0, 0.0, 0.0, 0.0, 0.0)  # all cloud
+    body = json.loads(responses.calls[1].request.body)
+    assert body["input"]["data"][0]["type"] == "landsat-ot-l1"
+    assert "BQA" in body["aggregation"]["evalscript"]
+
+
+@responses.activate
+def test_truecolor_png_from_landsat(client):
+    add_token()
+    responses.add(responses.POST, PROCESS_URL, body=b"\x89PNG-ls", content_type="image/png")
+    assert client.truecolor_png(GEOM, date(2025, 11, 3), "ls") == b"\x89PNG-ls"
+    body = json.loads(responses.calls[1].request.body)
+    assert body["input"]["data"][0]["type"] == "landsat-ot-l1"
+    assert "B02" in body["evalscript"]

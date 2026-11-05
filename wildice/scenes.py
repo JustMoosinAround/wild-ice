@@ -1,7 +1,7 @@
 """Which lakes a new Sentinel scene has covered since their last satellite request.
 
-Sentinel-2 photographs a given lake every few days and Sentinel-1 radar passes
-less often, so asking for every lake's numbers every day mostly re-reads images
+Sentinel-2 and Landsat 8-9 photograph a given lake every few days and Sentinel-1
+radar passes less often, so asking for every lake's numbers every day mostly re-reads images
 already seen. The daily run asks the image catalog what arrived, then requests
 numbers only for lakes under a scene newer than the one they last got.
 """
@@ -19,7 +19,7 @@ from shapely.geometry.base import BaseGeometry
 
 from wildice.models import Lake
 
-SENSORS = ("s2", "s1")  # Sentinel-2 photo, Sentinel-1 radar
+SENSORS = ("s2", "s1", "ls")  # Sentinel-2 photo, Sentinel-1 radar, Landsat 8-9 photo
 
 # lake id -> sensor -> acquisition time of the newest scene already requested
 Seen = dict[str, dict[str, datetime]]
@@ -27,7 +27,7 @@ Seen = dict[str, dict[str, datetime]]
 
 @dataclass(frozen=True)
 class Scene:
-    sensor: str            # "s2" or "s1"
+    sensor: str            # "s2", "s1" or "ls"
     time: datetime         # acquisition time, UTC
     footprint: BaseGeometry
 

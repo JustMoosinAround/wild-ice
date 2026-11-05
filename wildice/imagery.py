@@ -1,4 +1,4 @@
-"""Per-lake Sentinel-2 / Sentinel-1 summary statistics from Copernicus Data Space.
+"""Per-lake Sentinel-2 / Sentinel-1 / Landsat 8-9 summary statistics from Copernicus Data Space.
 
 Assumed Statistical API response shape (no live credentials were available when
 this was written, so fixtures are hand-built to the documented format):
@@ -12,6 +12,7 @@ Band keys inside an output are B0, B1, ... in the order the evalscript returns
 them. Output ids and band order are defined by the scripts in wildice/evalscripts:
   s2_stats.js : "valid" B0; "reflectance" B0=B03, B1=B04, B2=B11 (each x valid flag)
   s1_stats.js : "vv" B0 (linear power)
+  ls_stats.js : "valid" B0; "surface" B0=B03, B1=B04, B2=B06, B3=B10 kelvin (each x valid)
 Days with no data come back as no interval (or a NaN mean); both are handled.
 """
 from __future__ import annotations
@@ -29,7 +30,7 @@ import requests
 from shapely.geometry import shape
 
 from wildice.config import Config
-from wildice.models import ImageryStats, Lake, S1Obs, S2Obs, SourceUnavailable
+from wildice.models import ImageryStats, Lake, LSObs, S1Obs, S2Obs, SourceUnavailable
 from wildice.scenes import SENSORS, Scene
 
 TOKEN_URL = ("https://identity.dataspace.copernicus.eu/auth/realms/CDSE/"
@@ -37,7 +38,12 @@ TOKEN_URL = ("https://identity.dataspace.copernicus.eu/auth/realms/CDSE/"
 STATS_URL = "https://sh.dataspace.copernicus.eu/api/v1/statistics"
 PROCESS_URL = "https://sh.dataspace.copernicus.eu/api/v1/process"
 CATALOG_URL = "https://sh.dataspace.copernicus.eu/api/v1/catalog/1.0.0/search"
-CATALOG_COLLECTIONS = {"s2": "sentinel-2-l2a", "s1": "sentinel-1-grd"}
+CATALOG_COLLECTIONS = {"s2": "sentinel-2-l2a", "s1": "sentinel-1-grd",
+                       "ls": "landsat-ot-l1"}
+# Process API collection and thumbnail script per camera
+TRUECOLOR = {"s2": ("sentinel-2-l2a", "truecolor.js"),
+             "ls": ("landsat-ot-l1", "truecolor_ls.js")}
+KELVIN = 273.15
 CATALOG_PAGE_SIZE = 100  # the catalog's maximum
 CATALOG_MAX_PAGES = 50   # a two-week window over the region is a few pages
 SOURCE = "copernicus"
@@ -272,7 +278,7 @@ class CopernicusClient:
 
     def scenes(self, bbox: tuple[float, float, float, float], start: date,
                end: date) -> list[Scene]:
-        """Sentinel-2 and Sentinel-1 scenes over bbox (south, west, north, east), start..end."""
+        """Sentinel-2, Sentinel-1 and Landsat 8-9 scenes over bbox (south, west, north, east), start..end."""
         south, west, north, east = bbox
         out: list[Scene] = []
         for sensor, collection in CATALOG_COLLECTIONS.items():
@@ -343,12 +349,37 @@ class CopernicusClient:
             raise SourceUnavailable(SOURCE, f"unexpected S1 response: {exc}") from exc
         return out
 
-    def truecolor_png(self, geometry: dict, day: date) -> bytes:
+    def ls_stats(self, geometry: dict, start: date, end: date) -> list[LSObs]:
+        rows = self._statistics("landsat-ot-l1", {"mosaickingOrder": "mostRecent"},
+                                _script("ls_stats.js"), geometry, start, end)
+        out: list[LSObs] = []
+        try:
+            for row in rows:
+                outputs = row["outputs"]
+                valid = _mean(outputs["valid"])
+                if valid is None:  # no data at all that day
+                    continue
+                if valid <= 0.0:  # data present but no valid pixels
+                    out.append(LSObs(self._day(row), 0.0, 0.0, 0.0, 0.0, 0.0))
+                    continue
+                surf = outputs["surface"]
+                means = [_mean(surf, b) for b in ("B0", "B1", "B2", "B3")]
+                if any(m is None for m in means):  # NaN band on a valid day
+                    continue
+                g, r, sw, kelvin = (m / valid for m in means)
+                out.append(LSObs(self._day(row), round(valid, 6), round(g, 6), round(r, 6),
+                                 round(sw, 6), round(kelvin - KELVIN, 2)))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise SourceUnavailable(SOURCE, f"unexpected Landsat response: {exc}") from exc
+        return out
+
+    def truecolor_png(self, geometry: dict, day: date, sensor: str = "s2") -> bytes:
+        collection, script = TRUECOLOR[sensor]
         body = {
             "input": {
                 "bounds": self._bounds(geometry),
                 "data": [{
-                    "type": "sentinel-2-l2a",
+                    "type": collection,
                     "dataFilter": {
                         "timeRange": {
                             "from": f"{day.isoformat()}T00:00:00Z",
@@ -360,7 +391,7 @@ class CopernicusClient:
             "output": {"width": THUMB_PX, "height": THUMB_PX,
                        "responses": [{"identifier": "default",
                                       "format": {"type": "image/png"}}]},
-            "evalscript": _script("truecolor.js"),
+            "evalscript": _script(script),
         }
         return self._post(PROCESS_URL, body).content
 
@@ -376,6 +407,7 @@ def fetch_imagery(client: CopernicusClient, lake: Lake, run_date: date, cfg: Con
         s2=tuple(client.s2_stats(lake.interior, start, run_date)) if "s2" in sensors else (),
         s1=tuple(client.s1_stats(lake.interior, start, run_date)) if "s1" in sensors else (),
         s1_baseline_db=baseline_db,
+        ls=tuple(client.ls_stats(lake.interior, start, run_date)) if "ls" in sensors else (),
     )
 
 

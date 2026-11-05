@@ -41,6 +41,12 @@ imagery:  # placeholders, tuned by backtest
   # confirm a clearing
   low_sun_start: "11-25"
   low_sun_end: "01-15"
+  # Landsat 8-9: matched to same-day Sentinel-2 looks on skated lakes (2018-2025).
+  # It shares snow_ndsi. Dark open water read +1.1 to +5 C on its thermal band,
+  # dark ice +0.7 C or colder.
+  ls_snow_brightness: 0.30
+  ls_dark_brightness: 0.15
+  ls_open_water_c: 1.5
 weather:
   batch_pause_s: 10  # pause between Open-Meteo requests
 site:
