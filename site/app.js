@@ -27,6 +27,8 @@ const REPORT = {
   snow: { text: "Snow on ice", label: "snow_covered" },
   rough: { text: "Rough ice", label: null },
 };
+// ?embed: view-only map for other websites. No reports, pins or GitHub token.
+const VIEW_ONLY = new URLSearchParams(location.search).has("embed");
 const REPORTED_KEY = "wildice.reported"; // lake id -> {day, rating, note}, until the next daily run
 const UNDO_MS = 5000;
 let pendingReport = null; // {id, rating, note, timer, before}
@@ -95,8 +97,9 @@ function lakeStyle(id) {
 }
 
 function visible(id) {
-  if (!$("only-skate").checked) return true;
   const d = info(id);
+  if (VIEW_ONLY && d && d.hidden) return false;
+  if (!$("only-skate").checked) return true;
   return !!d && SKATE_LABELS.has(d.label);
 }
 
@@ -283,7 +286,7 @@ function renderPanel(id, statusText) {
   panel.append(el("div", {}, chip, el("span", { class: "meta", text: "  " + d.confidence + " confidence" })));
   panel.append(el("p", { class: "meta", text: d.reason }));
   if (d.warning) panel.append(el("p", { class: "warn", text: d.warning }));
-  panel.append(reportSection(id));
+  if (!VIEW_ONLY) panel.append(reportSection(id));
   if (d.thickness_cm != null) {
     panel.append(el("p", { class: "est", text: "est. " + d.thickness_cm + " cm" }));
     panel.append(el("p", { class: "disc", text: status.disclaimer || "Rough estimate only — check ice yourself." }));
@@ -313,6 +316,10 @@ function renderPanel(id, statusText) {
   if (d.thumb) panel.append(el("img", { class: "thumb", src: "data/" + d.thumb, alt: d.name + " satellite thumbnail", loading: "lazy" }));
   if (typeof d.browser_url === "string" && d.browser_url.startsWith("https://")) {
     panel.append(el("a", { class: "cop", href: d.browser_url, target: "_blank", rel: "noopener", text: "Open in Copernicus Browser" }));
+  }
+  if (VIEW_ONLY) {
+    panel.hidden = false;
+    return;
   }
 
   const prow = el("div", { class: "row" });
@@ -448,7 +455,10 @@ function setupSearch() {
   for (const f of features) sizes[f.properties.id] = f.properties.area_acres;
   input.addEventListener("input", () => {
     const pool = {};
-    for (const [id, d] of Object.entries(status.lakes)) pool[id] = { name: d.name, area_acres: sizes[id] };
+    for (const [id, d] of Object.entries(status.lakes)) {
+      if (VIEW_ONLY && d.hidden) continue;
+      pool[id] = { name: d.name, area_acres: sizes[id] };
+    }
     hits = searchLakes(pool, input.value);
     active = 0;
     if (input.value.trim()) draw(); else close();
@@ -486,12 +496,15 @@ function addKey() {
       box.append(row);
     }
     const star = el("div", { class: "key-row" });
-    star.append(el("i", { class: "star", text: "★" }), el("span", { text: "Pinned lake" }));
-    const faded = el("div", { class: "key-row" });
-    const fsw = el("i", { class: "sw" });
-    fsw.style.cssText = "background:#3b82f6;border-color:#1d4ed8;opacity:.3";
-    faded.append(fsw, el("span", { text: "Faded: hidden lake" }));
-    box.append(star, faded);
+    star.append(el("i", { class: "star", text: "★" }), el("span", { text: VIEW_ONLY ? "Favorite lake" : "Pinned lake" }));
+    box.append(star);
+    if (!VIEW_ONLY) {
+      const faded = el("div", { class: "key-row" });
+      const fsw = el("i", { class: "sw" });
+      fsw.style.cssText = "background:#3b82f6;border-color:#1d4ed8;opacity:.3";
+      faded.append(fsw, el("span", { text: "Faded: hidden lake" }));
+      box.append(faded);
+    }
     L.DomEvent.disableClickPropagation(box);
     L.DomEvent.disableScrollPropagation(box);
     return box;
@@ -523,9 +536,13 @@ async function main() {
   addKey();
   $("only-skate").addEventListener("change", applyFilter);
   window.addEventListener("hashchange", routeHash);
-  window.addEventListener("pagehide", commitReport); // don't lose a report in its undo window
-  window.addEventListener("online", flush);
-  flush();
+  if (VIEW_ONLY) {
+    document.body.classList.add("embed");
+  } else {
+    window.addEventListener("pagehide", commitReport); // don't lose a report in its undo window
+    window.addEventListener("online", flush);
+    flush();
+  }
   try {
     await load();
   } catch {
@@ -533,7 +550,7 @@ async function main() {
     return;
   }
   showBanner();
-  overlayReported();
+  if (!VIEW_ONLY) overlayReported();
   build();
   setupSearch();
   routeHash();
