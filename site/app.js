@@ -495,10 +495,10 @@ function addKey() {
       row.append(sw, el("span", {}, el("b", { text: s.text }), el("br"), desc));
       box.append(row);
     }
-    const star = el("div", { class: "key-row" });
-    star.append(el("i", { class: "star", text: "★" }), el("span", { text: VIEW_ONLY ? "Favorite lake" : "Pinned lake" }));
-    box.append(star);
     if (!VIEW_ONLY) {
+      const star = el("div", { class: "key-row" });
+      star.append(el("i", { class: "star", text: "★" }), el("span", { text: "Pinned lake" }));
+      box.append(star);
       const faded = el("div", { class: "key-row" });
       const fsw = el("i", { class: "sw" });
       fsw.style.cssText = "background:#3b82f6;border-color:#1d4ed8;opacity:.3";
@@ -526,6 +526,8 @@ async function load() {
   ]);
   features = g.features;
   status = s;
+  // Pins are personal: the public map shows every lake the same way.
+  if (VIEW_ONLY) for (const d of Object.values(status.lakes)) d.pinned = false;
 }
 
 async function main() {
