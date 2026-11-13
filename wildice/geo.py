@@ -47,3 +47,19 @@ class LineIndex:
         g = _project(geom)
         idx = self._tree.nearest(g)
         return float(g.distance(self._lines[idx])) / _M_PER_MILE
+
+
+def longest_span_mi(geojson: dict) -> float:
+    """Length of the lake's long axis (longest side of its tightest enclosing rectangle)."""
+    from shapely.geometry import shape
+    rect = _project(shape(geojson)).minimum_rotated_rectangle
+    xs, ys = rect.exterior.coords.xy
+    sides = [((xs[i + 1] - xs[i]) ** 2 + (ys[i + 1] - ys[i]) ** 2) ** 0.5 for i in range(len(xs) - 1)]
+    return max(sides) / _M_PER_MILE
+
+
+def shoreline_index(geojson: dict) -> float:
+    """Shoreline development: perimeter over that of a circle of the same area (round = 1)."""
+    from shapely.geometry import shape
+    g = _project(shape(geojson))
+    return g.length / (2 * (np.pi * g.area) ** 0.5) if g.area > 0 else 1.0

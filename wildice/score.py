@@ -108,6 +108,15 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
                   and last_clear_day >= window_start)
     radar_frozen = bool(latest_s1 and not s2_in_window
                         and s1_frozen(latest_s1, imagery.s1_baseline_db, cfg))
+    # Crack lines on a dark lake: today's imagery only (history keeps classes, not texture).
+    cracked_day = None
+    for obs in (imagery.s2 if imagery else ()):
+        if (obs.texture is not None and obs.texture >= cfg.imagery.crack_texture
+                and classify_s2(obs, cfg) is SurfaceClass.DARK
+                and (cracked_day is None or obs.day > cracked_day)):
+            cracked_day = obs.day
+    if cracked_day != last_clear_day:  # a later clear look (e.g. white) wins
+        cracked_day = None
 
     snow = ice.snow_since_reset_cm
     cover = cfg.snow.cover_cm
@@ -141,7 +150,8 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
     # A dark S2 alone can be open water (radar disagrees) or low-sun shading.
     caveats: list[str] = []
     if label is Label.LIKELY_BLACK_ICE:
-        if latest_s1 is not None and s1_frozen(latest_s1, imagery.s1_baseline_db, cfg) is False:
+        if (latest_s1 is not None and cracked_day is None
+                and s1_frozen(latest_s1, imagery.s1_baseline_db, cfg) is False):
             caveats.append("radar does not confirm ice")
         if latest_cls is SurfaceClass.DARK and in_low_sun(last_clear_day, cfg):
             caveats.append("low sun")
@@ -162,7 +172,9 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
     else:
         parts.append("no snow recorded")
     image = "Landsat image" if sensor == "ls" else "image"
-    if latest_cls is SurfaceClass.WATER:
+    if cracked_day is not None:
+        parts.append(f"crack lines on {_fmt(cracked_day)} image")
+    elif latest_cls is SurfaceClass.WATER:
         parts.append(f"open water (above freezing) on {_fmt(last_clear_day)} {image}")
     elif latest_cls is SurfaceClass.DARK:
         parts.append(f"dark on {_fmt(last_clear_day)} {image}")

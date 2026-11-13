@@ -1,0 +1,78 @@
+from dataclasses import replace
+from datetime import date, timedelta
+from pathlib import Path
+
+import pytest
+
+from wildice.config import load_config
+from wildice.geo import longest_span_mi, shoreline_index
+from wildice.hazards import ridge_note
+from wildice.models import DayWeather, IceState, Lake
+
+CFG = load_config(Path(__file__).resolve().parent.parent / "config.yaml")
+RUN = date(2026, 11, 13)
+
+
+def _box(w_deg, h_deg, lon0=-149.5, lat0=61.0):
+    return {"type": "Polygon", "coordinates": [[[lon0, lat0], [lon0 + w_deg, lat0],
+                                                 [lon0 + w_deg, lat0 + h_deg],
+                                                 [lon0, lat0 + h_deg], [lon0, lat0]]]}
+
+
+# ~2.4 mi east-west (0.07 deg lon at 61 N), ~0.4 mi north-south
+BIG = Lake("w1", "Big", 600, 0.1, None, 61.0, -149.5, _box(0.07, 0.006), None)
+SMALL = Lake("w2", "Small", 40, 0.1, None, 61.0, -149.5, _box(0.01, 0.004), None)
+STAR = {"type": "Polygon", "coordinates": [[[0, 0], [4, 1], [5, 5], [6, 1], [10, 0], [6, -1],
+                                             [5, -5], [4, -1], [0, 0]]]}
+
+
+def _ice(cm=8.0):
+    return IceState(100, cm, RUN - timedelta(days=10), None, 0.0, None, ())
+
+
+def _days(means, gust=10.0):
+    start = RUN - timedelta(days=len(means) - 1)
+    return [DayWeather(start + timedelta(days=i), m - 3, m + 3, m, 0.0, 0.0, gust)
+            for i, m in enumerate(means)]
+
+
+def test_span_and_shape():
+    assert longest_span_mi(BIG.interior) == pytest.approx(2.35, rel=0.05)
+    assert longest_span_mi(SMALL.interior) < 0.5
+    assert shoreline_index(_box(0.01, 0.005)) < 1.3
+    assert shoreline_index(STAR) > 1.5
+
+
+def test_warm_up_after_cold_spell_on_big_lake():
+    days = _days([-5, -15, -18, -16, -14, -6, -3, -2])
+    note = ridge_note(BIG, days, _ice(), RUN, CFG)
+    assert note is not None and "pressure ridges likely" in note and "2.3 mi" in note
+
+
+def test_no_warning_for_small_lake_steady_cold_or_open_water():
+    warm_up = _days([-5, -15, -18, -16, -14, -6, -3, -2])
+    assert ridge_note(SMALL, warm_up, _ice(), RUN, CFG) is None
+    assert ridge_note(BIG, _days([-12] * 8), _ice(), RUN, CFG) is None
+    assert ridge_note(BIG, warm_up, _ice(0.0), RUN, CFG) is None
+
+
+def test_old_warm_up_has_passed():
+    days = _days([-18, -16, -5, -3, -12, -12, -12, -12])  # warmed 5 days ago, cold since
+    assert ridge_note(BIG, days, _ice(), RUN, CFG) is None
+
+
+def test_windy_thaw_warns_ridges_may_be_open():
+    days = _days([-10, -10, -10, -10, -10, -10, 2, 3], gust=45.0)
+    note = ridge_note(BIG, days, _ice(25.0), RUN, CFG)
+    assert note is not None and "open water" in note
+
+
+def test_points_and_bays_mentioned():
+    lake = Lake("w3", "Star", 900, 0.1, None, 61.0, -149.5,
+                {"type": "Polygon", "coordinates": [[[-149.5 + x * 0.008, 61.0 + y * 0.002]
+                                                     for x, y in STAR["coordinates"][0]]]}, None)
+    cfg = replace(CFG, ridges=replace(CFG.ridges, points_index=2.0))
+    days = _days([-5, -15, -18, -16, -14, -6, -3, -2])
+    note = ridge_note(lake, days, _ice(), RUN, cfg)
+    assert note is not None and "points and bays" in note
+    assert "points and bays" not in ridge_note(BIG, days, _ice(), RUN, cfg)

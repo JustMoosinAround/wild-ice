@@ -1,6 +1,8 @@
 """Once-a-day job: weather -> ice model -> imagery -> scores -> site data + alert."""
 from __future__ import annotations
 
+from dataclasses import replace
+
 import argparse
 import calendar
 import json
@@ -24,6 +26,7 @@ from wildice.models import (
     ImageryStats, Label, Lake, S1Obs, Score, SourceUnavailable, SurfaceClass,
 )
 from wildice.prefs import load_prefs
+from wildice.hazards import ridge_note
 from wildice.reports import apply_report, ice_with_report, load_reports
 from wildice.scenes import Seen, load_seen, new_sensors, save_seen
 from wildice.score import optical_classes, score_lake, valid_ls_classes, valid_s2_classes
@@ -395,7 +398,9 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
                                     window_start, run_date, ice, lake.id, baselines)
             sc = score_lake(lake, ice, img, run_date, cfg, s2_history=s2_history.get(lake.id),
                             ls_history=ls_history.get(lake.id))
-            scores[lake.id] = apply_report(sc, rep, ice, hist, run_date, cfg)
+            sc = apply_report(sc, rep, ice, hist, run_date, cfg)
+            ridges = ridge_note(lake, wx[cell_of(lake.lat, lake.lon)], ice, run_date, cfg)
+            scores[lake.id] = replace(sc, reason=f"{sc.reason}; {ridges}") if ridges else sc
 
         if client is not None:
             _thumbnails(client, lakes, scores, prev_status, site_data / "thumbs", budget)

@@ -595,3 +595,31 @@ def test_truecolor_png_from_landsat(client):
     body = json.loads(responses.calls[1].request.body)
     assert body["input"]["data"][0]["type"] == "landsat-ot-l1"
     assert "B02" in body["evalscript"]
+
+
+@responses.activate
+def test_s2_texture_from_percentiles(client):
+    add_token()
+    data = fixture("cdse_s2_stats.json")
+    data["data"][0]["outputs"]["reflectance"]["bands"]["B0"]["stats"]["percentiles"] = {
+        "75.0": 0.040, "95.0": 0.085}
+    responses.add(responses.POST, STATS_URL, json=data)
+    obs = client.s2_stats(GEOM, D1, D2)
+    assert obs[0].texture == pytest.approx(0.045)
+    assert obs[1].texture is None  # no percentiles returned: unknown, not smooth
+    body = json.loads(responses.calls[1].request.body)
+    k = body["calculations"]["reflectance"]["statistics"]["B0"]["percentiles"]["k"]
+    assert k == [75, 95]
+
+
+@responses.activate
+def test_s2_falls_back_when_texture_request_refused(client):
+    add_token()
+    responses.add(responses.POST, STATS_URL, status=400, json={"error": "bad calculations"})
+    responses.add(responses.POST, STATS_URL, json=fixture("cdse_s2_stats.json"))
+    responses.add(responses.POST, STATS_URL, json=fixture("cdse_s2_stats.json"))
+    obs = client.s2_stats(GEOM, D1, D2)
+    assert obs[0].b03 == pytest.approx(0.051) and obs[0].texture is None
+    client.s2_stats(GEOM, D1, D2)  # later lakes skip the refused part straight away
+    bodies = [json.loads(c.request.body) for c in responses.calls[1:]]
+    assert ["calculations" in b for b in bodies] == [True, False, False]

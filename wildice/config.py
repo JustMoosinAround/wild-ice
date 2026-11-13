@@ -59,11 +59,21 @@ class ImageryCfg:
     monthly_request_budget: int
     max_lakes_per_day: int
     max_minutes_per_run: float
+    crack_texture: float  # S2Obs.texture at or above this on a dark image = crack lines
     low_sun_start: str  # MM-DD
     low_sun_end: str  # MM-DD, may wrap the new year
     ls_snow_brightness: float  # Landsat's own thresholds (top-of-atmosphere reflectance)
     ls_dark_brightness: float
     ls_open_water_c: float  # a dark Landsat look at or above this is open water
+
+
+@dataclass(frozen=True)
+class RidgesCfg:
+    min_span_mi: float      # lakes at least this long can grow pressure ridges
+    warmup_c: float         # daily-mean rise after a cold spell that triggers a warning
+    window_days: int        # how recent the warm-up or thaw must be
+    thaw_gust_kmh: float    # a thaw day this windy may open old ridges
+    points_index: float     # shoreline development index for "many points and bays"
 
 
 @dataclass(frozen=True)
@@ -84,6 +94,7 @@ class Config:
     snow: SnowCfg
     reset: ResetCfg
     imagery: ImageryCfg
+    ridges: RidgesCfg
     weather: WeatherCfg
     site: SiteCfg
     season_start: str
@@ -120,7 +131,7 @@ def load_config(path: Path) -> Config:
     if not isinstance(raw, dict):
         raise ConfigError("config is empty or not a mapping")
 
-    missing = [k for k in ("region", "filters", "ice", "snow", "reset", "imagery", "weather", "site",
+    missing = [k for k in ("region", "filters", "ice", "snow", "reset", "imagery", "ridges", "weather", "site",
                            "season_start", "pinned", "hidden") if k not in raw]
     if missing:
         raise ConfigError(f"missing config key(s): {', '.join(missing)}")
@@ -144,9 +155,12 @@ def load_config(path: Path) -> Config:
             min_valid_fraction=float, fresh_days=int, shore_buffer_m=float,
             snow_ndsi=float, snow_brightness=float, dark_brightness=float,
             s1_frozen_delta_db=float, lookback_days=int, monthly_request_budget=int,
-            max_lakes_per_day=int, max_minutes_per_run=float,
+            max_lakes_per_day=int, max_minutes_per_run=float, crack_texture=float,
             low_sun_start=_mmdd, low_sun_end=_mmdd,
             ls_snow_brightness=float, ls_dark_brightness=float, ls_open_water_c=float)),
+        ridges=_section(raw, "ridges", RidgesCfg, dict(
+            min_span_mi=float, warmup_c=float, window_days=int, thaw_gust_kmh=float,
+            points_index=float)),
         weather=_section(raw, "weather", WeatherCfg, dict(batch_pause_s=float)),
         site=_section(raw, "site", SiteCfg, dict(base_url=str)),
         season_start=str(_get(raw, "season_start")),

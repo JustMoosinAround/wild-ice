@@ -33,6 +33,9 @@ imagery:  # placeholders, tuned by backtest
   snow_brightness: 0.36
   dark_brightness: 0.155
   s1_frozen_delta_db: 3.0
+  # Bright streaks on a dark lake (cracks, lava lines, ridges) mean ice, not open water.
+  # Measured as p95 - p75 green reflectance; placeholder until backtest tunes it.
+  crack_texture: 0.02
   lookback_days: 14
   monthly_request_budget: 9000
   max_lakes_per_day: 150       # cap even when lots of the month's budget is left
@@ -47,6 +50,13 @@ imagery:  # placeholders, tuned by backtest
   ls_snow_brightness: 0.30
   ls_dark_brightness: 0.15
   ls_open_water_c: 1.5
+ridges:  # pressure-ridge warnings (lakeice.org); placeholders until we have reports
+  min_span_mi: 1.0
+  warmup_c: 8
+  window_days: 3
+  thaw_gust_kmh: 40
+  points_index: 2.5   # about the most convoluted quarter of big lakes (Kenai, Skilak)
+
 weather:
   batch_pause_s: 10  # pause between Open-Meteo requests
 site:

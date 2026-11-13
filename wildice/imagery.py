@@ -26,6 +26,8 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Callable
 
+import logging
+
 import requests
 from shapely.geometry import shape
 
@@ -46,6 +48,7 @@ TRUECOLOR = {"s2": ("sentinel-2-l2a", "truecolor.js"),
 KELVIN = 273.15
 CATALOG_PAGE_SIZE = 100  # the catalog's maximum
 CATALOG_MAX_PAGES = 50   # a two-week window over the region is a few pages
+log = logging.getLogger(__name__)
 SOURCE = "copernicus"
 CRS_4326 = "http://www.opengis.net/def/crs/EPSG/0/4326"
 TIMEOUT_S = 120
@@ -152,6 +155,24 @@ def _mean(output: dict, band: str = "B0") -> float | None:
     return None if math.isnan(value) else value
 
 
+# Bright streaks on dark ice (stress cracks, lava lines, ridges; lakeice.org) lift the
+# upper percentiles of green reflectance; open water stays even. Invalid pixels are 0
+# and sit below p75 on any day clear enough to classify (valid >= 0.7).
+S2_TEXTURE_CALC = {"reflectance": {"statistics": {"B0": {"percentiles": {"k": [75, 95]}}}}}
+
+
+def _texture(output: dict) -> float | None:
+    try:
+        pct = output["bands"]["B0"]["stats"].get("percentiles") or {}
+        by_k = {float(k): float(v) for k, v in pct.items()}
+        hi, lo = by_k.get(95.0), by_k.get(75.0)
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return None
+    if hi is None or lo is None or math.isnan(hi) or math.isnan(lo):
+        return None
+    return round(hi - lo, 6)
+
+
 class CopernicusClient:
     def __init__(self, client_id: str, client_secret: str, session: requests.Session,
                  budget: Budget | None = None,
@@ -249,7 +270,8 @@ class CopernicusClient:
         return {"geometry": geometry, "properties": {"crs": CRS_4326}}
 
     def _statistics(self, collection: str, data_filter: dict, evalscript: str,
-                    geometry: dict, start: date, end: date) -> list[dict]:
+                    geometry: dict, start: date, end: date,
+                    calculations: dict | None = None) -> list[dict]:
         body = {
             "input": {
                 "bounds": self._bounds(geometry),
@@ -263,6 +285,8 @@ class CopernicusClient:
                 "resolution": {"x": resolution_for(geometry), "y": resolution_for(geometry)},
             },
         }
+        if calculations:
+            body["calculations"] = calculations
         resp = self._post(STATS_URL, body)
         try:
             data = resp.json()["data"]
@@ -311,8 +335,20 @@ class CopernicusClient:
         return out
 
     def s2_stats(self, geometry: dict, start: date, end: date) -> list[S2Obs]:
-        rows = self._statistics("sentinel-2-l2a", {"mosaickingOrder": "mostRecent"},
-                                _script("s2_stats.js"), geometry, start, end)
+        args = ("sentinel-2-l2a", {"mosaickingOrder": "mostRecent"}, _script("s2_stats.js"),
+                geometry, start, end)
+        if getattr(self, "texture_ok", True):
+            try:
+                rows = self._statistics(*args, calculations=S2_TEXTURE_CALC)
+            except SourceUnavailable as exc:
+                if exc.status != 400:
+                    raise
+                # The API refused the percentile request: carry on without texture.
+                log.warning("S2 texture request refused (%s); continuing without it", exc)
+                self.texture_ok = False
+                rows = self._statistics(*args)
+        else:
+            rows = self._statistics(*args)
         out: list[S2Obs] = []
         try:
             for row in rows:
@@ -328,7 +364,8 @@ class CopernicusClient:
                 if any(m is None for m in means):  # NaN band on a valid day
                     continue
                 bands = [round(m / valid, 6) for m in means]
-                out.append(S2Obs(self._day(row), round(valid, 6), *bands))
+                out.append(S2Obs(self._day(row), round(valid, 6), *bands,
+                                 texture=_texture(refl)))
         except (KeyError, TypeError, ValueError) as exc:
             raise SourceUnavailable(SOURCE, f"unexpected S2 response: {exc}") from exc
         return out
