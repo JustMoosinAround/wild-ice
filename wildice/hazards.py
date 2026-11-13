@@ -43,3 +43,20 @@ def ridge_note(lake: Lake, days: Sequence[DayWeather], ice: IceState, run_date: 
     if shoreline_index(lake.interior) >= r.points_index:
         notes.append("many points and bays: expect ridges off points and across bay mouths")
     return "; ".join(notes)
+
+
+def big_ice_note(lake: Lake, days: Sequence[DayWeather], ice: IceState, run_date: date,
+                 cfg: Config) -> str | None:
+    """lakeice.org "Big Ice": past a few miles, wind and currents make leads, open areas
+    and refrozen leads common, and strong wind can move whole sheets."""
+    r = cfg.ridges
+    if lake.interior is None or ice.thickness_cm < cfg.ice.open_cm:
+        return None
+    span = longest_span_mi(lake.interior)
+    if span < r.big_ice_mi:
+        return None
+    note = f"big ice ({span:.1f} mi): expect leads, open areas and thinly refrozen leads"
+    recent_from = run_date - timedelta(days=r.window_days - 1)
+    if any(recent_from <= d.day <= run_date and d.gust_kmh >= r.thaw_gust_kmh for d in days):
+        note += "; windy: sheets can shift and open new leads"
+    return note

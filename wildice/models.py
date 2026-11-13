@@ -83,8 +83,8 @@ class S2Obs:
     b03: float
     b04: float
     b11: float
-    # p95 - p75 green reflectance over the lake: bright streaks (cracks, lava lines,
-    # ridges) on otherwise dark ice. None when the API gave no percentiles.
+    # p95 - p75 green reflectance over the lake: high when grey (older) ice sits next to
+    # black patches (open water or newer ice). None when the API gave no percentiles.
     texture: float | None = None
 
 

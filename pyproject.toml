@@ -14,6 +14,7 @@ dependencies = [
   "PyYAML",
   "osmium>=4.3",
   "tzdata",  # time-zone data for zoneinfo on Windows
+  "Pillow",  # thumbnail patch analysis
 ]
 
 [project.optional-dependencies]

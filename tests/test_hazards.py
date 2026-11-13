@@ -76,3 +76,15 @@ def test_points_and_bays_mentioned():
     note = ridge_note(lake, days, _ice(), RUN, cfg)
     assert note is not None and "points and bays" in note
     assert "points and bays" not in ridge_note(BIG, days, _ice(), RUN, cfg)
+
+
+def test_big_ice_note_only_on_lakes_over_three_miles():
+    from wildice.hazards import big_ice_note
+    huge = Lake("w9", "Huge", 9000, 0.1, None, 61.0, -149.5, _box(0.12, 0.01), None)
+    calm = _days([-12] * 8)
+    note = big_ice_note(huge, calm, _ice(), RUN, CFG)
+    assert note is not None and note.startswith("big ice (4.0 mi)") and "windy" not in note
+    windy = big_ice_note(huge, _days([-12] * 8, gust=50.0), _ice(), RUN, CFG)
+    assert "windy" in windy
+    assert big_ice_note(BIG, calm, _ice(), RUN, CFG) is None
+    assert big_ice_note(huge, calm, _ice(0.0), RUN, CFG) is None

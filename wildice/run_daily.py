@@ -17,16 +17,17 @@ from zoneinfo import ZoneInfo
 
 import requests
 
-from wildice import alert, publish
+from wildice import alert, publish, thumbpatch
 from wildice.catalog import load_catalog
 from wildice.config import Config, load_config
-from wildice.icemodel import run_ice_model
+from wildice.icemodel import in_low_sun, run_ice_model
 from wildice.imagery import Budget, CopernicusClient, fetch_imagery, s1_baseline
 from wildice.models import (
     ImageryStats, Label, Lake, S1Obs, Score, SourceUnavailable, SurfaceClass,
 )
 from wildice.prefs import load_prefs
-from wildice.hazards import ridge_note
+from wildice.hazards import big_ice_note, ridge_note
+from wildice.patches import apply_patches, texture_by_day
 from wildice.reports import apply_report, ice_with_report, load_reports
 from wildice.scenes import Seen, load_seen, new_sensors, save_seen
 from wildice.score import optical_classes, score_lake, valid_ls_classes, valid_s2_classes
@@ -121,6 +122,32 @@ def _load_s2_history(path: Path, start: date) -> S2History:
         if kept:
             out[str(lake_id)] = kept
     return out
+
+
+TextureHistory = dict[str, dict[date, float]]
+
+
+def _load_texture_history(path: Path, start: date) -> TextureHistory:
+    """Per-lake patchiness readings this season (see patches.py)."""
+    raw = _read_json(path)
+    out: TextureHistory = {}
+    for lake_id, days in (raw.items() if isinstance(raw, dict) else ()):
+        kept = {}
+        for day, v in (days.items() if isinstance(days, dict) else ()):
+            try:
+                d, val = date.fromisoformat(str(day)), float(v)
+            except (TypeError, ValueError):
+                continue
+            if d >= start:
+                kept[d] = val
+        if kept:
+            out[str(lake_id)] = kept
+    return out
+
+
+def _save_texture_history(path: Path, history: TextureHistory) -> None:
+    _write_json(path, {k: {d.isoformat(): round(v[d], 5) for d in sorted(v)}
+                       for k, v in sorted(history.items()) if v})
 
 
 def _save_s2_history(path: Path, history: S2History) -> None:
@@ -293,8 +320,24 @@ def _lake_specific(exc: SourceUnavailable) -> bool:
             and exc.status not in FATAL_CLIENT_STATUS)
 
 
+def _note_patch(lake_id: str, day: date, png: bytes, thumbs_dir: Path,
+                patches: dict) -> None:
+    """Record the thumbnail's grey/black zones; keep a shaded copy when it is patchy."""
+    patch_path = thumbs_dir / f"{lake_id}-patch.png"
+    try:
+        info = thumbpatch.analyze(png)
+        if info and info["mixed"]:
+            patch_path.write_bytes(thumbpatch.overlay(png))
+        elif patch_path.exists():
+            patch_path.unlink()
+    except (OSError, ValueError) as exc:  # cosmetic: keep the run going
+        log.warning("patch check for %s failed: %s", lake_id, exc)
+        return
+    patches[lake_id] = {"day": day.isoformat(), **(info or {"mixed": False})}
+
+
 def _thumbnails(client, lakes: dict[str, Lake], scores: dict[str, Score], prev: dict | None,
-                thumbs_dir: Path, budget: Budget) -> None:
+                thumbs_dir: Path, budget: Budget, patches: dict) -> None:
     prev_lakes = prev.get("lakes", {}) if isinstance(prev, dict) else {}
     for lake_id, sc in scores.items():
         lake = lakes[lake_id]
@@ -303,6 +346,8 @@ def _thumbnails(client, lakes: dict[str, Lake], scores: dict[str, Score], prev: 
         path = thumbs_dir / f"{lake_id}.png"
         prev_day = (prev_lakes.get(lake_id) or {}).get("last_clear_day")
         if prev_day == sc.last_clear_day.isoformat() and path.exists():
+            if (patches.get(lake_id) or {}).get("day") != prev_day:  # saved before patches
+                _note_patch(lake_id, sc.last_clear_day, path.read_bytes(), thumbs_dir, patches)
             continue
         if budget.remaining() < 1:
             log.info("request budget exhausted; skipping thumbnails")
@@ -314,6 +359,7 @@ def _thumbnails(client, lakes: dict[str, Lake], scores: dict[str, Score], prev: 
             return
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(png)
+        _note_patch(lake_id, sc.last_clear_day, png, thumbs_dir, patches)
 
 
 def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.Session,
@@ -336,6 +382,11 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
     s2_history = _load_s2_history(s2_history_path, season_start(run_date, cfg))
     ls_history_path = state / "ls_history.json"
     ls_history = _load_s2_history(ls_history_path, season_start(run_date, cfg))
+    texture_path = state / "texture_history.json"
+    texture_history = _load_texture_history(texture_path, season_start(run_date, cfg))
+    patches_path = state / "patch_thumbs.json"
+    patches = _read_json(patches_path)
+    patches = patches if isinstance(patches, dict) else {}
     last_checked_path = state / "last_checked.json"
     last_checked = _load_last_checked(last_checked_path, season_start(run_date, cfg))
     seen_path = state / "seen_scenes.json"
@@ -398,12 +449,22 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
                                     window_start, run_date, ice, lake.id, baselines)
             sc = score_lake(lake, ice, img, run_date, cfg, s2_history=s2_history.get(lake.id),
                             ls_history=ls_history.get(lake.id))
+            days = wx[cell_of(lake.lat, lake.lon)]
+            tex = texture_by_day(texture_history.get(lake.id), imagery.get(lake.id), cfg)
+            if tex:
+                texture_history[lake.id] = tex
+            sc = apply_patches(sc, tex, days, run_date, cfg)
             sc = apply_report(sc, rep, ice, hist, run_date, cfg)
-            ridges = ridge_note(lake, wx[cell_of(lake.lat, lake.lon)], ice, run_date, cfg)
-            scores[lake.id] = replace(sc, reason=f"{sc.reason}; {ridges}") if ridges else sc
+            notes = [n for n in (ridge_note(lake, days, ice, run_date, cfg),
+                                 big_ice_note(lake, days, ice, run_date, cfg)) if n]
+            scores[lake.id] = (replace(sc, reason="; ".join([sc.reason, *notes]))
+                               if notes else sc)
+        _save_texture_history(texture_path, texture_history)
 
         if client is not None:
-            _thumbnails(client, lakes, scores, prev_status, site_data / "thumbs", budget)
+            _thumbnails(client, lakes, scores, prev_status, site_data / "thumbs", budget,
+                        patches)
+        _write_json(patches_path, patches)
     except SourceUnavailable as exc:
         # The detail names the source and the error (status, URL, OAuth reason); it never
         # contains secrets: credentials travel in request bodies, and ntfy errors are
@@ -422,6 +483,11 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
                for k, v in publish.load_history(site_data / "history", run_date).items()}
     status = publish.build_status(lake_list, scores, pinned, hidden, history, run_date,
                                   stale_since=None)
+    for lake_id, entry in status["lakes"].items():
+        p = patches.get(lake_id) or {}
+        if p.get("mixed") and p.get("day") == entry.get("last_clear_day"):
+            entry["patch_thumb"] = f"thumbs/{lake_id}-patch.png"
+            entry["patch_low_sun"] = in_low_sun(date.fromisoformat(p["day"]), cfg)
     publish.write_outputs(status, site_data, run_date)
     publish.write_series(site_data, {
         lake.id: publish.lake_series(wx[cell_of(lake.lat, lake.lon)], traces[lake.id])

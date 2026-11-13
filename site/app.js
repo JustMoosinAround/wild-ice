@@ -313,7 +313,15 @@ function renderPanel(id, statusText) {
   const chart = el("div", { class: "wx-mount" });
   panel.append(chart);
   loadChart(id, chart);
-  if (d.thumb) panel.append(el("img", { class: "thumb", src: "data/" + d.thumb, alt: d.name + " satellite thumbnail", loading: "lazy" }));
+  if (d.patch_thumb) {
+    // Grey ice next to black patches: shade the black part (open water or newer, thinner ice).
+    panel.append(el("figure", { class: "patch" },
+      el("img", { class: "thumb", src: "data/" + d.patch_thumb, alt: d.name + " satellite image with black patches shaded orange", loading: "lazy" }),
+      el("figcaption", { text: "Orange: black patches next to grey ice. Could be open water or newer, thinner ice: check before you cross."
+        + (d.patch_low_sun ? " Low sun: some may be mountain shadow." : "") })));
+  } else if (d.thumb) {
+    panel.append(el("img", { class: "thumb", src: "data/" + d.thumb, alt: d.name + " satellite thumbnail", loading: "lazy" }));
+  }
   if (typeof d.browser_url === "string" && d.browser_url.startsWith("https://")) {
     panel.append(el("a", { class: "cop", href: d.browser_url, target: "_blank", rel: "noopener", text: "Open in Copernicus Browser" }));
   }

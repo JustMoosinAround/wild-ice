@@ -758,3 +758,43 @@ def test_landsat_open_water_look_labels_open_water(tmp_repo, mocked):
     client = FakeClient(s2=[], ls=[LSObs(RUN - timedelta(days=1), 0.95, 0.09, 0.08, 0.01, 3.0)])
     assert run(RUN, tmp_repo, ENV, session(), client) == 0
     assert status_of(tmp_repo)["lakes"]["w1"]["label"] == "open_water"
+
+
+def _half_black_half_grey_png():
+    import io as _io
+    import numpy as _np
+    from PIL import Image as _Image
+    a = _np.zeros((64, 64, 4), dtype=_np.uint8)
+    a[8:56, 8:56, 3] = 255
+    a[:, :32, :3] = int(0.03 * 2.5 * 255)
+    a[:, 32:, :3] = int(0.15 * 2.5 * 255)
+    buf = _io.BytesIO()
+    _Image.fromarray(a, "RGBA").save(buf, format="PNG")
+    return buf.getvalue()
+
+
+class PatchyThumbClient(FakeClient):
+    def truecolor_png(self, geometry, day, sensor="s2"):
+        self.calls.append(("png", day, day))
+        return _half_black_half_grey_png()
+
+
+def test_patchy_thumbnail_gets_shaded_copy_in_status(tmp_repo, mocked):
+    cold_weather(mocked)
+    assert run(RUN, tmp_repo, ENV, session(), PatchyThumbClient()) == 0
+    lake = status_of(tmp_repo)["lakes"]["w1"]
+    assert lake["patch_thumb"] == "thumbs/w1-patch.png"
+    assert (tmp_repo / "site/data/thumbs/w1-patch.png").exists()
+    saved = json.loads((tmp_repo / "state/patch_thumbs.json").read_text(encoding="utf-8"))
+    assert saved["w1"]["mixed"] is True and saved["w1"]["day"] == lake["last_clear_day"]
+    # a rerun without a new clear day keeps it without asking for the image again
+    again = PatchyThumbClient()
+    assert run(RUN, tmp_repo, ENV, session(), again) == 0
+    assert [c for c in again.calls if c[0] == "png"] == []
+    assert status_of(tmp_repo)["lakes"]["w1"]["patch_thumb"] == "thumbs/w1-patch.png"
+
+
+def test_even_thumbnail_has_no_patch(tmp_repo, mocked):
+    cold_weather(mocked)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    assert "patch_thumb" not in status_of(tmp_repo)["lakes"]["w1"]

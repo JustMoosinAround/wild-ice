@@ -155,8 +155,8 @@ def _mean(output: dict, band: str = "B0") -> float | None:
     return None if math.isnan(value) else value
 
 
-# Bright streaks on dark ice (stress cracks, lava lines, ridges; lakeice.org) lift the
-# upper percentiles of green reflectance; open water stays even. Invalid pixels are 0
+# Grey (older, snow-dusted) ice next to black patches lifts the upper percentiles of
+# green reflectance; evenly black water or ice stays low. Invalid pixels are 0
 # and sit below p75 on any day clear enough to classify (valid >= 0.7).
 S2_TEXTURE_CALC = {"reflectance": {"statistics": {"B0": {"percentiles": {"k": [75, 95]}}}}}
 

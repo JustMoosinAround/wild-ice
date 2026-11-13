@@ -277,29 +277,3 @@ def test_valid_ls_classes_and_optical_merge():
     assert optical_classes({D: SurfaceClass.WHITE}, {D: SurfaceClass.DARK,
                                                      D - timedelta(1): SurfaceClass.GREY}) == {
         D: SurfaceClass.WHITE, D - timedelta(1): SurfaceClass.GREY}
-
-
-def test_crack_lines_confirm_dark_ice_over_quiet_radar():
-    im = img(1, DARK + (0.05,), s1=[S1Obs(RUN - timedelta(days=1), -19.5)], base=-20)
-    s = score_lake(lake, ice(), im, RUN, cfg)
-    assert (s.label, s.confidence) == (Label.LIKELY_BLACK_ICE, Confidence.HIGH)
-    assert "crack lines on" in s.reason and "radar does not confirm" not in s.reason
-
-
-def test_smooth_dark_image_is_not_crack_evidence():
-    im = img(1, DARK + (0.002,), s1=[S1Obs(RUN - timedelta(days=1), -19.5)], base=-20)
-    s = score_lake(lake, ice(), im, RUN, cfg)
-    assert s.confidence is Confidence.MEDIUM and "crack lines" not in s.reason
-
-
-def test_crack_lines_alone_do_not_make_thin_ice_skateable():
-    im = img(1, DARK + (0.05,))
-    s = score_lake(lake, ice(h=4), im, RUN, cfg)
-    assert s.label is Label.FREEZING and "crack lines on" in s.reason
-
-
-def test_later_white_image_beats_earlier_crack_lines():
-    im = ImageryStats((S2Obs(RUN - timedelta(days=3), *DARK, texture=0.05),
-                       S2Obs(RUN - timedelta(days=1), *WHITE)), (), None)
-    s = score_lake(lake, ice(), im, RUN, cfg)
-    assert s.label is Label.SNOW_COVERED and "crack lines" not in s.reason

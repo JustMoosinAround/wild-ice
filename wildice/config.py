@@ -59,7 +59,8 @@ class ImageryCfg:
     monthly_request_budget: int
     max_lakes_per_day: int
     max_minutes_per_run: float
-    crack_texture: float  # S2Obs.texture at or above this on a dark image = crack lines
+    patchy_texture: float  # S2Obs.texture at or above this: grey ice with black patches
+    patch_days: int        # how long a patch seen on a clear image is remembered
     low_sun_start: str  # MM-DD
     low_sun_end: str  # MM-DD, may wrap the new year
     ls_snow_brightness: float  # Landsat's own thresholds (top-of-atmosphere reflectance)
@@ -74,6 +75,7 @@ class RidgesCfg:
     window_days: int        # how recent the warm-up or thaw must be
     thaw_gust_kmh: float    # a thaw day this windy may open old ridges
     points_index: float     # shoreline development index for "many points and bays"
+    big_ice_mi: float       # lakes this long are "big ice": leads, open areas, moving sheets
 
 
 @dataclass(frozen=True)
@@ -155,12 +157,12 @@ def load_config(path: Path) -> Config:
             min_valid_fraction=float, fresh_days=int, shore_buffer_m=float,
             snow_ndsi=float, snow_brightness=float, dark_brightness=float,
             s1_frozen_delta_db=float, lookback_days=int, monthly_request_budget=int,
-            max_lakes_per_day=int, max_minutes_per_run=float, crack_texture=float,
+            max_lakes_per_day=int, max_minutes_per_run=float, patchy_texture=float, patch_days=int,
             low_sun_start=_mmdd, low_sun_end=_mmdd,
             ls_snow_brightness=float, ls_dark_brightness=float, ls_open_water_c=float)),
         ridges=_section(raw, "ridges", RidgesCfg, dict(
             min_span_mi=float, warmup_c=float, window_days=int, thaw_gust_kmh=float,
-            points_index=float)),
+            points_index=float, big_ice_mi=float)),
         weather=_section(raw, "weather", WeatherCfg, dict(batch_pause_s=float)),
         site=_section(raw, "site", SiteCfg, dict(base_url=str)),
         season_start=str(_get(raw, "season_start")),
