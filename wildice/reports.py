@@ -64,14 +64,15 @@ def load_reports(ratings_dir: Path, run_date: date, season_start: date) -> dict[
 
 def ice_with_report(days: Sequence[DayWeather], cfg: Config,
                     s2_classes: Mapping[date, SurfaceClass] | None, area_acres: float | None,
-                    report: Report | None, trace: list[TraceRow] | None = None) -> IceState:
+                    report: Report | None, trace: list[TraceRow] | None = None,
+                    depth_m: float | None = None) -> IceState:
     """Ice model, restarted from open water (at 0 C) after an open-water report."""
     if report is None or report.rating != "water":
-        return run_ice_model(days, cfg, s2_classes, area_acres, trace)
+        return run_ice_model(days, cfg, s2_classes, area_acres, trace, depth_m)
     before = [d for d in days if d.day < report.day]
     after = [d for d in days if d.day > report.day]
     if trace is not None:
-        run_ice_model(before, cfg, s2_classes, area_acres, trace)  # what the model thought
+        run_ice_model(before, cfg, s2_classes, area_acres, trace, depth_m)  # what it thought
         if any(d.day == report.day for d in days):
             trace.append((report.day, 0.0, 0.0))
     later = {k: v for k, v in (s2_classes or {}).items() if k > report.day}

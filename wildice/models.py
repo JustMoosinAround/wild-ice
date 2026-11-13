@@ -45,6 +45,7 @@ class Lake:
     lon: float
     interior: dict | None  # GeoJSON geometry, EPSG:4326
     warning: str | None
+    depth_m: float | None = None  # mean depth (HydroLAKES estimate), when matched
 
 
 @dataclass(frozen=True)

@@ -60,3 +60,29 @@ def big_ice_note(lake: Lake, days: Sequence[DayWeather], ice: IceState, run_date
     if any(recent_from <= d.day <= run_date and d.gust_kmh >= r.thaw_gust_kmh for d in days):
         note += "; windy: sheets can shift and open new leads"
     return note
+
+
+def lead_note(lake: Lake, days: Sequence[DayWeather], ice: IceState, run_date: date,
+              cfg: Config) -> str | None:
+    """lakeice.org "Leads": strong wind (~30 mph) splits sheets a couple of miles across,
+    most easily when ice is thin (~4") or thaw-weakened; the gap can open between
+    skaters and shore in minutes, and takes days of cold to refreeze."""
+    r = cfg.ridges
+    if lake.interior is None or ice.thickness_cm < cfg.ice.open_cm:
+        return None
+    span = longest_span_mi(lake.interior)
+    if span < r.lead_min_span_mi:
+        return None
+    by_day = {d.day: d for d in days}
+    thawed = any(run_date - timedelta(days=r.window_days - 1) <= d.day <= run_date
+                 and d.t_mean > 0 for d in days)
+    if ice.thickness_cm > r.lead_max_cm and not thawed:
+        return None
+    today, yesterday = by_day.get(run_date), by_day.get(run_date - timedelta(days=1))
+    weak = f"~{ice.thickness_cm:.0f} cm" + (" thaw-weakened" if thawed else "")
+    if today is not None and today.gust_kmh >= r.lead_gust_kmh:
+        return (f"lead risk today: gusts to {today.gust_kmh:.0f} km/h on {weak} ice; "
+                "the sheet can split between you and shore")
+    if yesterday is not None and yesterday.gust_kmh >= r.lead_gust_kmh:
+        return "strong wind yesterday: new leads may be open or only thinly refrozen"
+    return None

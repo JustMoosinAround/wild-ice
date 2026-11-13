@@ -7,6 +7,7 @@ from pathlib import Path
 import requests
 from shapely.geometry import mapping, shape
 
+from wildice.depths import attach_depths, load_points
 from wildice.config import Config, load_config
 from wildice.geo import LineIndex, area_acres, interior
 from wildice.models import Lake
@@ -105,7 +106,7 @@ def main() -> None:
     cfg = load_config(Path("config.yaml"))
     pbf = download_extract(EXTRACT_PATH, requests.Session())
     water, roads, trails = read_layers(pbf, cfg.region.bbox)
-    lakes = build_catalog(water, roads, trails, cfg)
+    lakes = attach_depths(build_catalog(water, roads, trails, cfg), load_points())
     write_catalog(lakes, Path("site/data/lakes.geojson"))
     print(f"wrote {len(lakes)} lakes")
 

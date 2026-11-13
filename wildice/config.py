@@ -76,6 +76,9 @@ class RidgesCfg:
     thaw_gust_kmh: float    # a thaw day this windy may open old ridges
     points_index: float     # shoreline development index for "many points and bays"
     big_ice_mi: float       # lakes this long are "big ice": leads, open areas, moving sheets
+    lead_min_span_mi: float  # wind can split sheets about this long into leads
+    lead_gust_kmh: float    # gusts that open leads (~30 mph in the lakeice.org account)
+    lead_max_cm: float      # ice at or under this is thin enough to split (unless thawed)
 
 
 @dataclass(frozen=True)
@@ -162,7 +165,8 @@ def load_config(path: Path) -> Config:
             ls_snow_brightness=float, ls_dark_brightness=float, ls_open_water_c=float)),
         ridges=_section(raw, "ridges", RidgesCfg, dict(
             min_span_mi=float, warmup_c=float, window_days=int, thaw_gust_kmh=float,
-            points_index=float, big_ice_mi=float)),
+            points_index=float, big_ice_mi=float, lead_min_span_mi=float,
+            lead_gust_kmh=float, lead_max_cm=float)),
         weather=_section(raw, "weather", WeatherCfg, dict(batch_pause_s=float)),
         site=_section(raw, "site", SiteCfg, dict(base_url=str)),
         season_start=str(_get(raw, "season_start")),

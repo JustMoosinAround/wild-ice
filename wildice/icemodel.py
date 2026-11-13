@@ -20,6 +20,12 @@ _SECONDS_PER_DAY = 86400
 # hundred acres, ~ 40 for several thousand. Small lakes are shallow, so they track
 # the air within days.
 _LAG_A, _LAG_B = -18.0, 15.0     # lag days = A + B * log10(acres)
+# With a mean depth (HydroLAKES) there is a second estimate, lag = C * depth^P, fitted
+# so the 757 matched catalog lakes keep the logger-fitted lags on average (log-log fit
+# against the area rule). The slower of the two wins: depth holds heat (deep small lakes
+# cool slower), while area also stands for wind fetch, which keeps big lakes mixing and
+# open whatever their depth. So depth can only delay freeze-up, never bring it forward.
+_LAG_C, _LAG_P = 3.64, 0.64
 _LAG_MIN, _LAG_MAX = 5.0, 50.0
 # Above 4 C the whole lake mixes and cools slowly; below it the cold water stays on
 # top, so the surface finishes cooling to 0 C about four times faster.
@@ -42,9 +48,11 @@ def ashton_thickness_cm(fdd: float, h: float) -> float:
     return max(0.0, (-a + sqrt(a * a + b)) * 100)
 
 
-def water_lag_days(area_acres: float) -> float:
+def water_lag_days(area_acres: float, depth_m: float | None = None) -> float:
     """Days the lake's water takes to close most of the gap to the air temperature."""
     lag = _LAG_A + _LAG_B * log10(max(area_acres, 1.0))
+    if depth_m is not None and depth_m > 0:
+        lag = max(lag, _LAG_C * depth_m ** _LAG_P)
     return min(_LAG_MAX, max(_LAG_MIN, lag))
 
 
@@ -68,6 +76,7 @@ def run_ice_model(
     s2_classes: Mapping[date, SurfaceClass] | None = None,
     area_acres: float | None = None,
     trace: list[TraceRow] | None = None,
+    depth_m: float | None = None,
 ) -> IceState:
     """Run the model day by day over a season-to-date, ascending list of days.
 
@@ -76,7 +85,7 @@ def run_ice_model(
     water temperature and ice thickness are appended to `trace` if given.
     """
     cum = 0.0
-    lag = water_lag_days(area_acres) if area_acres is not None else None
+    lag = water_lag_days(area_acres, depth_m) if area_acres is not None else None
     water = cfg.ice.water_start_c if lag is not None else 0.0
     thickness = 0.0
     freeze_up: date | None = None

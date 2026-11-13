@@ -88,3 +88,35 @@ def test_big_ice_note_only_on_lakes_over_three_miles():
     assert "windy" in windy
     assert big_ice_note(BIG, calm, _ice(), RUN, CFG) is None
     assert big_ice_note(huge, calm, _ice(0.0), RUN, CFG) is None
+
+
+def _windy_today(gust_today, gust_yesterday=10.0, means=None):
+    days = _days(means or [-10] * 8)
+    days[-1] = replace(days[-1], gust_kmh=gust_today)
+    days[-2] = replace(days[-2], gust_kmh=gust_yesterday)
+    return days
+
+
+def test_lead_risk_today_on_thin_ice_big_sheet():
+    from wildice.hazards import lead_note
+    note = lead_note(BIG, _windy_today(55.0), _ice(8.0), RUN, CFG)
+    assert note is not None and note.startswith("lead risk today: gusts to 55 km/h on ~8 cm ice")
+
+
+def test_lead_after_yesterdays_wind():
+    from wildice.hazards import lead_note
+    note = lead_note(BIG, _windy_today(10.0, gust_yesterday=60.0), _ice(8.0), RUN, CFG)
+    assert note is not None and "yesterday" in note
+
+
+def test_no_lead_on_thick_cold_ice_small_lake_or_calm_day():
+    from wildice.hazards import lead_note
+    assert lead_note(BIG, _windy_today(55.0), _ice(30.0), RUN, CFG) is None
+    assert lead_note(SMALL, _windy_today(55.0), _ice(8.0), RUN, CFG) is None
+    assert lead_note(BIG, _windy_today(20.0), _ice(8.0), RUN, CFG) is None
+
+
+def test_thaw_weakened_thick_ice_can_still_lead():
+    from wildice.hazards import lead_note
+    days = _windy_today(55.0, means=[-10, -10, -10, -10, -10, 1, 2, -1])
+    assert lead_note(BIG, days, _ice(30.0), RUN, CFG) is not None

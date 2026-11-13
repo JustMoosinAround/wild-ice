@@ -26,7 +26,7 @@ from wildice.models import (
     ImageryStats, Label, Lake, S1Obs, Score, SourceUnavailable, SurfaceClass,
 )
 from wildice.prefs import load_prefs
-from wildice.hazards import big_ice_note, ridge_note
+from wildice.hazards import big_ice_note, lead_note, ridge_note
 from wildice.patches import apply_patches, texture_by_day
 from wildice.reports import apply_report, ice_with_report, load_reports
 from wildice.scenes import Seen, load_seen, new_sensors, save_seen
@@ -402,7 +402,8 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
                                          optical_classes(s2_history.get(lake.id),
                                                          ls_history.get(lake.id)),
                                          lake.area_acres,
-                                         reports.get(lake.id), traces[lake.id])
+                                         reports.get(lake.id), traces[lake.id],
+                                         lake.depth_m)
                 for lake in lake_list}
 
         if client is None:
@@ -443,7 +444,7 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
             hist = optical_classes(s2_history.get(lake.id), ls_history.get(lake.id))
             rep = reports.get(lake.id)
             ice = (ice_with_report(wx[cell_of(lake.lat, lake.lon)], cfg, hist, lake.area_acres,
-                                   rep)
+                                   rep, depth_m=lake.depth_m)
                    if lake.id in imagery else ice0[lake.id])
             img = _with_saved_radar(imagery.get(lake.id), s1_history.get(lake.id, {}),
                                     window_start, run_date, ice, lake.id, baselines)
@@ -455,7 +456,8 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
                 texture_history[lake.id] = tex
             sc = apply_patches(sc, tex, days, run_date, cfg)
             sc = apply_report(sc, rep, ice, hist, run_date, cfg)
-            notes = [n for n in (ridge_note(lake, days, ice, run_date, cfg),
+            notes = [n for n in (lead_note(lake, days, ice, run_date, cfg),
+                                 ridge_note(lake, days, ice, run_date, cfg),
                                  big_ice_note(lake, days, ice, run_date, cfg)) if n]
             scores[lake.id] = (replace(sc, reason="; ".join([sc.reason, *notes]))
                                if notes else sc)

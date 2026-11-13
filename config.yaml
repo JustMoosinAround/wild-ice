@@ -60,6 +60,9 @@ ridges:  # pressure-ridge warnings (lakeice.org); placeholders until we have rep
   thaw_gust_kmh: 40
   points_index: 2.5   # about the most convoluted quarter of big lakes (Kenai, Skilak)
   big_ice_mi: 3.0     # lakeice.org "Big Ice": wind and currents dominate past a few miles
+  lead_min_span_mi: 2.0  # lakeice.org "Leads": a 2-mile sheet split in ~30 mph wind on 4" ice
+  lead_gust_kmh: 45
+  lead_max_cm: 15
 
 weather:
   batch_pause_s: 10  # pause between Open-Meteo requests

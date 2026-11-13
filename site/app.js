@@ -279,6 +279,12 @@ function renderPanel(id, statusText) {
   panel.replaceChildren();
   panel.append(el("button", { class: "close", "aria-label": "Close", text: "×", onclick: closePanel }));
   panel.append(el("h2", { text: (d.pinned ? "★ " : "") + d.name }));
+  const props = (layers.get(id) || {}).feature?.properties || {};
+  if (props.area_acres) {
+    let size = Math.round(props.area_acres).toLocaleString() + " acres";
+    if (props.depth_m) size += ", about " + Math.round(props.depth_m) + " m deep on average (HydroLAKES estimate)";
+    panel.append(el("p", { class: "meta", text: size }));
+  }
   const chip = el("span", { class: "chip", text: s.text });
   chip.style.background = s.fill;
   chip.style.borderColor = s.line;
@@ -541,7 +547,7 @@ async function load() {
 async function main() {
   map = L.map("map").setView([61.2, -149.5], 8);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19, attribution: "&copy; OpenStreetMap contributors",
+    maxZoom: 19, attribution: "&copy; OpenStreetMap contributors · lake depths: <a href=\"https://www.hydrosheds.org/products/hydrolakes\">HydroLAKES</a> (CC BY 4.0)",
   }).addTo(map);
   addKey();
   $("only-skate").addEventListener("change", applyFilter);
