@@ -509,5 +509,390 @@
     "grey": 1.0,
     "white": 0.0,
     "mixed": false
+  },
+  "w28629986": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w162151338": {
+    "day": "2026-11-05",
+    "black": 0.001,
+    "grey": 0.999,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w162151352": {
+    "day": "2026-11-05",
+    "black": 0.0,
+    "grey": 1.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w165578895": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w183249120": {
+    "day": "2026-11-12",
+    "black": 0.784,
+    "grey": 0.216,
+    "white": 0.0,
+    "mixed": true
+  },
+  "w187842132": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w187842133": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w187842143": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w217233550": {
+    "day": "2026-11-05",
+    "black": 0.001,
+    "grey": 0.999,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w218458656": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w218458660": {
+    "day": "2026-11-12",
+    "black": 0.0,
+    "grey": 1.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w218458802": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w218897459": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w218897468": {
+    "day": "2026-11-05",
+    "black": 0.002,
+    "grey": 0.998,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w218897471": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w218897479": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "r2896632": {
+    "day": "2026-11-05",
+    "black": 0.003,
+    "grey": 0.997,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w218897500": {
+    "day": "2026-11-02",
+    "black": 0.997,
+    "grey": 0.003,
+    "white": 0.0,
+    "mixed": false
+  },
+  "r2896634": {
+    "day": "2026-11-05",
+    "black": 0.004,
+    "grey": 0.996,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w218897512": {
+    "day": "2026-11-05",
+    "black": 0.004,
+    "grey": 0.996,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w218897536": {
+    "day": "2026-11-05",
+    "black": 0.0,
+    "grey": 1.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "r2896633": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w218897543": {
+    "day": "2026-11-05",
+    "black": 0.0,
+    "grey": 1.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w224421985": {
+    "day": "2026-11-05",
+    "black": 0.0,
+    "grey": 1.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "r3561451": {
+    "day": "2026-11-05",
+    "black": 0.001,
+    "grey": 0.999,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w265003405": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w265003406": {
+    "day": "2026-11-05",
+    "black": 0.001,
+    "grey": 0.999,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w265003419": {
+    "day": "2026-11-05",
+    "black": 0.002,
+    "grey": 0.998,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w265376102": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w265534649": {
+    "day": "2026-11-05",
+    "black": 0.0,
+    "grey": 1.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w265590553": {
+    "day": "2026-11-05",
+    "black": 0.002,
+    "grey": 0.998,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w265590575": {
+    "day": "2026-11-05",
+    "black": 0.001,
+    "grey": 0.999,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w265723235": {
+    "day": "2026-11-07",
+    "black": 0.001,
+    "grey": 0.999,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w265723236": {
+    "day": "2026-11-07",
+    "black": 0.001,
+    "grey": 0.999,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w265723237": {
+    "day": "2026-11-05",
+    "black": 0.0,
+    "grey": 1.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w265723240": {
+    "day": "2026-11-07",
+    "black": 0.001,
+    "grey": 0.999,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w265749137": {
+    "day": "2026-11-05",
+    "black": 0.0,
+    "grey": 1.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w265770052": {
+    "day": "2026-11-05",
+    "black": 0.002,
+    "grey": 0.998,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w272761123": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w272762893": {
+    "day": "2026-11-05",
+    "black": 0.0,
+    "grey": 1.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w304662241": {
+    "day": "2026-11-02",
+    "black": 0.996,
+    "grey": 0.004,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w329591728": {
+    "day": "2026-11-05",
+    "black": 0.0,
+    "grey": 1.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w357243270": {
+    "day": "2026-11-05",
+    "black": 0.001,
+    "grey": 0.999,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w371902280": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w392386917": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "r6415983": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w437651700": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w437654719": {
+    "day": "2026-11-05",
+    "black": 0.001,
+    "grey": 0.999,
+    "white": 0.0,
+    "mixed": false
+  },
+  "r8421229": {
+    "day": "2026-11-05",
+    "black": 0.001,
+    "grey": 0.999,
+    "white": 0.0,
+    "mixed": false
+  },
+  "r8421230": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "r10515873": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w990534578": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "r13972678": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w1190039478": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "r1539147": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
   }
 }
