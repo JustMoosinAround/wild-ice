@@ -63,7 +63,7 @@ community share practical tips.
    small Worker holds the secrets, checks invites, strips photo metadata, stores photos
    privately (KV) and comments (D1), and writes friends' reports into the repo with a
    narrowly scoped GitHub token. Turnstile (free) stops bots on stranger comments. No
-   pausing, generous free limits (R2 10 GB, Workers 100k requests/day).
+   pausing, generous free limits (KV 1 GB, Workers 100k requests/day).
 2. **Supabase** — free hosted database with email-link logins and storage. Rejected: the
    spam check and photo handling still need custom functions, friends must sign in by
    email each time, and free projects pause when idle.
