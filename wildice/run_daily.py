@@ -27,6 +27,7 @@ from wildice.models import (
 )
 from wildice.prefs import load_prefs
 from wildice.hazards import big_ice_note, lead_note, ridge_note
+from wildice.icelog import fetch_export, merge_reports, reports_from_export
 from wildice.patches import apply_patches, texture_by_day
 from wildice.reports import apply_report, ice_with_report, load_reports
 from wildice.scenes import Seen, drop_cloudy, load_seen, new_sensors, save_seen
@@ -372,8 +373,21 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
     cfg = load_config(root / "config.yaml")
     lake_list = load_catalog(site_data / "lakes.geojson")
     lakes = {lake.id: lake for lake in lake_list}
-    pinned, hidden = load_prefs(cfg, root / "prefs")
     reports = load_reports(root / "ratings", run_date, season_start(run_date, cfg))
+    # Ice Log (friends' and owner's reports, pins, review count) from the worker, if set up.
+    export = None
+    if env.get("ICELOG_URL") and env.get("ICELOG_TOKEN"):
+        export = fetch_export(env["ICELOG_URL"], env["ICELOG_TOKEN"],
+                              season_start(run_date, cfg), session)
+    if export is not None:
+        logged = reports_from_export(export.reports, lakes, run_date,
+                                     season_start(run_date, cfg), cfg)
+        reports = merge_reports(reports, logged)
+        log.info("ice log: %d report(s) on %d lake(s), %d comment(s) and %d photo(s) waiting",
+                 len(export.reports), len(logged), export.pending_comments,
+                 export.pending_photos)
+    pinned, hidden = load_prefs(cfg, root / "prefs", export.prefs if export else ())
+    pending = (export.pending_comments, export.pending_photos) if export else (0, 0)
     budget = Budget(state / "usage.json", cfg.imagery.monthly_request_budget,
                     today=lambda: run_date)
     baselines_path = state / "baselines.json"
@@ -506,7 +520,8 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
             log.error("alerts topic not configured; %d alert(s) not sent", len(new))
             _ping_ops(env, "alerts topic not configured", ntfy)
             return 1  # labels not saved: the alert goes out once the secret is set
-        title, body, click = alert.format_alert(new, lakes, scores, pinned, cfg.site.base_url)
+        title, body, click = alert.format_alert(new, lakes, scores, pinned, cfg.site.base_url,
+                                                pending)
         try:
             alert.send_ntfy(topic, title, body, click, ntfy)
         except SourceUnavailable as exc:

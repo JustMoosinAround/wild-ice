@@ -30,8 +30,13 @@ def _map_url(base_url: str, lake_id: str) -> str:
     return f"{base_url.rstrip('/')}/#lake={lake_id}"
 
 
+def _plural(n: int, word: str) -> str:
+    return f"{n} {word}{'' if n == 1 else 's'}"
+
+
 def format_alert(ids: list[str], lakes: dict[str, Lake], scores: dict[str, Score],
-                 pinned: frozenset[str], base_url: str) -> tuple[str, str, str]:
+                 pinned: frozenset[str], base_url: str,
+                 pending: tuple[int, int] = (0, 0)) -> tuple[str, str, str]:
     """Return (title, markdown body, click URL). Title stays ASCII (HTTP header)."""
     n = len(ids)
     title = "1 lake looks skateable" if n == 1 else f"{n} lakes look skateable"
@@ -40,7 +45,12 @@ def format_alert(ids: list[str], lakes: dict[str, Lake], scores: dict[str, Score
         star = "★ " if i in pinned else ""
         lines.append(f"- {star}**{display_name(lakes[i])}** — {scores[i].reason} "
                      f"([map]({_map_url(base_url, i)}))")
-    return title, "\n".join(lines), _map_url(base_url, ids[0])
+    body = "\n".join(lines)
+    comments, photos = pending
+    if comments or photos:  # Ice Log items waiting for review: a line, never its own push
+        waiting = [_plural(n, w) for n, w in ((comments, "comment"), (photos, "photo")) if n]
+        body += f"\n\n{', '.join(waiting)} waiting"
+    return title, body, _map_url(base_url, ids[0])
 
 
 def send_ntfy(topic: str, title: str, body: str, click: str | None,
