@@ -3,7 +3,7 @@ from datetime import date, datetime, timezone
 from shapely.geometry import box, mapping
 
 from wildice.models import Lake
-from wildice.scenes import Scene, load_seen, new_sensors, save_seen
+from wildice.scenes import Scene, drop_cloudy, load_seen, new_sensors, save_seen
 
 UTC = timezone.utc
 T1 = datetime(2025, 11, 10, 21, 5, tzinfo=UTC)
@@ -53,3 +53,21 @@ def test_seen_roundtrip_drops_old_season_and_junk(tmp_path):
 
 def test_missing_seen_file_is_empty(tmp_path):
     assert load_seen(tmp_path / "none.json", date(2025, 10, 1)) == {}
+
+
+def test_overcast_photo_scenes_dropped_radar_kept():
+    scenes = [Scene("s2", T1, S2_FOOT, 20.0), Scene("s2", T2, S2_FOOT, 99.0),
+              Scene("ls", T2, S2_FOOT, 95.0), Scene("ls", T1, S2_FOOT, None),
+              Scene("s1", T2, S1_FOOT, None)]
+    kept, dropped = drop_cloudy(scenes, 95.0)
+    assert [(s.sensor, s.cloud_pct) for s in kept] == [("s2", 20.0), ("ls", None), ("s1", None)]
+    assert dropped == 2
+
+
+def test_lake_under_only_overcast_scene_is_not_new_and_waits_for_a_clear_one():
+    kept, _ = drop_cloudy([Scene("s2", T2, S2_FOOT, 100.0)], 95.0)
+    assert new_sensors([A], kept, {"wA": {"s2": T1}}) == {}
+    # the overcast scene was never marked seen, so a later clear one still counts
+    later = datetime(2025, 11, 14, 21, 5, tzinfo=UTC)
+    kept, _ = drop_cloudy([Scene("s2", later, S2_FOOT, 30.0)], 95.0)
+    assert new_sensors([A], kept, {"wA": {"s2": T1}}) == {"wA": {"s2": later}}

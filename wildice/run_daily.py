@@ -29,7 +29,7 @@ from wildice.prefs import load_prefs
 from wildice.hazards import big_ice_note, lead_note, ridge_note
 from wildice.patches import apply_patches, texture_by_day
 from wildice.reports import apply_report, ice_with_report, load_reports
-from wildice.scenes import Seen, load_seen, new_sensors, save_seen
+from wildice.scenes import Seen, drop_cloudy, load_seen, new_sensors, save_seen
 from wildice.score import optical_classes, score_lake, valid_ls_classes, valid_s2_classes
 from wildice.shortlist import shortlist
 from wildice.weather import cell_of, cell_points, make_session, season_start, update_cache
@@ -229,9 +229,11 @@ def _new_scenes(client, lake_list: list[Lake], seen: Seen, run_date: date, cfg: 
         log.error("scene catalog failed: %s; satellite skipped today", exc)
         _ping_ops(env, "copernicus catalog unavailable; weather-only labels today", ntfy)
         return {}
+    scenes, cloudy = drop_cloudy(scenes, cfg.imagery.max_scene_cloud_pct)
     wanted = new_sensors(lake_list, scenes, seen)
-    log.info("scene catalog: %d scenes, %d lakes with something new", len(scenes),
-             len(wanted))
+    log.info("scene catalog: %d scenes kept, %d photo scenes skipped as %.0f%%+ cloud, "
+             "%d lakes with something new", len(scenes), cloudy,
+             cfg.imagery.max_scene_cloud_pct, len(wanted))
     return wanted
 
 

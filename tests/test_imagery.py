@@ -497,8 +497,10 @@ def _catalog_page(features, next_token=None):
     return page
 
 
-def _item(when, polarization=None, west=-150.0):
+def _item(when, polarization=None, west=-150.0, cloud=None):
     props = {"datetime": when}
+    if cloud is not None:
+        props["eo:cloud_cover"] = cloud
     if polarization:
         props["s1:polarization"] = polarization
     return {"id": f"x{when}", "type": "Feature", "properties": props,
@@ -545,6 +547,23 @@ def test_scenes_reads_both_collections_and_pages():
     assert first["datetime"] == "2025-10-29T00:00:00Z/2025-11-13T23:59:59Z"
     assert bodies[1]["next"] == 1
     assert budget.remaining() == 96  # four catalog pages
+
+
+@responses.activate
+def test_scenes_carry_cloud_cover():
+    from wildice.imagery import CATALOG_URL
+    add_token()
+
+    def answer(request):
+        body = json.loads(request.body)
+        if body["collections"] == ["sentinel-1-grd"]:
+            return (200, {}, json.dumps(_catalog_page([_item("2025-11-11T03:00:00Z", "DV")])))
+        return (200, {}, json.dumps(_catalog_page([_item("2025-11-10T21:05:00Z", cloud=97.4)])))
+
+    responses.add_callback(responses.POST, CATALOG_URL, callback=answer)
+    c = CopernicusClient("id", "secret", requests.Session())
+    got = c.scenes((59.3, -152.5, 62.8, -144.0), date(2025, 10, 29), date(2025, 11, 12))
+    assert {(s.sensor, s.cloud_pct) for s in got} == {("s2", 97.4), ("ls", 97.4), ("s1", None)}
 
 
 @responses.activate

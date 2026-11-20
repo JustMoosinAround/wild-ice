@@ -798,3 +798,17 @@ def test_even_thumbnail_has_no_patch(tmp_repo, mocked):
     cold_weather(mocked)
     assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
     assert "patch_thumb" not in status_of(tmp_repo)["lakes"]["w1"]
+
+
+def test_overcast_photo_scenes_cost_no_requests(tmp_repo, mocked, caplog):
+    import logging
+    cold_weather(mocked)
+    foot = box(-153, 59, -143, 63)
+    client = FakeClient(scenes=[Scene("s2", YESTERDAY_PASS, foot, 99.0),
+                                Scene("ls", YESTERDAY_PASS, foot, 100.0)])
+    with caplog.at_level(logging.INFO):
+        assert run(RUN, tmp_repo, ENV, session(), client) == 0
+    assert _stats_calls(client) == []
+    assert "2 photo scenes skipped as 95%+ cloud" in caplog.text
+    seen = json.loads((tmp_repo / "state/seen_scenes.json").read_text(encoding="utf-8"))
+    assert seen == {}  # not marked seen: the next clear pass still counts

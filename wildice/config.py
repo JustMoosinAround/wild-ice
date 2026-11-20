@@ -59,6 +59,7 @@ class ImageryCfg:
     monthly_request_budget: int
     max_lakes_per_day: int
     max_minutes_per_run: float
+    max_scene_cloud_pct: float  # skip photo scenes this cloudy (whole-scene figure)
     patchy_texture: float  # S2Obs.texture at or above this: grey ice with black patches
     patch_days: int        # how long a patch seen on a clear image is remembered
     low_sun_start: str  # MM-DD
@@ -160,7 +161,7 @@ def load_config(path: Path) -> Config:
             min_valid_fraction=float, fresh_days=int, shore_buffer_m=float,
             snow_ndsi=float, snow_brightness=float, dark_brightness=float,
             s1_frozen_delta_db=float, lookback_days=int, monthly_request_budget=int,
-            max_lakes_per_day=int, max_minutes_per_run=float, patchy_texture=float, patch_days=int,
+            max_lakes_per_day=int, max_minutes_per_run=float, max_scene_cloud_pct=float, patchy_texture=float, patch_days=int,
             low_sun_start=_mmdd, low_sun_end=_mmdd,
             ls_snow_brightness=float, ls_dark_brightness=float, ls_open_water_c=float)),
         ridges=_section(raw, "ridges", RidgesCfg, dict(

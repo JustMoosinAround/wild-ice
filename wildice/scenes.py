@@ -30,6 +30,23 @@ class Scene:
     sensor: str            # "s2", "s1" or "ls"
     time: datetime         # acquisition time, UTC
     footprint: BaseGeometry
+    cloud_pct: float | None = None  # whole-scene cloud cover (eo:cloud_cover), photos only
+
+
+PHOTO_SENSORS = ("s2", "ls")
+
+
+def drop_cloudy(scenes: list[Scene], max_cloud_pct: float) -> tuple[list[Scene], int]:
+    """Photo scenes at or over max_cloud_pct are dropped; radar sees through cloud.
+
+    The figure is for the whole scene (~110 km for Sentinel-2, ~185 km for Landsat), so a
+    lake can sit in a clear hole of a mostly cloudy scene, and winter snow is often
+    counted as cloud: keep the cutoff high. A dropped scene is never marked seen, so the
+    next clear one still triggers a request.
+    """
+    kept = [sc for sc in scenes if not (sc.sensor in PHOTO_SENSORS and sc.cloud_pct is not None
+                                        and sc.cloud_pct >= max_cloud_pct)]
+    return kept, len(scenes) - len(kept)
 
 
 def new_sensors(lakes: Iterable[Lake], scenes: list[Scene], seen: Seen) -> Seen:

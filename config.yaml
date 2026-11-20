@@ -33,6 +33,11 @@ imagery:  # placeholders, tuned by backtest
   snow_brightness: 0.36
   dark_brightness: 0.155
   s1_frozen_delta_db: 3.0
+  # Skip Sentinel-2 / Landsat scenes at or above this cloud cover (the catalog's
+  # whole-scene figure, like Copernicus Browser's cloud slider). High on purpose: a lake
+  # can sit in a clear hole, and winter snow is often counted as cloud. Lower it once the
+  # daily logs show how many skipped scenes would have been clear over lakes.
+  max_scene_cloud_pct: 95
   # Patchy lake: grey (older, dusted) ice next to black patches that may be open water
   # or newer, thinner ice (lakeice.org: ice edges, polynyas). Measured as p95 - p75
   # green reflectance. On 344 thumbnails: evenly black lakes 0.003 (90% under 0.010),

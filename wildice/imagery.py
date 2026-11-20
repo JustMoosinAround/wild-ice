@@ -322,7 +322,9 @@ class CopernicusClient:
                         if sensor == "s1" and mode is not None and mode != S1_POLARIZATION:
                             continue  # a mode the radar request can't use
                         when = datetime.fromisoformat(props["datetime"].replace("Z", "+00:00"))
-                        out.append(Scene(sensor, when, shape(item["geometry"])))
+                        cloud = props.get("eo:cloud_cover")
+                        out.append(Scene(sensor, when, shape(item["geometry"]),
+                                         float(cloud) if cloud is not None else None))
                     token = (page.get("context") or {}).get("next")
                 except (KeyError, TypeError, ValueError, AttributeError) as exc:
                     raise SourceUnavailable(
