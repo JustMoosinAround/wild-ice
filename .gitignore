@@ -8,4 +8,3 @@ backtest.local.yaml
 *.local.*
 worker/node_modules/
 worker/.wrangler/
-.superpowers/
