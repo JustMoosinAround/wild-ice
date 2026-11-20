@@ -1,6 +1,7 @@
 // Wild Ice "Ice Log" worker: routing only. See docs/superpowers/specs/2026-11-20-ice-log-design.md.
 import { bootstrap, invite, me, redeem, revoke } from "./auth.js";
 import { HttpError, json, preflight, withCors } from "./http.js";
+import { getExport, getPhoto, postReport } from "./reports.js";
 
 const ROUTES = [
   ["POST", /^\/api\/bootstrap$/, bootstrap],
@@ -8,6 +9,9 @@ const ROUTES = [
   ["GET", /^\/api\/me$/, me],
   ["POST", /^\/api\/invites$/, invite],
   ["POST", /^\/api\/friends\/([\w-]+)\/revoke$/, revoke],
+  ["POST", /^\/api\/reports$/, postReport],
+  ["GET", /^\/api\/photos\/([\w-]+)$/, getPhoto],
+  ["GET", /^\/api\/export$/, getExport],
 ];
 
 async function route(request, env, ctx) {
