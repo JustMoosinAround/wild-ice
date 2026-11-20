@@ -135,9 +135,12 @@ and keeping secrets off phones.
 1. **Worth-the-drive cutoff.** Owner confirmed every grade A+ … F- means skateable
    ("F = skateable but awful"); the grade is quality, not safety. Proposed cutoff: A+ … C-
    = good skating (can alert), D+ … F- = skateable but rough (no alert, grade shown).
-   Awaiting confirmation of C-.
-2. **Card on the Cloudflare account?** R2 needs one even on the free tier. Without it,
-   photos go to Workers KV (~1 GB total; resized copies; originals kept a few weeks).
+   **Owner confirmed C-.**
+2. **Card on the Cloudflare account?** R2 needs one even on the free tier. Owner is
+   setting up the account and adding a card (R2 free plan). Without it, photos go to
+   Workers KV (~1 GB total; resized copies; originals kept a few weeks). Deploys will use
+   a scoped Cloudflare API token supplied through the environment's secure credential
+   form, never pasted into chat.
 
 ## Out of scope for this build, noted
 
