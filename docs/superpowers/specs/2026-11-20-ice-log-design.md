@@ -1,6 +1,10 @@
-# Friends' reports, photos and public comments — design
+# Ice Log — design
 
-Date: 2026-11-20 · Status: final draft — open questions answered; awaiting owner approval
+*Ice Log*: the shared log of what people found on each lake — on-the-ice reports with
+an A+ … F- grade, photos, and public comments. On the map each lake gets an "Ice Log"
+section; the button to add an entry reads "Log the ice".
+
+Date: 2026-11-20 · Status: **approved by the owner** (name "Ice Log" chosen at approval)
 
 ## Intent
 
