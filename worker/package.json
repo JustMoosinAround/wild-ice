@@ -1,0 +1,16 @@
+{
+  "name": "wild-ice-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.9.0",
+    "@vitest/runner": "^4.1.12",
+    "@vitest/snapshot": "^4.1.12",
+    "vitest": "^4.1.12",
+    "wrangler": "^4.166.0"
+  }
+}
