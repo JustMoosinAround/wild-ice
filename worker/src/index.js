@@ -2,6 +2,8 @@
 import { bootstrap, invite, me, redeem, revoke } from "./auth.js";
 import { HttpError, json, preflight, withCors } from "./http.js";
 import { getExport, getPhoto, postReport } from "./reports.js";
+import { postComment } from "./comments.js";
+import { getLake } from "./lakes.js";
 
 const ROUTES = [
   ["POST", /^\/api\/bootstrap$/, bootstrap],
@@ -12,6 +14,8 @@ const ROUTES = [
   ["POST", /^\/api\/reports$/, postReport],
   ["GET", /^\/api\/photos\/([\w-]+)$/, getPhoto],
   ["GET", /^\/api\/export$/, getExport],
+  ["POST", /^\/api\/comments$/, postComment],
+  ["GET", /^\/api\/lakes\/([\w-]+)$/, getLake],
 ];
 
 async function route(request, env, ctx) {
