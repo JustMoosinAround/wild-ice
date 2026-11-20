@@ -1,6 +1,6 @@
 # Friends' reports, photos and public comments — design
 
-Date: 2026-11-20 · Status: draft — two open questions, not yet approved
+Date: 2026-11-20 · Status: final draft — open questions answered; awaiting owner approval
 
 ## Intent
 
@@ -24,7 +24,8 @@ community share practical tips.
 4. **Public comments** on a lake: anyone can read them; comments from people without an
    invite wait for owner approval; invited friends' comments appear immediately.
 5. **Per-friend access the owner can switch off**, one person at a time.
-6. **Zero cost**, consistent with the rest of the project.
+6. **Zero cost**, consistent with the rest of the project. Owner's standing rule:
+   **default to the free option at every opportunity**; no payment card on any account.
 
 ## Non-goals
 
@@ -57,9 +58,10 @@ community share practical tips.
 
 ## Approaches considered
 
-1. **Cloudflare Worker + D1 + R2 + Turnstile** — *chosen.* One free Cloudflare account. A
+1. **Cloudflare Worker + D1 + Workers KV + Turnstile** — *chosen* (R2 was planned for
+   photos but needs a card; owner chose the free no-card KV store instead). One free Cloudflare account. A
    small Worker holds the secrets, checks invites, strips photo metadata, stores photos
-   privately (R2) and comments (D1), and writes friends' reports into the repo with a
+   privately (KV) and comments (D1), and writes friends' reports into the repo with a
    narrowly scoped GitHub token. Turnstile (free) stops bots on stranger comments. No
    pausing, generous free limits (R2 10 GB, Workers 100k requests/day).
 2. **Supabase** — free hosted database with email-link logins and storage. Rejected: the
@@ -97,7 +99,7 @@ and keeping secrets off phones.
 - **Moderation lives on a review page** on the map (`#review`, admin key required) listing
   waiting comments and photos, each with Approve / Reject; also lists friends with Revoke.
 - **Featured photos**: the owner approves a photo to feature it; the Worker serves the
-  metadata-free copy from R2. Up to ~6 featured per lake, newest first.
+  metadata-free copy from KV. Up to ~6 featured per lake, newest first.
 - **Lake verification.** If the photo's GPS survives upload, it must fall within ~300 m of
   the chosen lake's outline, else the report is stored but marked `unverified` and the
   model ignores it. If GPS is missing, the form offers one-tap "use my current location"
@@ -136,11 +138,12 @@ and keeping secrets off phones.
    ("F = skateable but awful"); the grade is quality, not safety. Proposed cutoff: A+ … C-
    = good skating (can alert), D+ … F- = skateable but rough (no alert, grade shown).
    **Owner confirmed C-.**
-2. **Card on the Cloudflare account?** R2 needs one even on the free tier. Owner is
-   setting up the account and adding a card (R2 free plan). Without it, photos go to
-   Workers KV (~1 GB total; resized copies; originals kept a few weeks). Deploys will use
-   a scoped Cloudflare API token supplied through the environment's secure credential
-   form, never pasted into chat.
+2. **No card: R2 is out.** Owner chose the free, no-card route. Photos go to **Workers
+   KV** (free: 1 GB total, 25 MB per value, ~1,000 writes/day): featured copies resized to
+   ~1600 px with metadata stripped, originals kept ~3 weeks for lake checks and review,
+   then deleted. Workers, D1, Turnstile and cron triggers are all on the free plan with no
+   card. Deploys use a scoped Cloudflare API token supplied through the environment's
+   secure credential form, never pasted into chat.
 
 ## Out of scope for this build, noted
 
@@ -150,7 +153,7 @@ and keeping secrets off phones.
 
 ## Left to the builder
 
-- Worker routing, D1 schema, R2 key layout, EXIF parsing/stripping library (must run in
+- Worker routing, D1 schema, KV key layout, EXIF parsing/stripping library (must run in
   Workers), image resizing for featured copies.
 - Deploy method (wrangler from a GitHub Action with a Cloudflare API token secret, or the
   owner running one command), and step-by-step setup notes for the owner.
