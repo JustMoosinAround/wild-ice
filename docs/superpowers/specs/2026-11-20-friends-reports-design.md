@@ -103,10 +103,11 @@ and keeping secrets off phones.
   model ignores it. If GPS is missing, the form offers one-tap "use my current location"
   for on-the-spot reports; reports with neither are accepted as `unverified_location`
   and *are* used (friends are trusted), but the flag is kept for later backtests.
-- **Grade → model.** Grades are stored and shown as given. For the model: **A+ … C-**
-  counts like "skateable", **D+ … D-** like "rough ice", **F+ … F-** like "rough ice"
-  plus a caution note. The condition the reporter picks (open water / snow on ice) still
-  wins where it applies. Thresholds live in `config.yaml` for the backtest to tune.
+- **Grade → model (owner: every grade means skateable).** A graded report counts as
+  skateable ice for the ice estimate. The grade sets quality: **A+ … C-** shows as good
+  skating and can trigger the morning alert; **D+ … F-** shows as skateable but rough, no
+  alert, grade displayed. Grades go with Skateable (and Rough); Open water / Snow on ice
+  take no grade. The cutoff lives in `config.yaml`.
 - **Several reporters, one lake.** The newest report wins (as today); the reason line names
   how many reports a lake had in the last week ("3 reports this week").
 - **Owner's morning alert** gets one line ("3 comments, 2 photos waiting") when there is
@@ -131,9 +132,10 @@ and keeping secrets off phones.
 
 ## Open questions for the owner
 
-1. **What the grades mean.** Where on A+ … F- ice stops being worth the drive, and
-   whether F means "skateable but awful" or "don't go out". Sets the grade → model
-   mapping above (grade offered only with Skateable or Rough, optional).
+1. **Worth-the-drive cutoff.** Owner confirmed every grade A+ … F- means skateable
+   ("F = skateable but awful"); the grade is quality, not safety. Proposed cutoff: A+ … C-
+   = good skating (can alert), D+ … F- = skateable but rough (no alert, grade shown).
+   Awaiting confirmation of C-.
 2. **Card on the Cloudflare account?** R2 needs one even on the free tier. Without it,
    photos go to Workers KV (~1 GB total; resized copies; originals kept a few weeks).
 
