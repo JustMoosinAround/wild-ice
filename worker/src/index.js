@@ -4,6 +4,8 @@ import { HttpError, json, preflight, withCors } from "./http.js";
 import { getExport, getPhoto, postReport } from "./reports.js";
 import { postComment } from "./comments.js";
 import { getLake } from "./lakes.js";
+import { getReview, postPref, reviewComment, reviewPhoto } from "./review.js";
+import { scheduled } from "./cron.js";
 
 const ROUTES = [
   ["POST", /^\/api\/bootstrap$/, bootstrap],
@@ -16,6 +18,10 @@ const ROUTES = [
   ["GET", /^\/api\/export$/, getExport],
   ["POST", /^\/api\/comments$/, postComment],
   ["GET", /^\/api\/lakes\/([\w-]+)$/, getLake],
+  ["GET", /^\/api\/review$/, getReview],
+  ["POST", /^\/api\/review\/comments\/([\w-]+)$/, reviewComment],
+  ["POST", /^\/api\/review\/photos\/([\w-]+)$/, reviewPhoto],
+  ["POST", /^\/api\/prefs$/, postPref],
 ];
 
 async function route(request, env, ctx) {
@@ -28,6 +34,7 @@ async function route(request, env, ctx) {
 }
 
 export default {
+  scheduled,
   async fetch(request, env, ctx) {
     if (request.method === "OPTIONS") return preflight(request, env);
     let response;

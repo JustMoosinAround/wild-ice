@@ -1,6 +1,7 @@
 // On-the-ice reports (with an optional, already resized and metadata-free photo).
 import { deviceFriend, newToken, requireDevice, requireService } from "./auth.js";
 import { HttpError, json, now, readJson } from "./http.js";
+import { exportPrefs, pendingCounts } from "./review.js";
 
 export const RATINGS = ["skated", "snow", "water", "rough"];
 export const GRADES = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-",
@@ -130,5 +131,9 @@ export async function getExport(env, request) {
   await requireService(env, request);
   const since = new URL(request.url).searchParams.get("since") || "2000-01-01";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(since)) throw new HttpError(400, "Bad since");
-  return json({ reports: await exportReports(env, since) });
+  return json({
+    reports: await exportReports(env, since),
+    prefs: await exportPrefs(env),
+    pending: await pendingCounts(env),
+  });
 }
