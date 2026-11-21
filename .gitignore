@@ -8,3 +8,4 @@ backtest.local.yaml
 *.local.*
 worker/node_modules/
 worker/.wrangler/
+worker/.dev.vars
