@@ -71,7 +71,7 @@ def test_body_has_map_link_and_click():
     scores = {i: score(i) for i in lakes}
     title, body, click = format_alert(["w1", "w2"], lakes, scores, frozenset({"w1"}), BASE)
     assert "/#lake=w1)" in body
-    assert click == f"{BASE}/#lake=w1"
+    assert click == f"{BASE}/#skateable"  # several lakes: open the list
     assert body.splitlines()[0] == (
         "- ★ **Jewel Lake** — clear, dark ice ([map](https://example.github.io/wildice/#lake=w1))")
     assert body.splitlines()[1].startswith("- **Unnamed lake (100 ac)** — ")
@@ -146,3 +146,11 @@ def test_send_ntfy_connection_error_does_not_leak_topic():
         send_ntfy(SECRET, "x", "y", None, requests.Session())
     _assert_topic_free(ei.value)
     assert "ConnectionError" in str(ei.value)
+
+
+
+def test_single_lake_alert_opens_that_lake():
+    lakes = {"w1": lake("w1", name="One")}
+    scores = {"w1": score("w1")}
+    _, _, click = format_alert(["w1"], lakes, scores, frozenset(), BASE)
+    assert click == f"{BASE}/#lake=w1"

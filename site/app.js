@@ -1,5 +1,6 @@
 import { renderWeatherChart } from "./chart.js";
 import { searchLakes } from "./search.js";
+import { skateableLakes } from "./skatelist.js";
 import {
   GRADES, flushReports, getDevice, inviteCodeFromHash, loadLake, ownerCall, postComment, prepPhoto,
   queueReport, queuedReports, redeemInvite, makeReport, checkDevice, clearLegacy, inviteDecision,
@@ -610,10 +611,41 @@ function routeHash() {
     return;
   }
   if (location.hash === "#review") { showReview(); return; }
+  if (location.hash === "#skateable") { showSkateable(); return; }
   const m = location.hash.match(/^#lake=(.+)$/);
   if (!m) return;
   const id = decodeURIComponent(m[1]);
   if (info(id)) openLake(id, true);
+}
+
+function areaById() {
+  const out = {};
+  for (const f of features) out[f.properties.id] = f.properties.area_acres;
+  return out;
+}
+
+// Every lake that looks skateable today, best first; tap one to open it.
+function showSkateable() {
+  const list = skateableLakes(status.lakes, areaById());
+  const items = el("ol", { class: "skate-list" });
+  for (const d of list) {
+    const s = STYLE[d.label] || STYLE.unknown;
+    const sw = el("i", { class: "sw" });
+    sw.style.background = s.fill;
+    sw.style.borderColor = s.line;
+    const est = d.thickness_cm != null ? `~${d.thickness_cm} cm · ` : "";
+    items.append(el("li", {}, el("button", { type: "button", class: "skate-row", onclick: () => openLake(d.id, true) },
+      sw, el("span", { class: "nm" }, el("b", { text: (d.pinned ? "★ " : "") + d.name }),
+        el("span", { class: "meta", text: est + s.text + " · " + d.confidence + " confidence" })))));
+  }
+  openPage(list.length ? `Skateable today (${list.length})` : "Nothing looks skateable today",
+    el("p", { class: "disc", text: status.disclaimer || "Rough estimate only — check ice yourself." }), items);
+}
+
+function addSkateButton() {
+  const n = skateableLakes(status.lakes, areaById()).length;
+  if (!n) return;
+  $("bar").append(el("a", { class: "review-link", href: "#skateable", text: `Skateable (${n})` }));
 }
 
 function isOwner() { return !VIEW_ONLY && WORKER_URL && getDevice(store)?.role === "owner"; }
@@ -813,6 +845,7 @@ async function main() {
   if (!VIEW_ONLY) overlayReported();
   build();
   setupSearch();
+  addSkateButton();
   routeHash();
 }
 

@@ -50,7 +50,8 @@ def format_alert(ids: list[str], lakes: dict[str, Lake], scores: dict[str, Score
     if comments or photos:  # Ice Log items waiting for review: a line, never its own push
         waiting = [_plural(n, w) for n, w in ((comments, "comment"), (photos, "photo")) if n]
         body += f"\n\n{', '.join(waiting)} waiting"
-    return title, body, _map_url(base_url, ids[0])
+    click = _map_url(base_url, ids[0]) if n == 1 else f"{base_url.rstrip('/')}/#skateable"
+    return title, body, click
 
 
 def send_ntfy(topic: str, title: str, body: str, click: str | None,
