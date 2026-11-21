@@ -812,3 +812,49 @@ def test_overcast_photo_scenes_cost_no_requests(tmp_repo, mocked, caplog):
     assert "2 photo scenes skipped as 95%+ cloud" in caplog.text
     seen = json.loads((tmp_repo / "state/seen_scenes.json").read_text(encoding="utf-8"))
     assert seen == {}  # not marked seen: the next clear pass still counts
+
+
+ICELOG_ENV = {**ENV, "ICELOG_URL": "https://ice.example", "ICELOG_TOKEN": "svc"}
+
+
+def _icelog(rsps, reports=(), prefs=(), pending=(0, 0)):
+    rsps.add(responses_lib.GET, "https://ice.example/api/export", json={
+        "reports": list(reports), "prefs": list(prefs),
+        "pending": {"comments": pending[0], "photos": pending[1]}})
+
+
+def test_ice_log_down_run_still_succeeds(tmp_repo, mocked, caplog):
+    cold_weather(mocked)
+    mocked.add(responses_lib.GET, "https://ice.example/api/export", status=503)
+    assert run(RUN, tmp_repo, ICELOG_ENV, session(), FakeClient()) == 0
+    assert status_of(tmp_repo)["lakes"]["w1"]["label"] == "likely_black_ice"
+    assert "ice log unavailable: HTTP 503" in caplog.text
+    assert ntfy_calls(mocked, "ops-topic") == 0
+
+
+def test_friend_d_grade_makes_lake_rough_and_no_alert(tmp_repo, mocked):
+    cold_weather(mocked)
+    _icelog(mocked, reports=[{"id": "r", "lake_id": "w1", "day": RUN.isoformat(),
+                              "created_at": f"{RUN}T18:00:00Z", "rating": "skated", "grade": "D",
+                              "note": "bumpy", "lat": None, "lon": None, "gps_source": None,
+                              "role": "friend"}])
+    assert run(RUN, tmp_repo, ICELOG_ENV, session(), FakeClient()) == 0
+    lake = status_of(tmp_repo)["lakes"]["w1"]
+    assert lake["label"] == "rough_ice"
+    assert lake["reason"].startswith("Reported skateable ice on Nov 12 (D)")
+    assert "bumpy" not in json.dumps(status_of(tmp_repo))
+    assert ntfy_calls(mocked, "alerts-topic") == 0
+
+
+def test_alert_carries_waiting_count_and_ice_log_pins(tmp_repo, mocked):
+    cold_weather(mocked)
+    _icelog(mocked, prefs=[{"lake_id": "w1", "action": "pin", "created_at": "x"}], pending=(2, 1))
+    assert run(RUN, tmp_repo, ICELOG_ENV, session(), FakeClient()) == 0
+    assert ntfy_bodies(mocked, "alerts-topic")[0].endswith("\n\n2 comments, 1 photo waiting")
+    assert status_of(tmp_repo)["lakes"]["w1"]["pinned"] is True
+
+
+def test_no_ice_log_settings_no_request(tmp_repo, mocked):
+    cold_weather(mocked)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    assert not any("ice.example" in c.request.url for c in mocked.calls)

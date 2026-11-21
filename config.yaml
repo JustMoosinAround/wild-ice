@@ -69,6 +69,10 @@ ridges:  # pressure-ridge warnings (lakeice.org); placeholders until we have rep
   lead_gust_kmh: 45
   lead_max_cm: 15
 
+icelog:  # reports from the Ice Log (friends and owner), via the Cloudflare worker
+  good_grade_min: "C-"   # owner: A+ ... C- is worth the drive; D+ ... F- is skateable but rough
+  max_gps_m: 300         # a friend's photo/phone location this far from the lake = wrong lake
+
 weather:
   batch_pause_s: 10  # pause between Open-Meteo requests
 site:

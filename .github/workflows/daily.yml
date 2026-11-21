@@ -40,6 +40,8 @@ jobs:
           CDSE_CLIENT_SECRET: ${{ secrets.CDSE_CLIENT_SECRET }}
           NTFY_TOPIC_ALERTS: ${{ secrets.NTFY_TOPIC_ALERTS }}
           NTFY_TOPIC_OPS: ${{ secrets.NTFY_TOPIC_OPS }}
+          ICELOG_URL: ${{ secrets.ICELOG_URL }}
+          ICELOG_TOKEN: ${{ secrets.ICELOG_TOKEN }}
           WILDICE_OPS_MARKER: ${{ runner.temp }}/ops_notified
         run: python -m wildice.run_daily
 

@@ -101,3 +101,28 @@ button.act.rep { display: flex; align-items: center; justify-content: center; ga
 .wx-table { border-collapse: collapse; width: 100%; font-size: 12px; font-variant-numeric: tabular-nums; }
 .wx-table th, .wx-table td { text-align: right; padding: 2px 4px; border-bottom: 1px solid var(--line); }
 .wx-table th:first-child, .wx-table td:first-child { text-align: left; }
+
+/* Ice Log */
+.details { display: flex; flex-direction: column; gap: 8px; }
+.details input[type=text], .comment-form input, .comment-form textarea { width: 100%; font: inherit; font-size: 16px; padding: 8px 10px; border: 1px solid #94a3b8; border-radius: 8px; }
+.grades { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.grade { min-height: 40px; border: 1px solid #94a3b8; border-radius: 8px; background: var(--bg); color: var(--fg); font-weight: 600; }
+.grade.sel { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.icelog { margin: 16px 0 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.icelog h3 { font-size: 16px; margin: 0 0 8px; }
+.featured { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.featured:empty { display: none; }
+.featured figure { margin: 0; }
+.featured img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; display: block; background: #e2e8f0; }
+.featured figcaption { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.comments { list-style: none; margin: 8px 0; padding: 0; }
+.comments li { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.comments li p { margin: 2px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.comment-form { display: flex; flex-direction: column; gap: 8px; }
+.turnstile:empty { display: none; }
+.review h3 { font-size: 15px; margin: 16px 0 6px; }
+.review-row { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.review-row p { margin: 2px 0; overflow-wrap: anywhere; }
+.review-row.friend { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.review input[type=text] { width: 100%; font-size: 14px; padding: 8px; border: 1px solid #94a3b8; border-radius: 8px; margin: 6px 0; }
+.review-link { font-size: 14px; color: var(--accent); min-height: 44px; display: inline-flex; align-items: center; }

@@ -1,0 +1,23 @@
+# Wild Ice "Ice Log" worker. Free plan only: Workers, D1, Workers KV, cron triggers.
+# Secrets are set with `wrangler secret put`, never here:
+#   BOOTSTRAP_TOKEN, SERVICE_TOKEN, TURNSTILE_SECRET, NTFY_TOPIC
+name = "wild-ice"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+[vars]
+SITE_ORIGIN = "https://justmoosinaround.github.io"     # who may call the API (CORS)
+SITE_URL = "https://justmoosinaround.github.io/wild-ice" # where invite links point
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wild-ice"
+database_id = "f2bc0757-b37b-405a-afdd-bf66ffef325d"
+migrations_dir = "migrations"
+
+[[kv_namespaces]]
+binding = "PHOTOS"
+id = "c44584ed55634563aa80cdf1bf7a9fa2"
+
+[triggers]
+crons = ["17 18 * * *"]  # daily 09:17 Alaska (AKST): photo cleanup + weekly reminder check

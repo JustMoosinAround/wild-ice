@@ -11,6 +11,7 @@ class Label(StrEnum):
     FREEZING = "freezing"
     LIKELY_BLACK_ICE = "likely_black_ice"
     SNOW_COVERED = "snow_covered"
+    ROUGH_ICE = "rough_ice"  # someone skated it but graded the ice D+ or worse
     UNKNOWN = "unknown"
 
 
