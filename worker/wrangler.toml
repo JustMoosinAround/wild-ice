@@ -12,12 +12,12 @@ SITE_URL = "https://justmoosinaround.github.io/wild-ice" # where invite links po
 [[d1_databases]]
 binding = "DB"
 database_name = "wild-ice"
-database_id = "00000000-0000-0000-0000-000000000000"  # set at deploy (Task 8)
+database_id = "f2bc0757-b37b-405a-afdd-bf66ffef325d"
 migrations_dir = "migrations"
 
 [[kv_namespaces]]
 binding = "PHOTOS"
-id = "00000000000000000000000000000000"               # set at deploy (Task 8)
+id = "c44584ed55634563aa80cdf1bf7a9fa2"
 
 [triggers]
 crons = ["17 18 * * *"]  # daily 09:17 Alaska (AKST): photo cleanup + weekly reminder check
