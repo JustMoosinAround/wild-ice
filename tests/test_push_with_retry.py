@@ -103,3 +103,20 @@ def test_gives_up_after_five_failures(repos, tmp_path):
     res = run_script(a, "2025-11-12")
     assert res.returncode == 1
     assert res.stderr.count("push attempt") == 5
+
+
+def test_second_run_same_day_wins_over_first_runs_data(repos):
+    """Two daily runs on one day (e.g. a manual re-run): both write the same data files.
+    The later run's data must land instead of the push failing on the clash."""
+    origin, a, b = repos
+    for repo, label in ((b, "first"), (a, "second")):
+        (repo / "site/data/history").mkdir(parents=True)
+        (repo / "site/data/history/2026-11-21.json").write_text(f'{{"w1": "{label}"}}\n')
+        (repo / "state").mkdir()
+        (repo / "state/labels.json").write_text(f'{{"w1": "{label}"}}\n')
+    assert run_script(b, "2026-11-21").returncode == 0  # first run lands
+    res = run_script(a, "2026-11-21")                    # re-run started before it
+    assert res.returncode == 0, res.stdout + res.stderr
+    got = git(origin, "show", "main:site/data/history/2026-11-21.json")
+    assert '"second"' in got
+    assert '"second"' in git(origin, "show", "main:state/labels.json")

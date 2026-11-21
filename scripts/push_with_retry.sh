@@ -23,7 +23,10 @@ git commit -q -m "data: ${run_date}" || exit 1
 i=1
 while [ "$i" -le "$attempts" ]; do
   echo "push attempt ${i}/${attempts}" >&2
-  if git pull -q --rebase --autostash origin main && git push -q origin HEAD:main; then
+  # -X theirs: on a clash, keep this run's version. Our commit holds only generated
+  # site/data and state files, so a clash means an earlier run (same day) wrote them
+  # too, and this later run's data is the newer answer.
+  if git pull -q --rebase -X theirs --autostash origin main && git push -q origin HEAD:main; then
     exit 0
   fi
   git rebase --abort >/dev/null 2>&1 || true
