@@ -144,3 +144,17 @@ def test_in_low_sun_helper():
     from wildice.icemodel import in_low_sun
     assert in_low_sun(date(2025, 12, 25), cfg) and in_low_sun(date(2026, 1, 15), cfg)
     assert not in_low_sun(date(2026, 1, 16), cfg) and not in_low_sun(date(2025, 11, 24), cfg)
+
+
+def test_warm_days_that_snowed_are_not_a_thaw():
+    # Nov 18-19 2026 in Anchorage: means just above 0 C, but it snowed (wet, heavy)
+    days = cold(n=5) + [wx(5, 0.9, snow=3), wx(6, 1.5, snow=12), wx(7, -6)]
+    s = run_ice_model(days, cfg)
+    assert s.last_reset.kind == ResetKind.FREEZE_UP
+    assert s.snow_since_reset_cm == pytest.approx(15)
+
+
+def test_light_snow_on_a_warm_day_still_counts_toward_a_thaw():
+    days = cold(n=5) + [wx(5, 3, snow=0.3), wx(6, 3, snow=0.2), wx(7, -3)]
+    s = run_ice_model(days, cfg)
+    assert s.last_reset.kind == ResetKind.LIKELY

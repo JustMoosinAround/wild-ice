@@ -102,8 +102,9 @@ def run_ice_model(
     r = cfg.reset
 
     for d in days:
-        # track warm runs (independent of frozen state)
-        if d.t_mean > 0:
+        # track warm runs (independent of frozen state). A day just above freezing that
+        # snowed (at least cover_cm) is a snow day, not a thaw.
+        if d.t_mean > 0 and d.snowfall_cm < cfg.snow.cover_cm:
             warm_days += 1
             warm_rain += d.rain_mm
             prev_warm_days, prev_warm_rain = 0, 0.0

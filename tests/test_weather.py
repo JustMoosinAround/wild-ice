@@ -328,3 +328,39 @@ def test_failed_batch_keeps_earlier_batches_cached(tmp_path, monkeypatch):
     assert saved_a[1]["snowfall_cm"] == 4.0  # forecast batch for a was saved
     saved_b = json.loads((tmp_path / "61.0_-149.5.json").read_text(encoding="utf-8"))
     assert [r["day"] for r in saved_b] == ["2025-10-01"]  # archive progress kept
+
+
+def _w(t_mean, rain, snow=0.0, t_min=None):
+    from datetime import date as _date
+    from wildice.models import DayWeather
+    return DayWeather(_date(2026, 11, 19), t_mean - 3 if t_min is None else t_min, t_mean + 2,
+                      t_mean, snow, rain, 30.0)
+
+
+def test_near_freezing_rain_counts_as_wet_snow():
+    from wildice.weather import wet_snow
+    cold_wet, warm = _w(1.5, 21.6), _w(4.0, 10.0)
+    out = wet_snow([cold_wet, warm, _w(-3, 0.0, snow=2.0)], max_c=2.0, cm_per_mm=0.55)
+    assert out[0].snowfall_cm == pytest.approx(21.6 * 0.55) and out[0].rain_mm == 0
+    assert out[1] == warm                      # a warm rain stays rain
+    assert out[2].snowfall_cm == 2.0           # real snow untouched
+
+
+def test_anchorage_nov_storm_leaves_lakes_snow_covered():
+    """Cheney Lake's recorded weather for Nov 2026: the storm fell as 4-8 in of wet snow."""
+    from datetime import date as _date, timedelta
+    from pathlib import Path
+    from wildice.config import load_config
+    from wildice.icemodel import run_ice_model
+    from wildice.models import DayWeather
+    from wildice.weather import wet_snow
+    cfg = load_config(Path("config.yaml"))
+    start = _date(2026, 10, 25)
+    days = [DayWeather(start + timedelta(i), -10, -4, -7, 0.0, 0.0, 10.0) for i in range(24)]  # to Nov 17
+    days += [DayWeather(_date(2026, 11, 18), -3.4, 4.0, 0.9, 0.14, 5.2, 40.0),
+             DayWeather(_date(2026, 11, 19), 0.1, 3.0, 1.5, 0.0, 21.6, 37.8),
+             DayWeather(_date(2026, 11, 20), -10.5, 0.5, -6.1, 0.0, 0.0, 40.7),
+             DayWeather(_date(2026, 11, 21), -7.4, 1.9, -1.2, 0.0, 0.0, 44.6)]
+    s = run_ice_model(wet_snow(days, cfg.snow.wet_snow_max_c, cfg.snow.wet_snow_cm_per_mm), cfg)
+    assert 10 <= s.snow_since_reset_cm <= 20      # owner observed 4-8 inches
+    assert s.snow_since_reset_cm > cfg.snow.cover_cm

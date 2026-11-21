@@ -36,6 +36,8 @@ class IceCfg:
 @dataclass(frozen=True)
 class SnowCfg:
     cover_cm: float
+    wet_snow_max_c: float      # "rain" on a day with a mean at or below this fell as wet snow
+    wet_snow_cm_per_mm: float  # cm of wet snow per mm of that water
 
 
 @dataclass(frozen=True)
@@ -161,7 +163,8 @@ def load_config(path: Path) -> Config:
                               min_area_acres_at_road=float)),
         ice=_section(raw, "ice", IceCfg, dict(ashton_h=float, skate_cm=float, open_cm=float,
                                                          water_start_c=float)),
-        snow=_section(raw, "snow", SnowCfg, dict(cover_cm=float)),
+        snow=_section(raw, "snow", SnowCfg, dict(cover_cm=float, wet_snow_max_c=float,
+                                                 wet_snow_cm_per_mm=float)),
         reset=_section(raw, "reset", ResetCfg,
                        dict(rain_mm=float, thaw_days=int, wind_gust_kmh=float, light_snow_cm=float)),
         imagery=_section(raw, "imagery", ImageryCfg, dict(

@@ -18,7 +18,9 @@ from wildice.models import Confidence, Label, SourceUnavailable
 from wildice.prefs import load_prefs
 from wildice.score import optical_classes, score_lake, valid_ls_classes, valid_s2_classes
 from wildice.shortlist import shortlist
-from wildice.weather import cell_of, cell_points, fetch_daily, make_session, season_start
+from wildice.weather import (
+    cell_of, cell_points, fetch_daily, make_session, season_start, wet_snow,
+)
 
 log = logging.getLogger(__name__)
 
@@ -80,7 +82,8 @@ def run_backtest(obs_path: Path, root: Path, session, client) -> list[Row]:
             cell = cell_of(lake.lat, lake.lon)
             wx = fetch_daily([cell], season_start(day, cfg), day, session, archive=True,
                              points=points)[cell]
-            wx = [d for d in wx if d.day <= day]
+            wx = wet_snow([d for d in wx if d.day <= day], cfg.snow.wet_snow_max_c,
+                          cfg.snow.wet_snow_cm_per_mm)
             ice = run_ice_model(wx, cfg, area_acres=lake.area_acres, depth_m=lake.depth_m)
             imaged = shortlist([lake], {lake.id: ice}, pinned, cfg, remaining_requests=2,
                                hidden=hidden)

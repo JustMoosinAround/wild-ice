@@ -5,6 +5,8 @@ rounded cell centre, which can sit on a ridge or in the sea.
 """
 from __future__ import annotations
 
+from dataclasses import replace
+
 import json
 import time
 from collections.abc import Callable, Iterable, Mapping, Sequence
@@ -227,3 +229,13 @@ def update_cache(cache_dir: Path, cells: Mapping[Cell, Point] | Sequence[Cell],
         fetch_daily(order, start, run_date, session, archive=False, points=points,
                     pause_s=pause, sleep=sleep, on_batch=keep)
     return {cell: current[cell] for cell in order}
+
+
+def wet_snow(days: Sequence[DayWeather], max_c: float, cm_per_mm: float) -> list[DayWeather]:
+    """Rain on a day whose mean is at or below max_c counted as wet snow instead."""
+    out = []
+    for d in days:
+        if d.rain_mm > 0 and d.t_mean <= max_c:
+            d = replace(d, snowfall_cm=round(d.snowfall_cm + d.rain_mm * cm_per_mm, 2), rain_mm=0.0)
+        out.append(d)
+    return out

@@ -33,7 +33,9 @@ from wildice.reports import apply_report, ice_with_report, load_reports
 from wildice.scenes import Seen, drop_cloudy, load_seen, new_sensors, save_seen
 from wildice.score import optical_classes, score_lake, valid_ls_classes, valid_s2_classes
 from wildice.shortlist import shortlist
-from wildice.weather import cell_of, cell_points, make_session, season_start, update_cache
+from wildice.weather import (
+    cell_of, cell_points, make_session, season_start, update_cache, wet_snow,
+)
 
 log = logging.getLogger(__name__)
 
@@ -412,6 +414,8 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
 
     try:
         wx = update_cache(state / "weather", cell_points(lake_list), run_date, cfg, session)
+        wx = {c: wet_snow(days, cfg.snow.wet_snow_max_c, cfg.snow.wet_snow_cm_per_mm)
+              for c, days in wx.items()}
         # earlier clearings this season count before today's imagery is in
         traces: dict[str, list] = {lake.id: [] for lake in lake_list}
         ice0 = {lake.id: ice_with_report(wx[cell_of(lake.lat, lake.lon)], cfg,

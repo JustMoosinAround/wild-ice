@@ -20,6 +20,12 @@ ice:
   water_start_c: 7
 snow:
   cover_cm: 2
+  # Near freezing, the weather model often calls wet snow "rain". Nov 18-19 2026 around
+  # Anchorage: 27 mm recorded as rain at daily means of +0.9/+1.5 C fell as 4-8 in of
+  # wet snow (owner). So rain on a day with a mean at or below wet_snow_max_c counts as
+  # snow at wet_snow_cm_per_mm (15 cm / 27 mm).
+  wet_snow_max_c: 2.0
+  wet_snow_cm_per_mm: 0.55
 reset:  # placeholders, tuned by backtest
   rain_mm: 5
   thaw_days: 2
