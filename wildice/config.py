@@ -85,6 +85,22 @@ class RidgesCfg:
 
 
 @dataclass(frozen=True)
+class ThawCfg:
+    """lakeice.org "Thawed Ice": Ashton/Bilello thaw-loss rates and thaw stages."""
+    loss_cm_per_cdd: float       # average thickness loss per thaw degree-day (C)
+    slow_cm_per_cdd: float       # low winter sun: Bilello's slowest rate
+    fast_cm_per_cdd: float       # warm wind, or a shallow pond in the sun: the fastest
+    windy_gust_kmh: float        # a thaw day this windy melts at the fast rate
+    shallow_m: float             # mean depth under this: sun warms the water under the ice
+    recover_days: int            # this many cold days in a row and the ice has recovered
+    lookback_days: int           # how far back to add up the thaw
+    weak_cdd: float              # thaw degree-days since recovery that weaken the ice
+    rotten_cdd: float            # ...that can rot it (candled ice) whatever the thickness
+    new_ice_days: int            # ice younger than this: thin spots and skinned holes
+    slush_ratio: float           # snow deeper than this share of the ice floods it
+
+
+@dataclass(frozen=True)
 class IcelogCfg:
     good_grade_min: str  # this grade or better = good skating (may alert); below = rough
     max_gps_m: float     # a friend's GPS farther than this from the lake = wrong lake
@@ -117,6 +133,7 @@ class Config:
     reset: ResetCfg
     imagery: ImageryCfg
     ridges: RidgesCfg
+    thaw: ThawCfg
     icelog: IcelogCfg
     snowobs: SnowobsCfg
     weather: WeatherCfg
@@ -155,7 +172,7 @@ def load_config(path: Path) -> Config:
     if not isinstance(raw, dict):
         raise ConfigError("config is empty or not a mapping")
 
-    missing = [k for k in ("region", "filters", "ice", "snow", "reset", "imagery", "ridges", "icelog", "snowobs", "weather", "site",
+    missing = [k for k in ("region", "filters", "ice", "snow", "reset", "imagery", "ridges", "thaw", "icelog", "snowobs", "weather", "site",
                            "season_start", "pinned", "hidden") if k not in raw]
     if missing:
         raise ConfigError(f"missing config key(s): {', '.join(missing)}")
@@ -187,6 +204,10 @@ def load_config(path: Path) -> Config:
             min_span_mi=float, warmup_c=float, window_days=int, thaw_gust_kmh=float,
             points_index=float, big_ice_mi=float, lead_min_span_mi=float,
             lead_gust_kmh=float, lead_max_cm=float)),
+        thaw=_section(raw, "thaw", ThawCfg, dict(
+            loss_cm_per_cdd=float, slow_cm_per_cdd=float, fast_cm_per_cdd=float,
+            windy_gust_kmh=float, shallow_m=float, recover_days=int, lookback_days=int,
+            weak_cdd=float, rotten_cdd=float, new_ice_days=int, slush_ratio=float)),
         snowobs=_section(raw, "snowobs", SnowobsCfg, dict(
             max_km=float, max_dz_m=float, lowland_m=float, note_days=int)),
         icelog=_section(raw, "icelog", IcelogCfg, dict(good_grade_min=str, max_gps_m=float)),

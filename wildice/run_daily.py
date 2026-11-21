@@ -26,7 +26,8 @@ from wildice.models import (
     ImageryStats, Label, Lake, S1Obs, Score, SourceUnavailable, SurfaceClass,
 )
 from wildice.prefs import load_prefs
-from wildice.hazards import big_ice_note, lead_note, ridge_note
+from wildice.hazards import (big_ice_note, lead_note, new_ice_note, ridge_note, slush_note,
+                             thaw_note)
 from wildice.icelog import fetch_export, merge_reports, reports_from_export
 from wildice.snowobs import apply_measured, fetch_observations, latest_measured, match_station
 from wildice.patches import apply_patches, texture_by_day
@@ -492,7 +493,9 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
             hit = latest_measured(measured.get(st.id, {}), run_date, cfg.snowobs.note_days) if st else None
             snow_note = (f"measured {hit[1]:.0f} cm new snow at {st.name} ({st.source}), "
                          f"{hit[0]:%b} {hit[0].day}") if hit else None
-            notes = [n for n in (snow_note, lead_note(lake, days, ice, run_date, cfg),
+            notes = [n for n in (snow_note, thaw_note(lake, days, ice, run_date, cfg),
+                                 new_ice_note(ice, run_date, cfg), slush_note(ice, cfg),
+                                 lead_note(lake, days, ice, run_date, cfg),
                                  ridge_note(lake, days, ice, run_date, cfg),
                                  big_ice_note(lake, days, ice, run_date, cfg)) if n]
             scores[lake.id] = (replace(sc, reason="; ".join([sc.reason, *notes]))

@@ -22,10 +22,33 @@ def test_cold_week_thickness():
     assert s.thickness_cm == pytest.approx(12.63, abs=0.01)  # Ashton (1989), H = 20
 
 
-def test_thaw_subtracts_mean():
+def test_thaw_melts_at_the_ashton_bilello_rate():
+    # lakeice.org "Thawed Ice": 0.15" per thaw degree-day F = 0.69 cm per C day
+    cold = run_ice_model([wx(i, -5) for i in range(5)], cfg)
     s = run_ice_model([wx(i, -5) for i in range(5)] + [wx(5, 3)], cfg)
-    assert s.cum_fdd == 22
-    assert s.thickness_cm == pytest.approx(8.89, abs=0.01)
+    assert s.thickness_cm == pytest.approx(cold.thickness_cm - 3 * 0.69, abs=0.01)
+    # cum_fdd follows the thinner ice, so the next cold day grows it from there
+    assert ashton_thickness_cm(s.cum_fdd, cfg.ice.ashton_h) == pytest.approx(s.thickness_cm)
+
+
+def test_thaw_rate_slow_in_low_sun_fast_in_wind_or_shallow_pond():
+    base = [wx(i, -5) for i in range(5)]
+    cold = run_ice_model(base, cfg).thickness_cm
+    def loss(day, **kw):
+        return cold - run_ice_model(base + [day], cfg, **kw).thickness_cm
+    assert loss(wx(5, 2, gust=50)) == pytest.approx(2 * 1.14, abs=0.01)
+    assert loss(wx(5, 2), area_acres=None, depth_m=1.0) == pytest.approx(2 * 1.14, abs=0.01)
+    assert loss(wx(5, 2), depth_m=5.0) == pytest.approx(2 * 0.69, abs=0.01)
+    low = [DayWeather(date(2025, 12, 1) + timedelta(i), -8, -2, -5, 0, 0, 0) for i in range(5)]
+    thaw = DayWeather(date(2025, 12, 6), -1, 5, 2, 0, 0, 0)
+    assert (run_ice_model(low, cfg).thickness_cm - run_ice_model(low + [thaw], cfg).thickness_cm
+            == pytest.approx(2 * 0.37, abs=0.01))
+
+
+def test_warm_snow_day_is_not_a_thaw_for_the_ice():
+    base = [wx(i, -5) for i in range(5)]
+    s = run_ice_model(base + [wx(5, 0.5, snow=6)], cfg)
+    assert s.thickness_cm == pytest.approx(run_ice_model(base, cfg).thickness_cm)
 
 
 def test_never_negative():

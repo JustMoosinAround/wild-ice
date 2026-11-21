@@ -48,6 +48,30 @@ def ashton_thickness_cm(fdd: float, h: float) -> float:
     return max(0.0, (-a + sqrt(a * a + b)) * 100)
 
 
+def ashton_fdd(thickness_cm: float, h: float) -> float:
+    """Freezing degree-days that grow `thickness_cm` of ice (inverse of the above)."""
+    if thickness_cm <= 0:
+        return 0.0
+    x = thickness_cm / 100
+    return (x * x + 2 * x * _K_ICE / h) * _RHO_ICE * _LATENT / (2 * _K_ICE * _SECONDS_PER_DAY)
+
+
+def thaw_loss_cm(d: DayWeather, cfg: Config, depth_m: float | None = None) -> float:
+    """Ice lost on a thaw day (lakeice.org "Thawed Ice", Ashton's decay method on
+    Bilello's Canada/Alaska data): an average 0.69 cm per thaw degree-day C, the fastest
+    rate in warm wind or in a shallow pond the sun can warm, the slowest in low sun."""
+    t = cfg.thaw
+    if d.gust_kmh >= t.windy_gust_kmh:
+        rate = t.fast_cm_per_cdd
+    elif in_low_sun(d.day, cfg):
+        rate = t.slow_cm_per_cdd
+    elif depth_m is not None and depth_m < t.shallow_m:
+        rate = t.fast_cm_per_cdd
+    else:
+        rate = t.loss_cm_per_cdd
+    return rate * d.t_mean
+
+
 def water_lag_days(area_acres: float, depth_m: float | None = None) -> float:
     """Days the lake's water takes to close most of the gap to the air temperature."""
     lag = _LAG_A + _LAG_B * log10(max(area_acres, 1.0))
@@ -104,7 +128,8 @@ def run_ice_model(
     for d in days:
         # track warm runs (independent of frozen state). A day just above freezing that
         # snowed (at least cover_cm) is a snow day, not a thaw.
-        if d.t_mean > 0 and d.snowfall_cm < cfg.snow.cover_cm:
+        thaw_day = d.t_mean > 0 and d.snowfall_cm < cfg.snow.cover_cm
+        if thaw_day:
             warm_days += 1
             warm_rain += d.rain_mm
             prev_warm_days, prev_warm_rain = 0, 0.0
@@ -114,7 +139,14 @@ def run_ice_model(
 
         # 1. water temperature, thickness / freeze-up
         if cum > 0 or lag is None:
-            cum = max(0.0, cum - d.t_mean)  # ice (or no water model): water held at 0 C
+            # ice (or no water model): water held at 0 C. Ice melts on a thaw day at the
+            # decay rate, which is faster than Ashton growth run backwards; a warm day
+            # that snowed spends its heat on the snow.
+            if cum > 0 and thaw_day:
+                left = ashton_thickness_cm(cum, cfg.ice.ashton_h) - thaw_loss_cm(d, cfg, depth_m)
+                cum = ashton_fdd(left, cfg.ice.ashton_h)
+            elif d.t_mean < 0 or cum <= 0:
+                cum = max(0.0, cum - d.t_mean)
             water = 0.0
         else:
             step = lag if water > _MIXED_C else max(_SURFACE_LAG_MIN, lag / _SURFACE_SPEEDUP)

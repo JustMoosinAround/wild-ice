@@ -120,3 +120,56 @@ def test_thaw_weakened_thick_ice_can_still_lead():
     from wildice.hazards import lead_note
     days = _windy_today(55.0, means=[-10, -10, -10, -10, -10, 1, 2, -1])
     assert lead_note(BIG, days, _ice(30.0), RUN, CFG) is not None
+
+
+# lakeice.org "Thawed Ice", "New-ice Holes", "Small Ponds"
+
+def _snow_ice(cm, snow, froze_days_ago=10):
+    return IceState(100, cm, RUN - timedelta(days=froze_days_ago), None, snow, None, ())
+
+
+def test_thaw_note_weak_then_rotten_then_recovered():
+    from wildice.hazards import thaw_note
+    # two days at +5 = 10 thaw degree-days (C), then one cold day: still weak
+    weak = thaw_note(SMALL, _days([-10] * 5 + [5, 5, -3]), _ice(20), RUN, CFG)
+    assert weak is not None and weak.startswith("thaw-weakened ice: 10 thaw degree-days")
+    # 12 days at +5: candled, rotten ice
+    rotten = thaw_note(SMALL, _days([-10] * 5 + [5] * 12), _snow_ice(30, 0, 20), RUN, CFG)
+    assert rotten.startswith("rotten ice risk: 60 thaw degree-days")
+    # three cold days after the thaw: recovered
+    assert thaw_note(SMALL, _days([-10] * 5 + [5, 5, -3, -3, -3]), _ice(20), RUN, CFG) is None
+    # a small thaw, a snowy warm day, or open water: nothing
+    assert thaw_note(SMALL, _days([-10] * 5 + [2, 2]), _ice(20), RUN, CFG) is None
+    snowy = [replace(d, snowfall_cm=8.0) if d.t_mean > 0 else d for d in _days([-10] * 5 + [5, 5])]
+    assert thaw_note(SMALL, snowy, _ice(20), RUN, CFG) is None
+    assert thaw_note(SMALL, _days([-10] * 5 + [5, 5]), _ice(0.0), RUN, CFG) is None
+
+
+def test_thaw_note_counts_only_since_freeze_up_and_names_shallow_ponds():
+    from wildice.hazards import thaw_note
+    days = _days([5, 5, 5, -10, -10])  # the thaw came before this ice formed
+    assert thaw_note(SMALL, days, _snow_ice(5, 0, froze_days_ago=1), RUN, CFG) is None
+    pond = replace(SMALL, depth_m=1.0)
+    note = thaw_note(pond, _days([-10] * 5 + [5, 5]), _ice(20), RUN, CFG)
+    assert "shallow" in note
+
+
+def test_new_ice_note_for_the_first_week():
+    from wildice.hazards import new_ice_note
+    assert "skinned-over holes" in new_ice_note(_snow_ice(6, 0, froze_days_ago=3), RUN, CFG)
+    assert new_ice_note(_snow_ice(6, 0, froze_days_ago=8), RUN, CFG) is None
+    assert new_ice_note(_snow_ice(0.0, 0, froze_days_ago=3), RUN, CFG) is None
+
+
+def test_slush_note_when_snow_outweighs_the_ice():
+    from wildice.hazards import slush_note
+    assert slush_note(_snow_ice(10, 4), CFG) is None
+    note = slush_note(_snow_ice(10, 8), CFG)
+    assert note.startswith("8 cm of snow on ~10 cm ice")
+    assert slush_note(_snow_ice(10, 1.5), CFG) is None   # under cover_cm
+
+
+def test_big_ice_wants_thicker_ice():
+    from wildice.hazards import big_ice_note
+    huge = Lake("w9", "Huge", 9000, 0.1, None, 61.0, -149.5, _box(0.12, 0.01), None)
+    assert "5 cm more ice" in big_ice_note(huge, _days([-12] * 8), _ice(), RUN, CFG)

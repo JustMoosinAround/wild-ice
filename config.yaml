@@ -75,6 +75,21 @@ ridges:  # pressure-ridge warnings (lakeice.org); placeholders until we have rep
   lead_gust_kmh: 45
   lead_max_cm: 15
 
+thaw:  # lakeice.org "Thawed Ice", "Small Ponds", "New-ice Holes"; F rates converted to C
+  # Ashton's ice-decay method on Bilello's Canada/Alaska data: 0.15"/thaw degree-day F
+  # on average (6 TDD per inch), 0.08" slowest (12), 0.25" fastest (4).
+  loss_cm_per_cdd: 0.69
+  slow_cm_per_cdd: 0.37   # low sun: little sunlight to drive melt
+  fast_cm_per_cdd: 1.14   # "a 24 hour, 50 degree thaw with 20-30 mph wind melts a couple inches"
+  windy_gust_kmh: 40
+  shallow_m: 2.0          # "ponds often melt faster than deep lakes"
+  recover_days: 3         # "the ice typically recovers after a few cold days"
+  lookback_days: 30
+  weak_cdd: 8             # "15 thaw degree days with some wind" (F) fill a sheet with holes
+  rotten_cdd: 57          # 103 TDD (F) rotted 13.5" candled ice past holding a person
+  new_ice_days: 7         # new-ice holes stay open "for days to as long as a week or more"
+  slush_ratio: 0.5        # snow over ~50% of the ice thickness pushes it under water
+
 snowobs:  # measured new snow from SNOTEL + CoCoRaHS stations replaces the weather model's
   max_km: 25
   max_dz_m: 300
