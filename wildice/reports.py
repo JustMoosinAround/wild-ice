@@ -30,11 +30,23 @@ _PHRASE = {"skated": "skateable ice", "snow": "snow on the ice", "water": "open 
            "rough": "rough ice"}
 
 
+GRADES = ("A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-",
+          "D+", "D", "D-", "F+", "F", "F-")
+
+
 @dataclass(frozen=True)
 class Report:
     day: date
     rating: str
     note: str
+    grade: str | None = None   # A+ ... F-, only with skated / rough; every grade means skateable
+    source: str = "owner"      # "owner" or "friend" (friends' notes are never shown publicly)
+    verified: str = "ok"       # "ok" or "no_gps" (friend report without a location)
+    week_count: int = 1        # reports on this lake in the last 7 days
+
+
+def good_grade(grade: str, minimum: str) -> bool:
+    return GRADES.index(grade) <= GRADES.index(minimum)
 
 
 def load_reports(ratings_dir: Path, run_date: date, season_start: date) -> dict[str, Report]:
@@ -88,17 +100,26 @@ def apply_report(score: Score, report: Report | None, ice: IceState,
     if report is None or (run_date - report.day).days > REPORT_DAYS:
         return score
     label, conf = score.label, score.confidence
-    if report.rating == "skated":
+    if report.rating in ("skated", "rough"):
         snowed = (ice.last_snow_day is not None and ice.last_snow_day > report.day
                   and ice.snow_since_reset_cm > cfg.snow.cover_cm)
         if not snowed:
-            label, conf = Label.LIKELY_BLACK_ICE, Confidence.HIGH
+            if report.rating == "skated" and (
+                    report.grade is None or good_grade(report.grade, cfg.icelog.good_grade_min)):
+                label, conf = Label.LIKELY_BLACK_ICE, Confidence.HIGH
+            elif report.rating == "skated" or report.grade is not None:
+                label, conf = Label.ROUGH_ICE, Confidence.HIGH
     elif report.rating == "snow":
         cleared = any(d > report.day and c is SurfaceClass.DARK for d, c in s2_classes.items())
         if not cleared:
             label, conf = Label.SNOW_COVERED, Confidence.HIGH
     elif report.rating == "water" and label is Label.OPEN_WATER:
         conf = Confidence.HIGH
-    note = f' ("{report.note}")' if report.note else ""
-    reason = f"You reported {_PHRASE[report.rating]} on {_fmt(report.day)}{note}; {score.reason}"
+    who = "You reported" if report.source == "owner" else "Reported"
+    grade = f" ({report.grade})" if report.grade else ""
+    # Notes are never published (status.json is public): they stay on the review page.
+    parts = [f"{who} {_PHRASE[report.rating]} on {_fmt(report.day)}{grade}"]
+    if report.week_count >= 2:
+        parts.append(f"{report.week_count} reports this week")
+    reason = "; ".join([*parts, score.reason])
     return replace(score, label=label, confidence=conf, reason=reason)

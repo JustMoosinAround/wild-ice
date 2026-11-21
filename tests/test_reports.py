@@ -77,7 +77,8 @@ def test_water_report_note_and_confidence():
     sc = apply_report(_score(Label.OPEN_WATER, Confidence.LOW), Report(RUN, "water", "wide open"),
                       _ice(), {}, RUN, CFG)
     assert sc.label is Label.OPEN_WATER and sc.confidence is Confidence.HIGH
-    assert sc.reason.startswith('You reported open water on Nov 4 ("wide open"); ')
+    assert sc.reason.startswith("You reported open water on Nov 4; ")
+    assert "wide open" not in sc.reason
 
 
 def test_skated_report_holds_until_snow():
