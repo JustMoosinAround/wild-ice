@@ -581,7 +581,7 @@ function setupSearch() {
 
 function addKey() {
   const KEY_OPEN = "wildice.keyOpen";
-  const ctl = L.control({ position: "bottomleft" });
+  const ctl = L.control({ position: "topright" });
   ctl.onAdd = () => {
     const box = el("details", { class: "key" });
     let open = null;
