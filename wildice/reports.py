@@ -117,8 +117,8 @@ def apply_report(score: Score, report: Report | None, ice: IceState,
         conf = Confidence.HIGH
     who = "You reported" if report.source == "owner" else "Reported"
     grade = f" ({report.grade})" if report.grade else ""
-    note = f' ("{report.note}")' if report.note and report.source == "owner" else ""
-    parts = [f"{who} {_PHRASE[report.rating]} on {_fmt(report.day)}{grade}{note}"]
+    # Notes are never published (status.json is public): they stay on the review page.
+    parts = [f"{who} {_PHRASE[report.rating]} on {_fmt(report.day)}{grade}"]
     if report.week_count >= 2:
         parts.append(f"{report.week_count} reports this week")
     reason = "; ".join([*parts, score.reason])

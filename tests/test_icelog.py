@@ -126,11 +126,12 @@ def test_rough_with_any_grade_is_rough_ice():
     assert apply_report(_score(), _rep("rough", "A+"), _ice(), {}, RUN, CFG).label is Label.ROUGH_ICE
 
 
-def test_friend_note_stays_private_owner_note_shown():
+def test_notes_never_published():
     sc = apply_report(_score(), _rep(grade="B", note="east end glassy"), _ice(), {}, RUN, CFG)
     assert "glassy" not in sc.reason
     sc = apply_report(_score(), _rep(grade="B", source="owner", note="east end glassy"), _ice(), {}, RUN, CFG)
-    assert sc.reason.startswith('You reported skateable ice on Nov 19 (B) ("east end glassy"); ')
+    assert sc.reason.startswith("You reported skateable ice on Nov 19 (B); ")  # notes are never public
+    assert "glassy" not in sc.reason
 
 
 def test_three_reports_this_week_noted():

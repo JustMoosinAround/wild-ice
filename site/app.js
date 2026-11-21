@@ -2,7 +2,7 @@ import { renderWeatherChart } from "./chart.js";
 import { searchLakes } from "./search.js";
 import {
   GRADES, flushReports, getDevice, inviteCodeFromHash, loadLake, ownerCall, postComment, prepPhoto,
-  queueReport, queuedReports, redeemInvite,
+  queueReport, queuedReports, redeemInvite, makeReport, checkDevice, clearLegacy, inviteDecision,
 } from "./icelog.js";
 import { TURNSTILE_SITEKEY, WORKER_URL } from "./config.js";
 
@@ -313,13 +313,8 @@ function commitReport() {
   all[p.id] = rep;
   try { store.setItem(REPORTED_KEY, JSON.stringify(all)); } catch { /* storage blocked */ }
   applyReported(p.id, rep);
-  const report = { lake_id: p.id, rating: p.rating };
-  if (p.grade && GRADED.has(p.rating)) report.grade = p.grade;
-  if (p.note) report.note = p.note.slice(0, 300);
-  if (p.photo) report.photo = p.photo.jpegBase64;
-  const gps = p.photo && p.photo.gps ? { ...p.photo.gps, source: "photo" } : p.gps;
-  if (gps) report.gps = gps;
-  queueReport(store, report);
+  queueReport(store, makeReport({ lakeId: p.id, rating: p.rating, grade: p.grade, note: p.note,
+    photo: p.photo, gps: p.gps, day: rep.day }));
   if (currentId === p.id && !$("panel").hidden) renderPanel(p.id, "Logging…");
   sendQueue();
 }
@@ -650,6 +645,13 @@ function openPage(title, ...kids) {
 
 function showInvite(code) {
   if (!WORKER_URL) { showMsg("The Ice Log isn't set up yet."); return; }
+  const decision = inviteDecision(getDevice(store));
+  if (decision === "refuse") {
+    // Never let an invite (e.g. one being tested) replace the owner's key on this phone.
+    openPage("Invite link", el("p", { text: "This phone is already the owner's. Send the link to the friend it's for." }));
+    return;
+  }
+  if (decision === "confirm" && !confirm("This phone is already signed in to the Ice Log. Join again with this new link?")) return;
   const name = el("input", { type: "text", maxlength: "40", placeholder: "Your name", "aria-label": "Your name" });
   const msg = el("p", { class: "status" });
   const form = el("form", { class: "comment-form" },
@@ -702,11 +704,42 @@ async function showReview() {
         el("button", { class: "act", text: "Reject", onclick: decide(`/api/review/photos/${p.id}`, "reject", row) })));
     body.append(row);
   }
+  const out = el("div", {});
+  const { reports = [], published = [], featured = [] } = r.data;
+  body.append(el("h3", { text: `Recent reports (${reports.length})` }));
+  for (const rep of reports) {
+    const row = el("div", { class: "review-row" });
+    row.append(el("p", {}, el("b", { text: rep.credit || "Someone" }),
+        el("span", { class: "meta", text: ` · ${lakeName(rep.lake_id)} · ${shortDay(rep.day)}` })),
+      el("p", { text: (REPORT[rep.rating] ? REPORT[rep.rating].text : rep.rating) + (rep.grade ? " " + rep.grade : "") + (rep.note ? " — " + rep.note : "") }),
+      el("button", { class: "act", text: "Remove (wrong or bad report)", onclick: decide(`/api/review/reports/${rep.id}`, "remove", row) }));
+    body.append(row);
+  }
+  body.append(el("h3", { text: `Published comments (${published.length})` }));
+  for (const c of published) {
+    const row = el("div", { class: "review-row" });
+    row.append(el("p", {}, el("b", { text: c.name }), el("span", { class: "meta", text: " on " + lakeName(c.lake_id) })),
+      el("p", { text: c.text }),
+      el("button", { class: "act", text: "Take down", onclick: decide(`/api/review/comments/${c.id}`, "remove", row) }));
+    body.append(row);
+  }
+  body.append(el("h3", { text: `Featured photos (${featured.length})` }));
+  for (const p of featured) {
+    const row = el("div", { class: "review-row" });
+    row.append(el("img", { class: "thumb", src: `${WORKER_URL}/api/photos/${encodeURIComponent(p.public_id)}`, alt: "Featured photo", loading: "lazy" }),
+      el("p", { class: "meta", text: `${p.credit || "A friend"} · ${lakeName(p.lake_id)}` }),
+      el("button", { class: "act", text: "Take down", onclick: decide(`/api/review/photos/${p.id}`, "remove", row) }));
+    body.append(row);
+  }
   body.append(el("h3", { text: "Friends" }));
   for (const f of friends) {
     const row = el("div", { class: "review-row friend" });
     row.append(el("span", { text: f.name + (f.role === "owner" ? " (you)" : "") + (f.revoked ? " — switched off" : "") }));
     if (f.role !== "owner" && !f.revoked) {
+      row.append(el("button", { class: "act", text: "New phone link", onclick: async () => {
+        const res = await ownerCall("/api/invites", { ...ICELOG, method: "POST", body: { friend_id: f.id } }).catch(() => null);
+        if (res && res.status === 200) showInviteLink(out, res.data.invite_url, `New-phone link for ${f.name}. It works once.`);
+      } }));
       row.append(el("button", { class: "act", text: "Switch off", onclick: async () => {
         if (!confirm(`Switch off ${f.name}'s invite? Their phone stops working; past reports stay.`)) return;
         const res = await ownerCall(`/api/friends/${f.id}/revoke`, { ...ICELOG, method: "POST", body: {} }).catch(() => null);
@@ -715,14 +748,18 @@ async function showReview() {
     }
     body.append(row);
   }
-  const out = el("div", {});
   body.append(el("button", { class: "act", text: "New invite", onclick: async () => {
     const res = await ownerCall("/api/invites", { ...ICELOG, method: "POST", body: {} }).catch(() => null);
     if (!res || res.status !== 200) { out.replaceChildren(el("p", { class: "status", text: "Couldn't make an invite." })); return; }
-    const link = el("input", { type: "text", readonly: "", value: res.data.invite_url, "aria-label": "Invite link" });
-    out.replaceChildren(el("p", { class: "meta", text: "Send this to one friend. It works once, on one phone." }), link,
-      el("button", { class: "act", text: "Copy", onclick: () => navigator.clipboard?.writeText(res.data.invite_url) }));
+    showInviteLink(out, res.data.invite_url, "Send this to one friend. It works once, on one phone.");
   } }), out);
+}
+
+function showInviteLink(out, url, text) {
+  const link = el("input", { type: "text", readonly: "", value: url, "aria-label": "Invite link" });
+  out.replaceChildren(el("p", { class: "meta", text }), link,
+    el("button", { class: "act", text: "Copy", onclick: () => navigator.clipboard?.writeText(url) }));
+  out.scrollIntoView({ block: "nearest" });
 }
 
 async function load() {
@@ -752,7 +789,19 @@ async function main() {
     $("bar").append(el("a", { class: "review-link", href: "#review", text: "Review" }));
   }
   window.addEventListener("online", sendQueue);
-  sendQueue(); // reports logged without signal go out now
+  const dropped = clearLegacy(store); // the old GitHub token never stays on a phone
+  if (dropped) showMsg(`${dropped} old unsent change(s) from before the Ice Log were dropped.`);
+  if (WORKER_URL) {
+    checkDevice(ICELOG).then((state) => {
+      if (state === "revoked") {
+        showMsg("This invite was switched off.");
+        build();
+        if (currentId && !$("panel").hidden) renderPanel(currentId);
+      } else {
+        sendQueue(); // reports logged without signal go out now
+      }
+    });
+  }
   }
   try {
     await load();

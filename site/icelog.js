@@ -53,36 +53,114 @@ async function call(base, path, { fetch, method = "GET", body, token }) {
   return { status: r.status, data };
 }
 
-// Send queued reports in order. 401 = this phone's invite was switched off: forget the
-// key and the queue. 400/413 = the report can never succeed: drop it. Network or server
-// trouble: stop and keep the rest for next time.
-export async function flushReports({ fetch, storage, base }) {
+const MAX_TRIES = 6;        // network/server failures before a report is given up
+const PHOTO_TRIES = 3;      // ...and before its photo is dropped (it may be what fails)
+let inflight = null;
+
+function updateQueue(storage, fn) {
+  write(storage, QUEUE_KEY, fn(queuedReports(storage)));
+}
+
+// Send queued reports in order, one send at a time (a second call waits for the first).
+// 401 = this phone's invite was switched off: forget the key and the queue. 400/413 =
+// the report can never succeed: drop it. Network or server trouble: count a try, keep
+// it for later, and stop; a report that keeps failing loses its photo, then gives up,
+// so it can never block the ones behind it.
+export function flushReports(opts) {
+  const run = () => sendAll(opts);
+  inflight = (inflight || Promise.resolve()).then(run, run);
+  return inflight;
+}
+
+async function sendAll({ fetch, storage, base }) {
   const device = getDevice(storage);
-  let q = queuedReports(storage);
-  const out = { sent: 0, left: q.length, revoked: false };
-  if (!device || !q.length) return out;
+  const out = { sent: 0, left: queuedReports(storage).length, revoked: false };
+  if (!device || !out.left) return out;
   const rejected = [];
-  while (q.length) {
-    let res;
+  for (;;) {
+    const head = queuedReports(storage)[0];
+    if (!head) break;
+    const drop = () => updateQueue(storage, (q) => q.filter((r) => r.idem_key !== head.idem_key));
+    let res = null;
     try {
-      res = await call(base, "/api/reports", { fetch, method: "POST", body: q[0], token: device.key });
-    } catch {
-      break;
-    }
-    if (res.status === 401) {
+      const { tries, ...body } = head;
+      res = await call(base, "/api/reports", { fetch, method: "POST", body, token: device.key });
+    } catch { /* network trouble: handled below */ }
+    if (res && res.status === 401) {
       clearDevice(storage);
       write(storage, QUEUE_KEY, []);
       return { sent: out.sent, left: 0, revoked: true };
     }
-    if (res.status === 200) out.sent++;
-    else if (res.status >= 400 && res.status < 500) rejected.push(res.data.error || `HTTP ${res.status}`);
-    else break;
-    q = q.slice(1);
-    write(storage, QUEUE_KEY, q);
+    if (res && res.status === 200) { out.sent++; drop(); continue; }
+    if (res && res.status >= 400 && res.status < 500) {
+      rejected.push(res.data.error || `HTTP ${res.status}`);
+      drop();
+      continue;
+    }
+    const tries = (head.tries || 0) + 1;
+    if (tries >= MAX_TRIES) {
+      rejected.push("Couldn't send a report after several tries");
+      drop();
+      continue;
+    }
+    updateQueue(storage, (q) => q.map((r) => {
+      if (r.idem_key !== head.idem_key) return r;
+      const next = { ...r, tries };
+      if (tries >= PHOTO_TRIES) delete next.photo;
+      return next;
+    }));
+    break;
   }
-  out.left = q.length;
+  out.left = queuedReports(storage).length;
   if (rejected.length) out.rejected = rejected;
   return out;
+}
+
+// The report to queue: keeps the day it was logged (it may be sent days later).
+export function makeReport({ lakeId, rating, grade, note, photo, gps, day }) {
+  const r = { lake_id: lakeId, rating };
+  if (grade && (rating === "skated" || rating === "rough")) r.grade = grade;
+  const n = (note || "").trim().slice(0, 300);
+  if (n) r.note = n;
+  if (photo) r.photo = photo.jpegBase64;
+  const where = photo && photo.gps ? { ...photo.gps, source: "photo" } : gps;
+  if (where) r.gps = where;
+  r.day = day;
+  return r;
+}
+
+// At startup: is this phone's key still good? "revoked" clears it (and its queue).
+export async function checkDevice({ fetch, storage, base }) {
+  const device = getDevice(storage);
+  if (!device) return "none";
+  try {
+    const res = await call(base, "/api/me", { fetch, token: device.key });
+    if (res.status === 401) {
+      clearDevice(storage);
+      write(storage, QUEUE_KEY, []);
+      return "revoked";
+    }
+    return res.status === 200 ? "ok" : "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+// The map used to save through the owner's GitHub token: remove that token and its old
+// queue for good. Returns how many old unsent items were dropped.
+export function clearLegacy(storage) {
+  const old = read(storage, "wildice.queue", []);
+  try {
+    storage.removeItem("wildice.creds");
+    storage.removeItem("wildice.queue");
+  } catch { /* ignore */ }
+  return Array.isArray(old) ? old.length : 0;
+}
+
+// An invite link opened on a phone that is already signed in.
+export function inviteDecision(device) {
+  if (!device) return "join";
+  return device.role === "owner" ? "refuse" : "confirm";
 }
 
 export async function loadLake(lakeId, { fetch, base }) {

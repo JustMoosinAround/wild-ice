@@ -50,11 +50,11 @@ export async function requireService(env, request) {
   if (!(await sameSecret(bearer(request), env.SERVICE_TOKEN))) throw new HttpError(401, "Bad token");
 }
 
-export async function createInvite(env, { role, name = null }) {
+export async function createInvite(env, { role, name = null, friendId = null }) {
   const code = newToken();
   await env.DB.prepare(
-    "INSERT INTO invites (code_hash, role, name, created_at) VALUES (?, ?, ?, ?)",
-  ).bind(await hash(code), role, name, now()).run();
+    "INSERT INTO invites (code_hash, friend_id, role, name, created_at) VALUES (?, ?, ?, ?, ?)",
+  ).bind(await hash(code), friendId, role, name, now()).run();
   return { code, invite_url: `${env.SITE_URL}/#invite=${code}` };
 }
 
@@ -66,9 +66,13 @@ function cleanName(value, fallback) {
 export async function bootstrap(env, request) {
   if (!(await sameSecret(bearer(request), env.BOOTSTRAP_TOKEN))) throw new HttpError(401, "Bad token");
   const owner = await env.DB.prepare(
-    "SELECT 1 FROM friends WHERE role = 'owner' AND revoked_at IS NULL").first();
-  if (owner) throw new HttpError(409, "Owner already set up");
+    "SELECT id FROM friends WHERE role = 'owner' AND revoked_at IS NULL").first();
   const body = await readJson(request);
+  if (owner) {
+    // Owner lost their phone (or its storage): a new-phone link for the same owner.
+    const { invite_url } = await createInvite(env, { role: "owner", friendId: owner.id });
+    return json({ invite_url });
+  }
   const { invite_url } = await createInvite(env, { role: "owner", name: cleanName(body.name, "Owner") });
   return json({ invite_url });
 }
@@ -111,6 +115,15 @@ export async function me(env, request) {
 export async function invite(env, request) {
   await requireOwner(env, request);
   const body = await readJson(request);
+  if (body.friend_id != null) {
+    // New-phone link for an existing friend: same name, same reporter.
+    const f = await env.DB.prepare(
+      "SELECT id FROM friends WHERE id = ? AND role = 'friend' AND revoked_at IS NULL",
+    ).bind(String(body.friend_id)).first();
+    if (!f) throw new HttpError(404, "No such friend");
+    const { invite_url } = await createInvite(env, { role: "friend", friendId: f.id });
+    return json({ invite_url });
+  }
   const name = cleanName(body.name, "") || null;
   const { invite_url } = await createInvite(env, { role: "friend", name });
   return json({ invite_url });

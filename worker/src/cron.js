@@ -10,16 +10,20 @@ const ago = (days) => new Date(Date.now() - days * DAY).toISOString();
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 async function cleanPhotos(env) {
+  // Rejecting (here or on the review page) deletes the bytes once; rejected rows are
+  // never revisited, so the daily work stays small and within KV's free write limit.
   const { results } = await env.DB.prepare(
-    `SELECT id, public_id, status FROM photos
-     WHERE (status = 'pending' AND created_at < ?) OR status = 'rejected'`,
+    "SELECT id, public_id FROM photos WHERE status = 'pending' AND created_at < ?",
   ).bind(ago(KEEP_PENDING_DAYS)).all();
   for (const p of results) {
-    await env.PHOTOS.delete(`photo:${p.public_id}`);
-    if (p.status === "pending") {
-      await env.DB.prepare("UPDATE photos SET status = 'rejected', decided_at = ? WHERE id = ?")
-        .bind(new Date().toISOString(), p.id).run();
+    try {
+      await env.PHOTOS.delete(`photo:${p.public_id}`);
+    } catch (err) {
+      console.error("photo cleanup failed:", err && err.name);
+      continue;
     }
+    await env.DB.prepare("UPDATE photos SET status = 'rejected', decided_at = ? WHERE id = ?")
+      .bind(new Date().toISOString(), p.id).run();
   }
 }
 

@@ -3,14 +3,16 @@ import { describe, expect, it } from "vitest";
 import { call, codeOf, owner, friend } from "./helpers.js";
 
 describe("invites and devices", () => {
-  it("bootstrap creates one owner invite, then refuses", async () => {
+  it("bootstrap creates one owner, later only new-phone links for that owner", async () => {
     const first = await call("POST", "/api/bootstrap", { body: { name: "Owner" }, token: "test-bootstrap" });
     expect(first.status).toBe(200);
     const { invite_url } = await first.json();
     expect(invite_url.startsWith("https://justmoosinaround.github.io/wild-ice/#invite=")).toBe(true);
     await call("POST", "/api/invites/redeem", { body: { code: codeOf(invite_url) } });
     const second = await call("POST", "/api/bootstrap", { body: { name: "Owner" }, token: "test-bootstrap" });
-    expect(second.status).toBe(409);
+    expect(second.status).toBe(200);
+    await call("POST", "/api/invites/redeem", { body: { code: codeOf((await second.json()).invite_url) } });
+    expect(await env.DB.prepare("SELECT COUNT(*) AS n FROM friends").first("n")).toBe(1);
   });
 
   it("bootstrap needs the bootstrap token", async () => {

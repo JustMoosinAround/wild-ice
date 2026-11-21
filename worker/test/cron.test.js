@@ -75,6 +75,7 @@ describe("daily cron", () => {
     expect(await env.DB.prepare("SELECT status FROM photos WHERE public_id = ?").bind(old).first("status")).toBe("rejected");
     expect(await env.PHOTOS.get(`photo:${fresh}`)).toBe("bytes");
     expect(await env.PHOTOS.get(`photo:${featured}`)).toBe("bytes");
-    expect(await env.PHOTOS.get(`photo:${rejected}`)).toBeNull();
+    // rejected rows had their bytes deleted when rejected; the cron leaves them alone
+    expect(await env.PHOTOS.get(`photo:${rejected}`)).toBe("bytes");
   });
 });

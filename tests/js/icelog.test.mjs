@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   GRADES, isGoodGrade, getDevice, setDevice, clearDevice, queueReport, queuedReports,
   flushReports, loadLake, postComment, redeemInvite, inviteCodeFromHash,
+  makeReport, checkDevice, clearLegacy, inviteDecision,
 } from "../../site/icelog.js";
 
 function memStore() {
@@ -146,4 +147,76 @@ test("inviteCodeFromHash reads only a well-formed invite", () => {
   assert.equal(inviteCodeFromHash("#lake=w1"), null);
   assert.equal(inviteCodeFromHash("#invite="), null);
   assert.equal(inviteCodeFromHash("#invite=<script>"), null);
+});
+
+test("makeReport keeps the day it was logged, not the day it is sent", () => {
+  const r = makeReport({ lakeId: "w1", rating: "skated", grade: "B+", note: " glassy ", day: "2026-11-14" });
+  assert.deepEqual(r, { lake_id: "w1", rating: "skated", grade: "B+", note: "glassy", day: "2026-11-14" });
+  assert.equal(makeReport({ lakeId: "w1", rating: "water", grade: "B", day: "2026-11-14" }).grade, undefined);
+  const withPhoto = makeReport({ lakeId: "w1", rating: "rough", day: "d", photo: { jpegBase64: "AA", gps: { lat: 61, lon: -149 } },
+    gps: { lat: 1, lon: 2, source: "device" } });
+  assert.deepEqual(withPhoto.gps, { lat: 61, lon: -149, source: "photo" });
+  assert.equal(withPhoto.photo, "AA");
+});
+
+test("server trouble gives up on one report after 6 tries (photo dropped after 3), others go through", async () => {
+  const s = memStore();
+  setDevice(s, { key: "dev", name: "Pat", role: "friend" });
+  queueReport(s, { lake_id: "w1", rating: "skated", photo: "big" });
+  queueReport(s, { lake_id: "w2", rating: "snow" });
+  const f = fakeFetch((url, init) => (JSON.parse(init.body).lake_id === "w1" ? [503, {}] : [200, { id: "x" }]));
+  let r;
+  for (let i = 0; i < 3; i++) r = await flushReports({ fetch: f, storage: s, base: BASE });
+  assert.equal(queuedReports(s)[0].photo, undefined);
+  for (let i = 0; i < 3; i++) r = await flushReports({ fetch: f, storage: s, base: BASE });
+  assert.equal(r.sent, 1);
+  assert.equal(queuedReports(s).length, 0);
+  assert.deepEqual(r.rejected, ["Couldn't send a report after several tries"]);
+});
+
+test("two sends at once never lose a report", async () => {
+  const s = memStore();
+  setDevice(s, { key: "dev", name: "Pat", role: "friend" });
+  queueReport(s, { lake_id: "w1", rating: "skated" });
+  let release;
+  const gate = new Promise((r) => { release = r; });
+  const f = fakeFetch(async (url, init) => { if (JSON.parse(init.body).lake_id === "w1") await gate; return [200, { id: "x" }]; });
+  const a = flushReports({ fetch: f, storage: s, base: BASE });
+  queueReport(s, { lake_id: "w2", rating: "snow" });
+  const b = flushReports({ fetch: f, storage: s, base: BASE });
+  release();
+  await Promise.all([a, b]);
+  await flushReports({ fetch: f, storage: s, base: BASE });
+  const sent = f.calls.map((c) => c.body.lake_id).sort();
+  assert.deepEqual([...new Set(sent)], ["w1", "w2"]);
+  assert.equal(queuedReports(s).length, 0);
+});
+
+test("checkDevice clears a switched-off phone at startup", async () => {
+  const s = memStore();
+  setDevice(s, { key: "dev", name: "Pat", role: "friend" });
+  queueReport(s, { lake_id: "w1", rating: "skated" });
+  assert.equal(await checkDevice({ fetch: fakeFetch(() => [401, {}]), storage: s, base: BASE }), "revoked");
+  assert.equal(getDevice(s), null);
+  assert.equal(queuedReports(s).length, 0);
+  setDevice(s, { key: "dev", name: "Pat", role: "friend" });
+  assert.equal(await checkDevice({ fetch: fakeFetch(() => [200, { name: "Pat", role: "friend" }]), storage: s, base: BASE }), "ok");
+  assert.equal(await checkDevice({ fetch: async () => { throw new TypeError("offline"); }, storage: s, base: BASE }), "unknown");
+  assert.ok(getDevice(s));
+});
+
+test("clearLegacy removes the old GitHub token and reports unsent old ratings", () => {
+  const s = memStore();
+  s.setItem("wildice.creds", JSON.stringify({ token: "github_pat_x", repo: "a/b" }));
+  s.setItem("wildice.queue", JSON.stringify([{ path: "ratings/x" }, { path: "prefs/y" }]));
+  assert.equal(clearLegacy(s), 2);
+  assert.equal(s.getItem("wildice.creds"), null);
+  assert.equal(s.getItem("wildice.queue"), null);
+  assert.equal(clearLegacy(s), 0);
+});
+
+test("inviteDecision protects an already-signed-in phone", () => {
+  assert.equal(inviteDecision(null), "join");
+  assert.equal(inviteDecision({ role: "friend" }), "confirm");
+  assert.equal(inviteDecision({ role: "owner" }), "refuse");
 });

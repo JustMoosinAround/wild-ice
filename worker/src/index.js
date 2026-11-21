@@ -4,7 +4,7 @@ import { HttpError, json, preflight, withCors } from "./http.js";
 import { getExport, getPhoto, postReport } from "./reports.js";
 import { postComment } from "./comments.js";
 import { getLake } from "./lakes.js";
-import { getReview, postPref, reviewComment, reviewPhoto } from "./review.js";
+import { getReview, postPref, reviewComment, reviewPhoto, reviewReport } from "./review.js";
 import { scheduled } from "./cron.js";
 
 const ROUTES = [
@@ -21,6 +21,7 @@ const ROUTES = [
   ["GET", /^\/api\/review$/, getReview],
   ["POST", /^\/api\/review\/comments\/([\w-]+)$/, reviewComment],
   ["POST", /^\/api\/review\/photos\/([\w-]+)$/, reviewPhoto],
+  ["POST", /^\/api\/review\/reports\/([\w-]+)$/, reviewReport],
   ["POST", /^\/api\/prefs$/, postPref],
 ];
 

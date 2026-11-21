@@ -36,12 +36,15 @@ export async function postComment(env, request) {
   if (typeof body.lake_id !== "string" || !/^[wr]\d{1,12}$/.test(body.lake_id)) {
     throw new HttpError(400, "Unknown lake");
   }
-  const name = typeof body.name === "string" ? body.name.trim().replace(/\s+/g, " ") : "";
+  const who = await deviceFriend(env, request);
+  // A key that no longer works (switched off) is told so, not treated as a stranger.
+  if (!who && request.headers.get("Authorization")) throw new HttpError(401, "Not signed in");
+  const given = typeof body.name === "string" ? body.name.trim().replace(/\s+/g, " ") : "";
+  const name = who ? who.name : given;  // invited friends post under their own name
   if (!name || name.length > MAX_NAME) throw new HttpError(400, `Name must be 1-${MAX_NAME} characters`);
   const problem = checkText(body.text);
   if (problem) throw new HttpError(400, problem);
   const text = body.text.trim();
-  const who = await deviceFriend(env, request);
   const ip = request.headers.get("CF-Connecting-IP") || "";
   const sender = await hash(who ? `friend:${who.id}` : `ip:${ip}`);
   if (!who) {
