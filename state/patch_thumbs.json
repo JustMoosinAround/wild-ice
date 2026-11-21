@@ -3190,5 +3190,159 @@
     "grey": 0.047,
     "white": 0.0,
     "mixed": false
+  },
+  "w281310743": {
+    "day": "2026-10-27",
+    "black": 0.002,
+    "grey": 0.998,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w296812469": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w296835300": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w296835301": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "r3948484": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w296878488": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "r3948597": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w296895882": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w296895883": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w389390449": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w393506252": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w393507869": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w393526108": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w393526111": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w393526116": {
+    "day": "2026-10-27",
+    "black": 0.001,
+    "grey": 0.999,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w451049850": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "r10764316": {
+    "day": "2026-11-05",
+    "black": 0.979,
+    "grey": 0.021,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w777271367": {
+    "day": "2026-11-05",
+    "black": 0.001,
+    "grey": 0.999,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w908090693": {
+    "day": "2026-11-05",
+    "black": 0.974,
+    "grey": 0.026,
+    "white": 0.0,
+    "mixed": false
+  },
+  "r12329186": {
+    "day": "2026-11-05",
+    "black": 0.999,
+    "grey": 0.001,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w1032709619": {
+    "day": "2026-10-21",
+    "black": 0.342,
+    "grey": 0.658,
+    "white": 0.0,
+    "mixed": true
+  },
+  "w1512795719": {
+    "day": "2026-11-02",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
   }
 }
