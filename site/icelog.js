@@ -223,3 +223,12 @@ export function inviteCodeFromHash(hash) {
   const m = /^#invite=([A-Za-z0-9_-]{8,128})$/.exec(hash || "");
   return m ? m[1] : null;
 }
+
+// A pasted invite link (or bare code), for a home-screen app that can't open links:
+// on iPhone it doesn't share storage with Safari, so it has to join by itself.
+export function inviteCodeFromText(text) {
+  const t = (text || "").trim();
+  const i = t.indexOf("#invite=");
+  if (i >= 0) return inviteCodeFromHash(t.slice(i));
+  return /^[A-Za-z0-9_-]{8,128}$/.test(t) ? t : null;
+}

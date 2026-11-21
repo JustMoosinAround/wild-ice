@@ -2,8 +2,9 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow-x: hidden; }
 body { display: flex; flex-direction: column; font: 16px/1.4 system-ui, sans-serif; color: var(--fg); background: var(--bg); }
-#banner { background: #fef3c7; color: #78350f; padding: 8px var(--gutter); font-size: 14px; }
-#bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; padding: 8px var(--gutter); border-bottom: 1px solid var(--line); position: relative; z-index: 1100; }
+#banner { background: #fef3c7; color: #78350f; padding: calc(8px + env(safe-area-inset-top)) var(--gutter) 8px; font-size: 14px; }
+#bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; padding: calc(8px + env(safe-area-inset-top)) calc(var(--gutter) + env(safe-area-inset-right)) 8px calc(var(--gutter) + env(safe-area-inset-left)); border-bottom: 1px solid var(--line); position: relative; z-index: 1100; }
+#banner:not([hidden]) + #bar { padding-top: 8px; }
 #bar h1 { font-size: 18px; margin: 0; }
 .toggle { font-size: 14px; display: flex; align-items: center; gap: 6px; min-height: 44px; }
 .toggle input { width: 20px; height: 20px; }
@@ -130,3 +131,5 @@ button.act.rep { display: flex; align-items: center; justify-content: center; ga
 .skate-row { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 0; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--fg); text-align: left; font: inherit; cursor: pointer; }
 .skate-row .sw { flex: none; width: 20px; height: 14px; border: 2px solid; border-radius: 3px; }
 .skate-row .nm { display: flex; flex-direction: column; }
+.invite-paste { margin: 12px 0 4px; font-size: 14px; }
+.invite-paste summary { color: var(--accent); cursor: pointer; min-height: 44px; display: flex; align-items: center; }

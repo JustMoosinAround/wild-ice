@@ -3,7 +3,7 @@ import { searchLakes } from "./search.js";
 import { skateableLakes } from "./skatelist.js";
 import {
   GRADES, flushReports, getDevice, inviteCodeFromHash, loadLake, ownerCall, postComment, prepPhoto,
-  queueReport, queuedReports, redeemInvite, makeReport, checkDevice, clearLegacy, inviteDecision,
+  queueReport, queuedReports, redeemInvite, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
 } from "./icelog.js";
 import { TURNSTILE_SITEKEY, WORKER_URL } from "./config.js";
 
@@ -341,6 +341,7 @@ function iceLogSection(id) {
   const photos = el("div", { class: "featured" });
   const list = el("ol", { class: "comments" });
   box.append(photos, el("p", { class: "disc", text: status.disclaimer || "Rough estimate only — check ice yourself." }), list, commentForm(id, list));
+  if (!VIEW_ONLY && WORKER_URL && !getDevice(store)) box.append(pasteInvite());
   loadLake(id, ICELOG).then(({ comments, photos: ph }) => {
     if (!box.isConnected) return;
     for (const p of ph || []) {
@@ -354,6 +355,21 @@ function iceLogSection(id) {
     }
   });
   return box;
+}
+
+// "Have an invite?": paste the link here when the app can't open it (home-screen app).
+function pasteInvite() {
+  const input = el("input", { type: "text", placeholder: "Paste your invite link", "aria-label": "Invite link", autocomplete: "off" });
+  const msg = el("p", { class: "status" });
+  const form = el("form", { class: "comment-form" }, input, el("button", { class: "act", type: "submit", text: "Join" }), msg);
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const code = inviteCodeFromText(input.value);
+    if (!code) { msg.textContent = "That doesn't look like an invite link."; return; }
+    input.value = "";
+    showInvite(code);
+  });
+  return el("details", { class: "invite-paste" }, el("summary", { text: "Have an invite? Join the Ice Log" }), form);
 }
 
 function commentForm(id, list) {

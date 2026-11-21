@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   GRADES, isGoodGrade, getDevice, setDevice, clearDevice, queueReport, queuedReports,
-  flushReports, loadLake, postComment, redeemInvite, inviteCodeFromHash,
+  flushReports, loadLake, postComment, redeemInvite, inviteCodeFromHash, inviteCodeFromText,
   makeReport, checkDevice, clearLegacy, inviteDecision,
 } from "../../site/icelog.js";
 
@@ -147,6 +147,14 @@ test("inviteCodeFromHash reads only a well-formed invite", () => {
   assert.equal(inviteCodeFromHash("#lake=w1"), null);
   assert.equal(inviteCodeFromHash("#invite="), null);
   assert.equal(inviteCodeFromHash("#invite=<script>"), null);
+});
+
+test("inviteCodeFromText takes a pasted invite link or code", () => {
+  assert.equal(inviteCodeFromText(" https://x.github.io/wild-ice/#invite=Qv2lif-B2_sS \n"), "Qv2lif-B2_sS");
+  assert.equal(inviteCodeFromText("Qv2lif-B2_sS"), "Qv2lif-B2_sS");
+  assert.equal(inviteCodeFromText("https://x.github.io/wild-ice/#lake=w1"), null);
+  assert.equal(inviteCodeFromText("hello"), null);
+  assert.equal(inviteCodeFromText(""), null);
 });
 
 test("makeReport keeps the day it was logged, not the day it is sent", () => {
