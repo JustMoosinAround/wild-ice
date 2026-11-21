@@ -1,10 +1,8 @@
-import {
-  buildRatingFile, buildPrefFile, enqueue, flushQueue, CREDS_KEY, QUEUE_KEY,
-} from "./ratings.js";
 import { renderWeatherChart } from "./chart.js";
 import { searchLakes } from "./search.js";
 import {
-  GRADES, flushReports, getDevice, loadLake, postComment, prepPhoto, queueReport,
+  GRADES, flushReports, getDevice, inviteCodeFromHash, loadLake, ownerCall, postComment, prepPhoto,
+  queueReport, queuedReports, redeemInvite,
 } from "./icelog.js";
 import { TURNSTILE_SITEKEY, WORKER_URL } from "./config.js";
 
@@ -49,28 +47,7 @@ let status = { lakes: {} };
 let features = [];
 const layers = new Map(); // id -> {group, feature}
 
-function getCreds() {
-  try { return JSON.parse(store.getItem(CREDS_KEY)); } catch { return null; }
-}
-function pending() {
-  try { return JSON.parse(store.getItem(QUEUE_KEY) || "[]").length; } catch { return 0; }
-}
-function flush() {
-  return flushQueue(store, getCreds(), (...a) => fetch(...a), { onAuthFailed }).catch(() => 0);
-}
-
-// Bad token/repo: forget the creds (queue stays) and ask again.
-function onAuthFailed() {
-  store.removeItem(CREDS_KEY);
-  const panel = $("panel");
-  if (panel.hidden) {
-    showMsg("GitHub rejected the token or repo — re-enter it on your next rating.");
-    return;
-  }
-  const id = currentId;
-  if (id && info(id)) renderPanel(id, "GitHub rejected the token or repo — re-enter");
-  credsForm(() => flush().then(() => setStatus(pending() ? pending() + " waiting to upload" : "Saved")));
-}
+function pending() { return queuedReports(store).length; }
 
 function showMsg(text) {
   const m = $("msg");
@@ -486,25 +463,19 @@ function renderPanel(id, statusText) {
     return;
   }
 
-  const prow = el("div", { class: "row" });
-  prow.append(el("button", {
-    class: "act" + (d.pinned ? " on" : ""), text: d.pinned ? "★ Pinned" : "Pin",
-    onclick: () => act(id, () => buildPrefFile(id, d.pinned ? "unpin" : "pin", new Date()),
-      d.pinned ? "Unpinned" : "Pinned", (x) => { x.pinned = !x.pinned; }),
-  }));
-  prow.append(el("button", {
-    class: "act" + (d.hidden ? " on" : ""), text: d.hidden ? "Hidden (tap to show)" : "Hide",
-    onclick: () => act(id, () => buildPrefFile(id, d.hidden ? "unhide" : "hide", new Date()),
-      d.hidden ? "Unhidden" : "Hidden", (x) => { x.hidden = !x.hidden; }),
-  }));
-  panel.append(prow);
-  panel.append(el("a", { class: "cop", href: "#", text: "Reset GitHub token", onclick: (e) => {
-    e.preventDefault();
-    store.removeItem(CREDS_KEY);
-    renderPanel(id, "Token cleared");
-    credsForm(() => flush().then(() => setStatus(pending() ? pending() + " waiting to upload" : "Saved")));
-  } }));
-  panel.append(el("div", { class: "status", id: "status", text: statusText || (pending() ? pending() + " waiting to upload" : "") }));
+  if (isOwner()) {
+    const prow = el("div", { class: "row" });
+    prow.append(el("button", {
+      class: "act" + (d.pinned ? " on" : ""), text: d.pinned ? "★ Pinned" : "Pin",
+      onclick: () => setPref(id, d.pinned ? "unpin" : "pin"),
+    }));
+    prow.append(el("button", {
+      class: "act" + (d.hidden ? " on" : ""), text: d.hidden ? "Hidden (tap to show)" : "Hide",
+      onclick: () => setPref(id, d.hidden ? "unhide" : "hide"),
+    }));
+    panel.append(prow);
+  }
+  panel.append(el("div", { class: "status", id: "status", text: statusText || (pending() ? pending() + " waiting to send" : "") }));
   panel.hidden = false;
 }
 
@@ -523,47 +494,6 @@ function loadChart(id, mount) {
 function setStatus(t) {
   const s = $("status");
   if (s) s.textContent = t;
-}
-
-function credsForm(onDone) {
-  const form = el("form", {});
-  const token = el("input", { type: "password", autocomplete: "off", "aria-label": "GitHub token", placeholder: "github_pat_...", required: "" });
-  const repo = el("input", { type: "text", autocomplete: "off", "aria-label": "Repository", placeholder: "owner/repo", required: "", pattern: "[\\w.\\-]+/[\\w.\\-]+" });
-  form.append(
-    el("p", { class: "meta", text: "One-time setup: your fine-grained GitHub token (contents: write on this repo only). Stored only in this browser." }),
-    el("label", { text: "Token" }), token, el("label", { text: "Repository" }), repo,
-    el("button", { class: "act", type: "submit", text: "Save and continue", style: "width:100%;margin-top:8px" }),
-  );
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    store.setItem(CREDS_KEY, JSON.stringify({ token: token.value.trim(), repo: repo.value.trim() }));
-    form.remove();
-    onDone();
-  });
-  $("panel").append(form);
-  token.focus();
-}
-
-// Queue a file, apply an optimistic local change, then try to upload.
-async function act(id, makeFile, doneText, mutate, show = true) {
-  let file;
-  try { file = makeFile(); } catch (e) { setStatus(e.message); return; }
-  enqueue(store, file);
-  if (mutate) { mutate(info(id)); build(); }
-  const go = async () => {
-    if (show) renderPanel(id, "Saving...");
-    await flush();
-    const left = pending();
-    if (show && currentId === id) {
-      setStatus(left ? doneText + " - " + left + " waiting to upload (will retry)" : doneText + " - saved");
-    }
-  };
-  if (!getCreds()) {
-    renderPanel(id, doneText + " - queued");
-    credsForm(go);
-  } else {
-    await go();
-  }
 }
 
 function showBanner() {
@@ -677,10 +607,122 @@ function addKey() {
 }
 
 function routeHash() {
+  const code = inviteCodeFromHash(location.hash);
+  if (code) {
+    // Take the code out of the address bar and history straight away.
+    history.replaceState(null, "", location.pathname + location.search);
+    showInvite(code);
+    return;
+  }
+  if (location.hash === "#review") { showReview(); return; }
   const m = location.hash.match(/^#lake=(.+)$/);
   if (!m) return;
   const id = decodeURIComponent(m[1]);
   if (info(id)) openLake(id, true);
+}
+
+function isOwner() { return !VIEW_ONLY && WORKER_URL && getDevice(store)?.role === "owner"; }
+
+async function setPref(id, action) {
+  const d = info(id);
+  const before = { pinned: d.pinned, hidden: d.hidden };
+  if (action === "pin" || action === "unpin") d.pinned = action === "pin";
+  else d.hidden = action === "hide";
+  build();
+  renderPanel(id, "Saving…");
+  const r = await ownerCall("/api/prefs", { ...ICELOG, method: "POST", body: { lake_id: id, action } }).catch(() => null);
+  if (!r || r.status !== 200) {
+    Object.assign(d, before);
+    build();
+  }
+  if (currentId === id) renderPanel(id, r && r.status === 200 ? "Saved: the map updates after the next daily run" : "Couldn't save, try again");
+}
+
+function openPage(title, ...kids) {
+  currentId = null;
+  const panel = $("panel");
+  panel.replaceChildren(
+    el("button", { class: "close", "aria-label": "Close", text: "×", onclick: closePanel }),
+    el("h2", { text: title }), ...kids);
+  panel.hidden = false;
+  return panel;
+}
+
+function showInvite(code) {
+  if (!WORKER_URL) { showMsg("The Ice Log isn't set up yet."); return; }
+  const name = el("input", { type: "text", maxlength: "40", placeholder: "Your name", "aria-label": "Your name" });
+  const msg = el("p", { class: "status" });
+  const form = el("form", { class: "comment-form" },
+    el("p", { class: "meta", text: "You're invited to the Wild Ice Ice Log. Your name shows on your comments and on photos the owner features. This invite works once, on this phone." }),
+    name, el("button", { class: "act", type: "submit", text: "Join" }), msg);
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.textContent = "Joining…";
+    const r = await redeemInvite(code, name.value.trim(), ICELOG);
+    if (!r.ok) { msg.textContent = r.error; return; }
+    openPage("You're in", el("p", { text: `Welcome, ${r.name}. Tap a lake to log the ice.` }));
+  });
+  openPage("Join the Ice Log", form);
+  name.focus();
+}
+
+async function showReview() {
+  if (!isOwner()) { showMsg("Review is for the owner's phone."); return; }
+  const body = el("div", { class: "review" });
+  openPage("Review", body);
+  const r = await ownerCall("/api/review", ICELOG).catch(() => null);
+  if (!r || r.status !== 200) { body.append(el("p", { class: "status", text: "Couldn't load the review list." })); return; }
+  const { comments, photos, friends } = r.data;
+  const decide = (path, action, row) => async () => {
+    row.querySelectorAll("button").forEach((b) => { b.disabled = true; });
+    const res = await ownerCall(path, { ...ICELOG, method: "POST", body: { action } }).catch(() => null);
+    row.replaceChildren(el("p", { class: "meta", text: res && res.status === 200 ? "Done: " + action : "Failed, try again" }));
+  };
+  const lakeName = (id) => (info(id) ? info(id).name : id);
+  body.append(el("h3", { text: `Waiting comments (${comments.length})` }));
+  for (const c of comments) {
+    const row = el("div", { class: "review-row" });
+    row.append(el("p", {}, el("b", { text: c.name }), el("span", { class: "meta", text: " on " + lakeName(c.lake_id) })),
+      el("p", { text: c.text }),
+      el("div", { class: "row" },
+        el("button", { class: "act", text: "Approve", onclick: decide(`/api/review/comments/${c.id}`, "approve", row) }),
+        el("button", { class: "act", text: "Reject", onclick: decide(`/api/review/comments/${c.id}`, "reject", row) })));
+    body.append(row);
+  }
+  body.append(el("h3", { text: `Waiting photos (${photos.length})` }));
+  for (const p of photos) {
+    const row = el("div", { class: "review-row" });
+    const img = el("img", { class: "thumb", alt: "Photo from " + (p.credit || "a friend") });
+    // <img> can't send the owner key, so fetch the waiting photo and show it from memory.
+    fetch(`${WORKER_URL}/api/photos/${encodeURIComponent(p.public_id)}`, { headers: { Authorization: `Bearer ${getDevice(store).key}` } })
+      .then((res) => (res.ok ? res.blob() : null)).then((b) => { if (b) img.src = URL.createObjectURL(b); }).catch(() => {});
+    row.append(img, el("p", { class: "meta", text: `${p.credit || "A friend"} · ${lakeName(p.lake_id)} · ${shortDay(p.created_at.slice(0, 10))}` }),
+      el("div", { class: "row" },
+        el("button", { class: "act", text: "Feature", onclick: decide(`/api/review/photos/${p.id}`, "feature", row) }),
+        el("button", { class: "act", text: "Reject", onclick: decide(`/api/review/photos/${p.id}`, "reject", row) })));
+    body.append(row);
+  }
+  body.append(el("h3", { text: "Friends" }));
+  for (const f of friends) {
+    const row = el("div", { class: "review-row friend" });
+    row.append(el("span", { text: f.name + (f.role === "owner" ? " (you)" : "") + (f.revoked ? " — switched off" : "") }));
+    if (f.role !== "owner" && !f.revoked) {
+      row.append(el("button", { class: "act", text: "Switch off", onclick: async () => {
+        if (!confirm(`Switch off ${f.name}'s invite? Their phone stops working; past reports stay.`)) return;
+        const res = await ownerCall(`/api/friends/${f.id}/revoke`, { ...ICELOG, method: "POST", body: {} }).catch(() => null);
+        row.replaceChildren(el("span", { text: res && res.status === 200 ? f.name + " — switched off" : "Failed, try again" }));
+      } }));
+    }
+    body.append(row);
+  }
+  const out = el("div", {});
+  body.append(el("button", { class: "act", text: "New invite", onclick: async () => {
+    const res = await ownerCall("/api/invites", { ...ICELOG, method: "POST", body: {} }).catch(() => null);
+    if (!res || res.status !== 200) { out.replaceChildren(el("p", { class: "status", text: "Couldn't make an invite." })); return; }
+    const link = el("input", { type: "text", readonly: "", value: res.data.invite_url, "aria-label": "Invite link" });
+    out.replaceChildren(el("p", { class: "meta", text: "Send this to one friend. It works once, on one phone." }), link,
+      el("button", { class: "act", text: "Copy", onclick: () => navigator.clipboard?.writeText(res.data.invite_url) }));
+  } }), out);
 }
 
 async function load() {
@@ -706,10 +748,11 @@ async function main() {
     document.body.classList.add("embed");
   } else {
     window.addEventListener("pagehide", commitReport); // don't lose a report in its undo window
+  if (isOwner()) {
+    $("bar").append(el("a", { class: "review-link", href: "#review", text: "Review" }));
+  }
   window.addEventListener("online", sendQueue);
   sendQueue(); // reports logged without signal go out now
-    window.addEventListener("online", flush);
-    flush();
   }
   try {
     await load();

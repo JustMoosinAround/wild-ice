@@ -120,3 +120,9 @@ button.act.rep { display: flex; align-items: center; justify-content: center; ga
 .comments li p { margin: 2px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .comment-form { display: flex; flex-direction: column; gap: 8px; }
 .turnstile:empty { display: none; }
+.review h3 { font-size: 15px; margin: 16px 0 6px; }
+.review-row { padding: 8px 0; border-bottom: 1px solid var(--line); }
+.review-row p { margin: 2px 0; overflow-wrap: anywhere; }
+.review-row.friend { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.review input[type=text] { width: 100%; font-size: 14px; padding: 8px; border: 1px solid #94a3b8; border-radius: 8px; margin: 6px 0; }
+.review-link { font-size: 14px; color: var(--accent); min-height: 44px; display: inline-flex; align-items: center; }

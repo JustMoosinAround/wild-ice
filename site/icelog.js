@@ -139,3 +139,9 @@ export async function prepPhoto(file) {
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return { jpegBase64: btoa(bin), gps };
 }
+
+// "#invite=<code>" from an invite link; null for anything else.
+export function inviteCodeFromHash(hash) {
+  const m = /^#invite=([A-Za-z0-9_-]{8,128})$/.exec(hash || "");
+  return m ? m[1] : null;
+}

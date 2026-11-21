@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   GRADES, isGoodGrade, getDevice, setDevice, clearDevice, queueReport, queuedReports,
-  flushReports, loadLake, postComment, redeemInvite,
+  flushReports, loadLake, postComment, redeemInvite, inviteCodeFromHash,
 } from "../../site/icelog.js";
 
 function memStore() {
@@ -139,4 +139,11 @@ test("redeemInvite stores the device", async () => {
   const used = fakeFetch(() => [410, { error: "This invite was already used" }]);
   assert.deepEqual(await redeemInvite("code1", "Pat", { fetch: used, storage: memStore(), base: BASE }),
     { ok: false, error: "This invite was already used" });
+});
+
+test("inviteCodeFromHash reads only a well-formed invite", () => {
+  assert.equal(inviteCodeFromHash("#invite=Qv2lif-B2_sS"), "Qv2lif-B2_sS");
+  assert.equal(inviteCodeFromHash("#lake=w1"), null);
+  assert.equal(inviteCodeFromHash("#invite="), null);
+  assert.equal(inviteCodeFromHash("#invite=<script>"), null);
 });
