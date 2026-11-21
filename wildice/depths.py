@@ -27,12 +27,14 @@ class DepthPoint:
     depth_avg_m: float
     lon: float
     lat: float
+    elev_m: float | None = None  # lake surface elevation (HydroLAKES)
 
 
 def load_points(path: Path = DEPTHS_CSV) -> list[DepthPoint]:
     with open(path, newline="", encoding="utf-8") as f:
         return [DepthPoint(int(r["hylak_id"]), r["lake_name"], float(r["area_km2"]),
-                           float(r["depth_avg_m"]), float(r["pour_lon"]), float(r["pour_lat"]))
+                           float(r["depth_avg_m"]), float(r["pour_lon"]), float(r["pour_lat"]),
+                           float(r["elevation_m"]) if r.get("elevation_m") not in (None, "") else None)
                 for r in csv.DictReader(f)]
 
 
@@ -44,7 +46,7 @@ def attach_depths(lakes: list[Lake], points: list[DepthPoint]) -> list[Lake]:
         return list(lakes)
     tree = STRtree([g for _, g in shaped])
     xs, ys = _TO_AK.transform([p.lon for p in points], [p.lat for p in points])
-    best: dict[int, tuple[float, float]] = {}  # lake index -> (area mismatch, depth)
+    best: dict[int, tuple[float, DepthPoint]] = {}  # lake index -> (area mismatch, point)
     for p, x, y in zip(points, xs, ys):
         pt = shapely.Point(x, y)
         for j in tree.query(pt):
@@ -53,5 +55,6 @@ def attach_depths(lakes: list[Lake], points: list[DepthPoint]) -> list[Lake]:
                 continue
             mismatch = abs(math.log(p.area_km2 * _ACRES_PER_KM2 / lakes[i].area_acres))
             if mismatch <= math.log(MAX_AREA_RATIO) and (i not in best or mismatch < best[i][0]):
-                best[i] = (mismatch, p.depth_avg_m)
-    return [replace(l, depth_m=best[i][1]) if i in best else l for i, l in enumerate(lakes)]
+                best[i] = (mismatch, p)
+    return [replace(l, depth_m=best[i][1].depth_avg_m, elev_m=best[i][1].elev_m) if i in best else l
+            for i, l in enumerate(lakes)]

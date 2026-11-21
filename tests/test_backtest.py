@@ -72,6 +72,9 @@ def fake_weather(monkeypatch):
         return {c: _days(end, t_mean=state["t_mean"], snow_last=state["snow"]) for c in cells}
 
     monkeypatch.setattr(backtest, "fetch_daily", fetch)
+    # no measured snow unless a test sets state["stations"]/["measured"] (never the network)
+    monkeypatch.setattr(backtest, "fetch_observations",
+                        lambda *a, **k: (state.get("stations", []), state.get("measured", {})))
     return state
 
 
@@ -161,3 +164,12 @@ def test_no_note_when_shortlisted(root, fake_weather):
     rows = run_backtest(_obs(root, "skated"), root, requests.Session(), _dark())
     assert rows[0].note is None
     assert "note" not in summarize(rows)
+
+
+
+def test_measured_station_snow_used_in_backtest(root, fake_weather):
+    from wildice.snowobs import Station
+    fake_weather["stations"] = [Station("s", "Near", 61.0, -149.5, None, "CoCoRaHS")]
+    fake_weather["measured"] = {"s": {DAY - timedelta(days=1): 15.0}}
+    rows = run_backtest(_obs(root, "skated"), root, requests.Session(), _dark())
+    assert rows[0].predicted is Label.SNOW_COVERED

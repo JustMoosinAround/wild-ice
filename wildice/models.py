@@ -47,6 +47,7 @@ class Lake:
     interior: dict | None  # GeoJSON geometry, EPSG:4326
     warning: str | None
     depth_m: float | None = None  # mean depth (HydroLAKES estimate), when matched
+    elev_m: float | None = None   # surface elevation (HydroLAKES), when matched
 
 
 @dataclass(frozen=True)

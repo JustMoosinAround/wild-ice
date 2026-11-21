@@ -4,7 +4,7 @@
 
 Mean lake depths for Southcentral Alaska (the `region.bbox` in `config.yaml`), cut
 from HydroLAKES v1.0 (points version): Hylak_id, Lake_name, Lake_area (km²),
-Depth_avg (m) and the outlet ("pour point") longitude/latitude. Depths in this
+Depth_avg (m), Elevation (m) and the outlet ("pour point") longitude/latitude. Depths in this
 region are modeled estimates (Vol_src 3), not surveys.
 
 Source: Messager, M.L., Lehner, B., Grill, G., Nedeva, I., Schmitt, O. (2016).

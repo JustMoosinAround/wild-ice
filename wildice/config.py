@@ -91,6 +91,14 @@ class IcelogCfg:
 
 
 @dataclass(frozen=True)
+class SnowobsCfg:
+    max_km: float      # a lake uses the nearest station this close
+    max_dz_m: float    # ...whose height is within this of the lake's
+    lowland_m: float   # without both heights, match only when the known one is this low
+    note_days: int     # name measured snow from the last this-many days in the reason
+
+
+@dataclass(frozen=True)
 class WeatherCfg:
     batch_pause_s: float
 
@@ -110,6 +118,7 @@ class Config:
     imagery: ImageryCfg
     ridges: RidgesCfg
     icelog: IcelogCfg
+    snowobs: SnowobsCfg
     weather: WeatherCfg
     site: SiteCfg
     season_start: str
@@ -146,7 +155,7 @@ def load_config(path: Path) -> Config:
     if not isinstance(raw, dict):
         raise ConfigError("config is empty or not a mapping")
 
-    missing = [k for k in ("region", "filters", "ice", "snow", "reset", "imagery", "ridges", "icelog", "weather", "site",
+    missing = [k for k in ("region", "filters", "ice", "snow", "reset", "imagery", "ridges", "icelog", "snowobs", "weather", "site",
                            "season_start", "pinned", "hidden") if k not in raw]
     if missing:
         raise ConfigError(f"missing config key(s): {', '.join(missing)}")
@@ -178,6 +187,8 @@ def load_config(path: Path) -> Config:
             min_span_mi=float, warmup_c=float, window_days=int, thaw_gust_kmh=float,
             points_index=float, big_ice_mi=float, lead_min_span_mi=float,
             lead_gust_kmh=float, lead_max_cm=float)),
+        snowobs=_section(raw, "snowobs", SnowobsCfg, dict(
+            max_km=float, max_dz_m=float, lowland_m=float, note_days=int)),
         icelog=_section(raw, "icelog", IcelogCfg, dict(good_grade_min=str, max_gps_m=float)),
         weather=_section(raw, "weather", WeatherCfg, dict(batch_pause_s=float)),
         site=_section(raw, "site", SiteCfg, dict(base_url=str)),

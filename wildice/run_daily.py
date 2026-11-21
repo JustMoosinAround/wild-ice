@@ -28,6 +28,7 @@ from wildice.models import (
 from wildice.prefs import load_prefs
 from wildice.hazards import big_ice_note, lead_note, ridge_note
 from wildice.icelog import fetch_export, merge_reports, reports_from_export
+from wildice.snowobs import apply_measured, fetch_observations, latest_measured, match_station
 from wildice.patches import apply_patches, texture_by_day
 from wildice.reports import apply_report, ice_with_report, load_reports
 from wildice.scenes import Seen, drop_cloudy, load_seen, new_sensors, save_seen
@@ -416,9 +417,20 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
         wx = update_cache(state / "weather", cell_points(lake_list), run_date, cfg, session)
         wx = {c: wet_snow(days, cfg.snow.wet_snow_max_c, cfg.snow.wet_snow_cm_per_mm)
               for c, days in wx.items()}
+        # Measured new snow (SNOTEL, CoCoRaHS) replaces the weather model's where a lake
+        # has a station close enough; every later step reads lake_wx.
+        stations, measured = fetch_observations(session, season_start(run_date, cfg), run_date, cfg)
+        station_of = {lake.id: match_station(lake, stations, cfg) for lake in lake_list}
+        lake_wx = {}
+        for lake in lake_list:
+            days = wx[cell_of(lake.lat, lake.lon)]
+            st = station_of[lake.id]
+            lake_wx[lake.id] = apply_measured(days, measured.get(st.id, {})) if st else days
+        log.info("snow stations: %d, used by %d lake(s)", len(stations),
+                 sum(1 for v in station_of.values() if v))
         # earlier clearings this season count before today's imagery is in
         traces: dict[str, list] = {lake.id: [] for lake in lake_list}
-        ice0 = {lake.id: ice_with_report(wx[cell_of(lake.lat, lake.lon)], cfg,
+        ice0 = {lake.id: ice_with_report(lake_wx[lake.id], cfg,
                                          optical_classes(s2_history.get(lake.id),
                                                          ls_history.get(lake.id)),
                                          lake.area_acres,
@@ -463,20 +475,24 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
         for lake in lake_list:
             hist = optical_classes(s2_history.get(lake.id), ls_history.get(lake.id))
             rep = reports.get(lake.id)
-            ice = (ice_with_report(wx[cell_of(lake.lat, lake.lon)], cfg, hist, lake.area_acres,
+            ice = (ice_with_report(lake_wx[lake.id], cfg, hist, lake.area_acres,
                                    rep, depth_m=lake.depth_m)
                    if lake.id in imagery else ice0[lake.id])
             img = _with_saved_radar(imagery.get(lake.id), s1_history.get(lake.id, {}),
                                     window_start, run_date, ice, lake.id, baselines)
             sc = score_lake(lake, ice, img, run_date, cfg, s2_history=s2_history.get(lake.id),
                             ls_history=ls_history.get(lake.id))
-            days = wx[cell_of(lake.lat, lake.lon)]
+            days = lake_wx[lake.id]
             tex = texture_by_day(texture_history.get(lake.id), imagery.get(lake.id), cfg)
             if tex:
                 texture_history[lake.id] = tex
             sc = apply_patches(sc, tex, days, run_date, cfg)
             sc = apply_report(sc, rep, ice, hist, run_date, cfg)
-            notes = [n for n in (lead_note(lake, days, ice, run_date, cfg),
+            st = station_of[lake.id]
+            hit = latest_measured(measured.get(st.id, {}), run_date, cfg.snowobs.note_days) if st else None
+            snow_note = (f"measured {hit[1]:.0f} cm new snow at {st.name} ({st.source}), "
+                         f"{hit[0]:%b} {hit[0].day}") if hit else None
+            notes = [n for n in (snow_note, lead_note(lake, days, ice, run_date, cfg),
                                  ridge_note(lake, days, ice, run_date, cfg),
                                  big_ice_note(lake, days, ice, run_date, cfg)) if n]
             scores[lake.id] = (replace(sc, reason="; ".join([sc.reason, *notes]))
@@ -512,7 +528,7 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
             entry["patch_low_sun"] = in_low_sun(date.fromisoformat(p["day"]), cfg)
     publish.write_outputs(status, site_data, run_date)
     publish.write_series(site_data, {
-        lake.id: publish.lake_series(wx[cell_of(lake.lat, lake.lon)], traces[lake.id])
+        lake.id: publish.lake_series(lake_wx[lake.id], traces[lake.id])
         for lake in lake_list})
     log.info("wrote status for %d lakes (%d with imagery)", len(scores), len(imagery))
 

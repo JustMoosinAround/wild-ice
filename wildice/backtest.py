@@ -18,6 +18,7 @@ from wildice.models import Confidence, Label, SourceUnavailable
 from wildice.prefs import load_prefs
 from wildice.score import optical_classes, score_lake, valid_ls_classes, valid_s2_classes
 from wildice.shortlist import shortlist
+from wildice.snowobs import apply_measured, fetch_observations, match_station
 from wildice.weather import (
     cell_of, cell_points, fetch_daily, make_session, season_start, wet_snow,
 )
@@ -63,6 +64,7 @@ def run_backtest(obs_path: Path, root: Path, session, client) -> list[Row]:
     pinned, hidden = load_prefs(cfg, root / "prefs")
     doc = yaml.safe_load(Path(obs_path).read_text(encoding="utf-8")) or {}
     rows: list[Row] = []
+    snow_cache: dict = {}
     for item in doc.get("observations") or []:
         lake_id, observed = str(item.get("lake_id")), str(item.get("observed"))
         try:
@@ -84,6 +86,14 @@ def run_backtest(obs_path: Path, root: Path, session, client) -> list[Row]:
                              points=points)[cell]
             wx = wet_snow([d for d in wx if d.day <= day], cfg.snow.wet_snow_max_c,
                           cfg.snow.wet_snow_cm_per_mm)
+            # measured snow, as in the daily run (one fetch per season, kept for the run)
+            season = season_start(day, cfg)
+            if season not in snow_cache:
+                snow_cache[season] = fetch_observations(session, season, day, cfg)
+            stations, measured = snow_cache[season]
+            st = match_station(lake, stations, cfg)
+            if st:
+                wx = apply_measured(wx, measured.get(st.id, {}))
             ice = run_ice_model(wx, cfg, area_acres=lake.area_acres, depth_m=lake.depth_m)
             imaged = shortlist([lake], {lake.id: ice}, pinned, cfg, remaining_requests=2,
                                hidden=hidden)

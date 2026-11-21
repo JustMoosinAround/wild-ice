@@ -858,3 +858,25 @@ def test_no_ice_log_settings_no_request(tmp_repo, mocked):
     cold_weather(mocked)
     assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
     assert not any("ice.example" in c.request.url for c in mocked.calls)
+
+
+def test_measured_station_snow_overrides_weather_model(tmp_repo, mocked):
+    import re as _re
+    cold_weather(mocked)  # weather model: dry and cold, so the lake reads black ice
+    day_after = RUN.isoformat()  # report on RUN morning = snow that fell the day before
+    csv_text = ("ObservationDate,ObservationTime,EntryDateTime,StationNumber,StationName,Latitude,"
+                "Longitude,TotalPrecipAmt,NewSnowDepth,NewSnowSWE,TotalSnowDepth,TotalSnowSWE,DateTimeStamp\n"
+                f"{day_after}, 07:00 AM, x, AK-AB-1, Lakeside 1.0 N, 61.01, -149.5, 0.40, 6.5, NA, 6.5, NA, x\n")
+    mocked.add(responses_lib.GET, _re.compile(r"https://data\.cocorahs\.org/.*"), body=csv_text)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    lake = status_of(tmp_repo)["lakes"]["w1"]
+    assert lake["label"] == "snow_covered"
+    assert "measured 17 cm new snow at Lakeside 1.0 N (CoCoRaHS)" in lake["reason"]
+    assert ntfy_calls(mocked, "alerts-topic") == 0
+
+
+def test_station_sources_down_run_unchanged(tmp_repo, mocked, caplog):
+    cold_weather(mocked)
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    assert status_of(tmp_repo)["lakes"]["w1"]["label"] == "likely_black_ice"
+    assert "CoCoRaHS unavailable" in caplog.text

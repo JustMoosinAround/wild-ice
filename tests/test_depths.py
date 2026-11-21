@@ -17,15 +17,15 @@ LAKE = Lake("w1", "Test", 40.0, 0.1, None, 61.0017, -149.4964, POLY, None)
 
 def test_load_points_reads_csv(tmp_path):
     p = tmp_path / "d.csv"
-    p.write_text("hylak_id,lake_name,area_km2,depth_avg_m,pour_lon,pour_lat\n"
-                 "7,Test,0.16,6.5,-149.5,61.0\n")
-    assert load_points(p) == [DepthPoint(7, "Test", 0.16, 6.5, -149.5, 61.0)]
+    p.write_text("hylak_id,lake_name,area_km2,depth_avg_m,pour_lon,pour_lat,elevation_m\n"
+                 "7,Test,0.16,6.5,-149.5,61.0,85\n")
+    assert load_points(p) == [DepthPoint(7, "Test", 0.16, 6.5, -149.5, 61.0, 85.0)]
 
 
 def test_outlet_point_on_shore_matches_similar_area():
-    pt = DepthPoint(7, "", 40 / 247.105, 6.5, -149.5001, 61.001)  # just outside west shore
+    pt = DepthPoint(7, "", 40 / 247.105, 6.5, -149.5001, 61.001, 120.0)  # west shore
     (out,) = attach_depths([LAKE], [pt])
-    assert out.depth_m == 6.5
+    assert out.depth_m == 6.5 and out.elev_m == 120.0
 
 
 def test_far_or_wrong_size_points_do_not_match():
