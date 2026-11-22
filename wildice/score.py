@@ -99,6 +99,10 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
                                     if s2_history.get(d) is not SurfaceClass.CRACKED}}
     classes = optical_classes(s2_classes,
                               {**(ls_history or {}), **valid_ls_classes(imagery, cfg)})
+    # Images from before this ice formed show open water, not ice: they don't count.
+    before_ice = bool(classes) and ice.freeze_up is not None and max(classes) < ice.freeze_up
+    if ice.freeze_up is not None:
+        classes = {d: c for d, c in classes.items() if d >= ice.freeze_up}
     last_clear_day = max(classes) if classes else None
     latest_cls = classes[last_clear_day] if last_clear_day else None
     sensor = "ls" if last_clear_day is not None and last_clear_day not in s2_classes else "s2"
@@ -179,6 +183,8 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
         parts.append("radar suggests ice")
     elif last_clear_day is not None:
         parts.append(f"no clear image since {_fmt(last_clear_day)}")
+    elif before_ice:
+        parts.append("no clear image since freeze-up")
     else:
         parts.append("no clear image")
     if ice.possible_resets:

@@ -292,3 +292,13 @@ def test_crack_network_not_skateable_under_new_snow():
     s = score_lake(lake, ice(snow=5, last_snow=RUN - timedelta(days=1)), img(0, None), RUN, cfg,
                    s2_history=hist)
     assert s.label is Label.SNOW_COVERED
+
+
+def test_dark_image_from_before_freeze_up_is_open_water_not_ice():
+    froze = RUN - timedelta(days=2)
+    st = IceState(100, 12, froze, ResetEvent(froze, ResetKind.FREEZE_UP), 0.0, None, ())
+    s = score_lake(lake, st, img(10, DARK), RUN, cfg)
+    assert s.label is Label.UNKNOWN
+    assert "no clear image since freeze-up" in s.reason
+    # a dark image after freeze-up still counts
+    assert score_lake(lake, st, img(1, DARK), RUN, cfg).label is Label.LIKELY_BLACK_ICE
