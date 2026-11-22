@@ -262,3 +262,11 @@ test("skated list comes from the worker", async () => {
   assert.deepEqual(await getSkated({ fetch: f, storage: s, base: BASE }), [{ lake_id: "w1", day: "2026-01-05" }]);
   assert.equal(f.calls[0].url, `${BASE}/api/me/skated`);
 });
+
+test("a report from a track carries its minutes and the lake point", () => {
+  const r = makeReport({ lakeId: "w1", rating: "skated", grade: "A", day: "2025-02-08",
+    trackMinutes: 42, point: { lat: 60.42, lon: -150.3 } });
+  assert.equal(r.track_minutes, 42);
+  assert.deepEqual(r.gps, { lat: 60.42, lon: -150.3, source: "device" });
+  assert.equal(r.day, "2025-02-08");
+});

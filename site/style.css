@@ -196,3 +196,11 @@ button.save.on { background: #fee2e2; border-color: #dc2626; color: #991b1b; }
 .timeline li.tl-snow::before { background: #e2e8f0; border: 1px solid #64748b; }
 .tl-day { flex: none; width: 52px; color: var(--muted); }
 .view h3 { font-size: 15px; margin: 14px 0 4px; }
+
+/* upload */
+.file-in { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.file-label { display: flex; align-items: center; justify-content: center; margin: 8px 0 12px; cursor: pointer; }
+.uploads { display: grid; gap: 12px; }
+.upload-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #f8fafc; }
+.upload-card .row { margin: 0; }
+.upload-card input[type=text], .grade-sel { width: 100%; min-height: 44px; font-size: 16px; padding: 6px 10px; border: 1px solid #94a3b8; border-radius: 8px; background: var(--bg); color: var(--fg); }

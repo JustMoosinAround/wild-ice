@@ -3,6 +3,7 @@ import { searchLakes } from "./search.js";
 import { renderExplore } from "./views/explore-view.js";
 import { heroSection, timelineSection } from "./views/lake-page.js";
 import { renderMine } from "./views/mine-view.js";
+import { renderUpload } from "./views/upload-view.js";
 import { badges } from "./explore.js";
 
 const SKATE_CM = 5; // config.yaml ice.skate_cm: past 2" the thickness doesn't matter
@@ -696,7 +697,9 @@ function renderTab() {
     renderMine($("mine-view"), { status, saved: [...savedIds], skated: skatedRows, joined: !!getDevice(store),
       labelText: (l) => (STYLE[l] || STYLE.unknown).text, openLake: (id) => openLake(id, true) });
   } else if (tab === "upload") {
-    $("upload-view").replaceChildren(el("h2", { text: "Upload a track" }), el("p", { class: "meta", text: "Coming soon." }));
+    renderUpload($("upload-view"), { joined: canLog(), features,
+      queue: (r) => { queueReport(store, r); sendQueue(); setTimeout(loadMine, 4000); },
+      onJoin: () => { showTab("explore"); showMsg("Open any lake and use \"Have an invite? Join Wild Ice\" at the bottom."); } });
   }
 }
 

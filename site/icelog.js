@@ -117,13 +117,16 @@ async function sendAll({ fetch, storage, base }) {
 }
 
 // The report to queue: keeps the day it was logged (it may be sent days later).
-export function makeReport({ lakeId, rating, grade, note, photo, gps, day }) {
+export function makeReport({ lakeId, rating, grade, note, photo, gps, day, trackMinutes, point }) {
   const r = { lake_id: lakeId, rating };
   if (grade && (rating === "skated" || rating === "rough")) r.grade = grade;
   const n = (note || "").trim().slice(0, 300);
   if (n) r.note = n;
   if (photo) r.photo = photo.jpegBase64;
-  const where = photo && photo.gps ? { ...photo.gps, source: "photo" } : gps;
+  // A track's point on the lake beats a photo's GPS; both beat the phone's location.
+  const where = point ? { lat: point.lat, lon: point.lon, source: "device" }
+    : photo && photo.gps ? { ...photo.gps, source: "photo" } : gps;
+  if (trackMinutes) r.track_minutes = Math.round(trackMinutes);
   if (where) r.gps = where;
   r.day = day;
   return r;
