@@ -1,6 +1,6 @@
 import { renderWeatherChart } from "./chart.js";
 import { searchLakes } from "./search.js";
-import { skateableLakes, skateMeta } from "./skatelist.js";
+import { inLakes, skateMeta, sortLakes } from "./explore.js";
 
 const SKATE_CM = 5; // config.yaml ice.skate_cm: past 2" the thickness doesn't matter
 import {
@@ -644,7 +644,7 @@ function propsById() {
 
 // Every lake that looks skateable today, best first; tap one to open it.
 function showSkateable() {
-  const list = skateableLakes(status.lakes, propsById());
+  const list = sortLakes(inLakes(status.lakes), "just_in", propsById(), { runDate: status.run_date, skated: null }).map((d) => ({ ...d, road_mi: propsById()[d.id]?.road_mi ?? null }));
   const items = el("ol", { class: "skate-list" });
   for (const d of list) {
     const s = STYLE[d.label] || STYLE.unknown;
@@ -660,7 +660,7 @@ function showSkateable() {
 }
 
 function addSkateButton() {
-  const n = skateableLakes(status.lakes, propsById()).length;
+  const n = sortLakes(inLakes(status.lakes), "just_in", propsById(), { runDate: status.run_date, skated: null }).map((d) => ({ ...d, road_mi: propsById()[d.id]?.road_mi ?? null })).length;
   if (!n) return;
   $("bar").append(el("a", { class: "review-link", href: "#skateable", text: `Skateable (${n})` }));
 }
