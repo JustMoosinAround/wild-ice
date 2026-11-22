@@ -28,7 +28,18 @@
     <ul id="results" role="listbox" hidden></ul>
   </div>
 </header>
-<div id="map"></div>
+<main id="views">
+  <section id="explore-view" class="view" hidden aria-label="Lakes that are in"></section>
+  <div id="map"></div>
+  <section id="mine-view" class="view" hidden aria-label="My lakes"></section>
+  <section id="upload-view" class="view" hidden aria-label="Upload a track"></section>
+</main>
+<nav id="tabs" aria-label="Sections">
+  <button type="button" data-tab="explore"><span aria-hidden="true">◎</span>Explore</button>
+  <button type="button" data-tab="map"><span aria-hidden="true">⌖</span>Map</button>
+  <button type="button" data-tab="mine"><span aria-hidden="true">♡</span>My lakes</button>
+  <button type="button" data-tab="upload"><span aria-hidden="true">⇪</span>Upload</button>
+</nav>
 <div id="msg" hidden></div>
 <section id="panel" hidden aria-live="polite"></section>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

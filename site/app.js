@@ -1,6 +1,6 @@
 import { renderWeatherChart } from "./chart.js";
 import { searchLakes } from "./search.js";
-import { inLakes, skateMeta, sortLakes } from "./explore.js";
+import { renderExplore } from "./views/explore-view.js";
 
 const SKATE_CM = 5; // config.yaml ice.skate_cm: past 2" the thickness doesn't matter
 import {
@@ -629,7 +629,9 @@ function routeHash() {
     return;
   }
   if (location.hash === "#review") { showReview(); return; }
-  if (location.hash === "#skateable") { showSkateable(); return; }
+  if (location.hash === "#skateable") { showTab("explore"); return; }
+  const t = location.hash.match(/^#tab=(\w+)$/);
+  if (t) { showTab(t[1]); return; }
   const m = location.hash.match(/^#lake=(.+)$/);
   if (!m) return;
   const id = decodeURIComponent(m[1]);
@@ -642,27 +644,42 @@ function propsById() {
   return out;
 }
 
-// Every lake that looks skateable today, best first; tap one to open it.
-function showSkateable() {
-  const list = sortLakes(inLakes(status.lakes), "just_in", propsById(), { runDate: status.run_date, skated: null }).map((d) => ({ ...d, road_mi: propsById()[d.id]?.road_mi ?? null }));
-  const items = el("ol", { class: "skate-list" });
-  for (const d of list) {
-    const s = STYLE[d.label] || STYLE.unknown;
-    const sw = el("i", { class: "sw" });
-    sw.style.background = s.fill;
-    sw.style.borderColor = s.line;
-    items.append(el("li", {}, el("button", { type: "button", class: "skate-row", onclick: () => openLake(d.id, true) },
-      sw, el("span", { class: "nm" }, el("b", { text: (d.pinned ? "★ " : "") + d.name }),
-        el("span", { class: "meta", text: skateMeta(d, s.text) })))));
-  }
-  openPage(list.length ? `Skateable today (${list.length})` : "Nothing looks skateable today",
-    el("p", { class: "disc", text: status.disclaimer || "Rough estimate only — check ice yourself." }), items);
+const TABS = ["explore", "map", "mine", "upload"];
+const CHIP_KEY = "wildice.chip";
+let tab = "explore";
+let skated = null; // Set of lake ids this phone's skater has skated (Task 7), or null
+
+function readChip() { try { return store.getItem(CHIP_KEY) || "just_in"; } catch { return "just_in"; } }
+
+function photoUrl(d) {
+  return d.featured_photo && WORKER_URL ? `${WORKER_URL}/api/photos/${encodeURIComponent(d.featured_photo)}` : d.thumb ? "data/" + d.thumb : "";
 }
 
-function addSkateButton() {
-  const n = sortLakes(inLakes(status.lakes), "just_in", propsById(), { runDate: status.run_date, skated: null }).map((d) => ({ ...d, road_mi: propsById()[d.id]?.road_mi ?? null })).length;
-  if (!n) return;
-  $("bar").append(el("a", { class: "review-link", href: "#skateable", text: `Skateable (${n})` }));
+function renderTab() {
+  if (tab === "explore") {
+    renderExplore($("explore-view"), {
+      status, props: propsById(), ctx: { runDate: status.run_date, skated }, chip: readChip(),
+      onChip: (c) => { try { store.setItem(CHIP_KEY, c); } catch { /* ignore */ } renderTab(); },
+      onMap: () => { $("only-skate").checked = true; applyFilter(); showTab("map"); },
+      openLake: (id) => openLake(id, true), photoUrl,
+    });
+  } else if (tab === "mine") {
+    $("mine-view").replaceChildren(el("h2", { text: "My lakes" }), el("p", { class: "meta", text: "Saved lakes show here." }));
+  } else if (tab === "upload") {
+    $("upload-view").replaceChildren(el("h2", { text: "Upload a track" }), el("p", { class: "meta", text: "Coming soon." }));
+  }
+}
+
+function showTab(name) {
+  tab = TABS.includes(name) ? name : "explore";
+  $("explore-view").hidden = tab !== "explore";
+  $("mine-view").hidden = tab !== "mine";
+  $("upload-view").hidden = tab !== "upload";
+  $("map").classList.toggle("off", tab !== "map");
+  document.body.dataset.tab = tab;
+  for (const b of document.querySelectorAll("#tabs button")) b.setAttribute("aria-current", b.dataset.tab === tab ? "page" : "false");
+  if (tab === "map") map.invalidateSize();
+  renderTab();
 }
 
 function isOwner() { return !VIEW_ONLY && WORKER_URL && getDevice(store)?.role === "owner"; }
@@ -862,7 +879,14 @@ async function main() {
   if (!VIEW_ONLY) overlayReported();
   build();
   setupSearch();
-  addSkateButton();
+  if (!VIEW_ONLY) {
+    for (const b of document.querySelectorAll("#tabs button")) b.addEventListener("click", () => {
+      closePanel();
+      history.replaceState(null, "", "#tab=" + b.dataset.tab);
+      showTab(b.dataset.tab);
+    });
+    showTab(location.hash.startsWith("#lake=") ? "map" : "explore");
+  }
   routeHash();
 }
 
