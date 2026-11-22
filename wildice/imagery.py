@@ -412,12 +412,19 @@ class CopernicusClient:
             raise SourceUnavailable(SOURCE, f"unexpected Landsat response: {exc}") from exc
         return out
 
+    def lake_photo_png(self, geometry: dict, day: date, sensor: str = "s2") -> bytes:
+        """True color of the lake and its surroundings, not cut to the lake: for people."""
+        box, w, h = photo_bbox(geometry)
+        return self.truecolor_png(geometry, day, sensor, w, h,
+                                  bounds={"bbox": box, "properties": {"crs": CRS_4326}})
+
     def truecolor_png(self, geometry: dict, day: date, sensor: str = "s2",
-                      width: int = THUMB_PX, height: int = THUMB_PX) -> bytes:
+                      width: int = THUMB_PX, height: int = THUMB_PX,
+                      bounds: dict | None = None) -> bytes:
         collection, script = TRUECOLOR[sensor]
         body = {
             "input": {
-                "bounds": self._bounds(geometry),
+                "bounds": bounds or self._bounds(geometry),
                 "data": [{
                     "type": collection,
                     "dataFilter": {
@@ -434,6 +441,28 @@ class CopernicusClient:
             "evalscript": _script(script),
         }
         return self._post(PROCESS_URL, body).content
+
+
+PHOTO_PX = 800      # long side of the people-facing lake photo
+PHOTO_PAD = 0.35    # padding around the lake, as a share of its size on each side
+PHOTO_MIN_M = 500   # ...but at least this much, so small ponds show their surroundings
+
+
+def photo_bbox(geometry: dict) -> tuple[list[float], int, int]:
+    """Padded lon/lat box around the lake and its pixel size (long side PHOTO_PX)."""
+    import math
+    from shapely.geometry import shape
+    minx, miny, maxx, maxy = shape(geometry).bounds
+    lat = (miny + maxy) / 2
+    m_lon = 111_320 * math.cos(math.radians(lat))
+    w_m, h_m = (maxx - minx) * m_lon, (maxy - miny) * 110_540
+    pad_x = max(w_m * PHOTO_PAD, PHOTO_MIN_M) / m_lon
+    pad_y = max(h_m * PHOTO_PAD, PHOTO_MIN_M) / 110_540
+    box = [minx - pad_x, miny - pad_y, maxx + pad_x, maxy + pad_y]
+    bw, bh = (box[2] - box[0]) * m_lon, (box[3] - box[1]) * 110_540
+    if bw >= bh:
+        return box, PHOTO_PX, max(32, round(PHOTO_PX * bh / bw))
+    return box, max(32, round(PHOTO_PX * bw / bh)), PHOTO_PX
 
 
 def fetch_imagery(client: CopernicusClient, lake: Lake, run_date: date, cfg: Config,

@@ -104,6 +104,8 @@ def write_outputs(status: dict, site_data: Path, run_date: date) -> None:
     for lake_id, entry in out["lakes"].items():
         entry["thumb"] = (f"thumbs/{lake_id}.png"
                           if (site_data / "thumbs" / f"{lake_id}.png").exists() else None)
+        entry["photo"] = (f"thumbs/{lake_id}-photo.png"
+                          if (site_data / "thumbs" / f"{lake_id}-photo.png").exists() else None)
     _write_json(site_data / "status.json", out)
     _write_json(site_data / "history" / f"{run_date.isoformat()}.json",
                 {k: v["label"] for k, v in out["lakes"].items()})

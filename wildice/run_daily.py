@@ -369,6 +369,38 @@ def _thumbnails(client, lakes: dict[str, Lake], scores: dict[str, Score], prev: 
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(png)
         _note_patch(lake_id, sc.last_clear_day, png, thumbs_dir, patches)
+    _photos(client, lakes, scores, prev_lakes, thumbs_dir, budget)
+
+
+PHOTO_BACKFILL = 60  # lakes without a photo yet that get one per run
+
+
+def _photos(client, lakes: dict[str, Lake], scores: dict[str, Score], prev_lakes: dict,
+            thumbs_dir: Path, budget: Budget) -> None:
+    """The uncut photo of each thumbnailed lake (what people see on cards and lake
+    pages): fetched with a new clear day, or once for lakes that don't have one yet."""
+    backfill = 0
+    for lake_id, sc in scores.items():
+        lake = lakes[lake_id]
+        if sc.label not in THUMB_LABELS or sc.last_clear_day is None or lake.interior is None:
+            continue
+        path = thumbs_dir / f"{lake_id}-photo.png"
+        prev_day = (prev_lakes.get(lake_id) or {}).get("last_clear_day")
+        if path.exists() and prev_day == sc.last_clear_day.isoformat():
+            continue
+        if not path.exists():
+            backfill += 1
+            if backfill > PHOTO_BACKFILL:
+                continue
+        if budget.remaining() < 1:
+            return
+        try:
+            png = client.lake_photo_png(lake.interior, sc.last_clear_day, sc.last_clear_sensor)
+        except SourceUnavailable as exc:  # cosmetic: keep the run going
+            log.warning("photo for %s failed: %s", lake_id, exc)
+            return
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(png)
 
 
 def _explore(scores: dict[str, Score], explore_in: dict[str, tuple], history: dict,

@@ -473,8 +473,6 @@ function renderPanel(id, statusText) {
       el("img", { class: "thumb", src: "data/" + d.patch_thumb, alt: d.name + " satellite image with black patches shaded orange", loading: "lazy" }),
       el("figcaption", { text: "Orange: black patches next to grey ice. Could be open water or newer, thinner ice: check before you cross."
         + (d.patch_low_sun ? " Low sun: some may be mountain shadow." : "") })));
-  } else if (d.thumb) {
-    panel.append(el("img", { class: "thumb", src: "data/" + d.thumb, alt: d.name + " satellite thumbnail", loading: "lazy" }));
   }
   if (typeof d.browser_url === "string" && d.browser_url.startsWith("https://")) {
     panel.append(el("a", { class: "cop", href: d.browser_url, target: "_blank", rel: "noopener", text: "Open in Copernicus Browser" }));
@@ -681,7 +679,10 @@ async function toggleSave(id) {
 function readChip() { try { return store.getItem(CHIP_KEY) || "just_in"; } catch { return "just_in"; } }
 
 function photoUrl(d) {
-  return d.featured_photo && WORKER_URL ? `${WORKER_URL}/api/photos/${encodeURIComponent(d.featured_photo)}` : d.thumb ? "data/" + d.thumb : "";
+  // A skater's featured photo first, then the uncut satellite photo of the lake and
+  // its surroundings. The lake-shaped thumbnail is for the checks, not for people.
+  if (d.featured_photo && WORKER_URL) return `${WORKER_URL}/api/photos/${encodeURIComponent(d.featured_photo)}`;
+  return d.photo ? "data/" + d.photo : "";
 }
 
 function renderTab() {

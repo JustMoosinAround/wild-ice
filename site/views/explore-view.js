@@ -27,8 +27,9 @@ export function renderExplore(mount, opts) {
   const feed = el("ol", { class: "feed" });
   for (const d of list) {
     const ev = evidenceLine(d, ctx.runDate);
-    const img = el("img", { class: "card-photo", src: opts.photoUrl(d), alt: d.name, loading: "lazy" });
-    img.addEventListener("error", () => img.classList.add("none"), { once: true });
+    const src = opts.photoUrl(d);
+    const img = src ? el("img", { class: "card-photo", src, alt: d.name, loading: "lazy" }) : null;
+    if (img) img.addEventListener("error", () => img.remove(), { once: true });
     feed.append(el("li", {}, el("button", { type: "button", class: "card", onclick: () => opts.openLake(d.id) },
       img,
       el("span", { class: "card-body" },

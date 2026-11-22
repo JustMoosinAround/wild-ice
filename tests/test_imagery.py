@@ -642,3 +642,16 @@ def test_s2_falls_back_when_texture_request_refused(client):
     client.s2_stats(GEOM, D1, D2)  # later lakes skip the refused part straight away
     bodies = [json.loads(c.request.body) for c in responses.calls[1:]]
     assert ["calculations" in b for b in bodies] == [True, False, False]
+
+
+@responses.activate
+def test_lake_photo_is_the_whole_scene_around_the_lake(client):
+    add_token()
+    responses.add(responses.POST, PROCESS_URL, body=b"\x89PNG-photo", content_type="image/png")
+    assert client.lake_photo_png(GEOM, date(2025, 11, 3)) == b"\x89PNG-photo"
+    body = json.loads(responses.calls[1].request.body)
+    bounds = body["input"]["bounds"]
+    assert "geometry" not in bounds  # not cut to the lake's shape
+    w, s, e, n = bounds["bbox"]
+    assert w < -150.0 and e > -149.9 and s < 61.0 and n > 61.1  # padded around the lake
+    assert max(body["output"]["width"], body["output"]["height"]) == 800

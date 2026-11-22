@@ -126,6 +126,10 @@ class FakeClient:
             raise self.fail
         return list(self.ls)
 
+    def lake_photo_png(self, geometry, day, sensor="s2"):
+        self.calls.append(("photo", day, day))
+        return b"\x89PNG photo"
+
     def truecolor_png(self, geometry, day, sensor="s2", width=256, height=256):
         # crack checks ask for a bigger image than the 256 px thumbnail
         self.calls.append(("png", day, day) if (width, height) == (256, 256) else ("crack", day, day))
@@ -927,3 +931,16 @@ def test_status_has_explore_fields_from_reports_and_photos(tmp_repo, mocked):
     assert w1["featured_photo"] == "new"
     assert w1["came_in"] == RUN.isoformat()  # in today, no earlier history
     assert w1["timeline"][0]["text"] == "Dark ice on image"
+
+
+def test_lake_photo_saved_with_the_thumbnail_and_published(tmp_repo, mocked):
+    cold_weather(mocked)
+    first = FakeClient()
+    assert run(RUN, tmp_repo, ENV, session(), first) == 0
+    assert [c for c in first.calls if c[0] == "photo"] == [("photo", RUN - timedelta(days=1),
+                                                            RUN - timedelta(days=1))]
+    assert (tmp_repo / "site/data/thumbs/w1-photo.png").exists()
+    assert status_of(tmp_repo)["lakes"]["w1"]["photo"] == "thumbs/w1-photo.png"
+    second = FakeClient()
+    assert run(RUN, tmp_repo, ENV, session(), second) == 0
+    assert [c for c in second.calls if c[0] == "photo"] == []
