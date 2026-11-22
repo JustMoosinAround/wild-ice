@@ -210,6 +210,6 @@ def test_nearby_looks_include_landsat_with_temperature():
     trip = skatelog.Trip(day, LAKE, "IceSkate", 30.0, 1.0, "f")
     looks = skatelog.nearby_looks(client, trip, CFG)
     assert [(lk.day, lk.cls, lk.sensor, lk.temp_c) for lk in looks] == [
-        (day - timedelta(days=1), SurfaceClass.DARK, "ls", -6.0)]
+        (day - timedelta(days=1), SurfaceClass.ICE, "ls", -6.0)]
     text = skatelog.reference_markdown([(trip, looks, None)])
-    assert "Landsat dark" in text and "-6 °C" in text and "CDAS_L8_L9_LOTL1" in text
+    assert "Landsat ice" in text and "-6 °C" in text and "CDAS_L8_L9_LOTL1" in text

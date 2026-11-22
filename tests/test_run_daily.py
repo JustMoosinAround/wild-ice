@@ -85,6 +85,20 @@ def ntfy_bodies(rsps, topic):
             for c in rsps.calls if c.request.url == f"https://ntfy.sh/{topic}"]
 
 
+def _cracked_png():
+    import io
+    import numpy as np
+    from PIL import Image
+    a = np.full((300, 300), 0.12)
+    for k in range(10, 300, 25):
+        a[k:k + 2, :] = 0.3
+        a[:, k:k + 1] = 0.3
+    v = (a * 2.5 * 255).astype(np.uint8)
+    buf = io.BytesIO()
+    Image.fromarray(np.dstack([v, v, v, np.full_like(v, 255)])).save(buf, format="PNG")
+    return buf.getvalue()
+
+
 class FakeClient:
     """Stands in for CopernicusClient (Task 7 methods)."""
 
@@ -130,9 +144,13 @@ class FakeClient:
         self.calls.append(("photo", day, day))
         return b"\x89PNG photo"
 
-    def truecolor_png(self, geometry, day, sensor="s2", width=256, height=256):
-        # crack checks ask for a bigger image than the 256 px thumbnail
-        self.calls.append(("png", day, day) if (width, height) == (256, 256) else ("crack", day, day))
+    def truecolor_png(self, geometry, day, sensor="s2", width=256, height=256, bounds=None):
+        # crack checks ask for a bigger image than the 256 px thumbnail; by default the
+        # lake shows a crack network, so a dark look is confirmed ice
+        if (width, height) != (256, 256):
+            self.calls.append(("crack", day, day))
+            return _cracked_png()
+        self.calls.append(("png", day, day))
         self.png_sensors = getattr(self, "png_sensors", []) + [sensor]
         return b"\x89PNG fake"
 
@@ -530,13 +548,13 @@ DARK_DEC5 = S2Obs(DEC5, 0.95, 0.05, 0.05, 0.02)
 
 @pytest.mark.parametrize("dec20_client", ["none", "no_new_image"])
 def test_clearing_remembered_past_lookback(tmp_repo, dec20_client):
-    """Dec 1 snow 5 cm, Dec 5 dark image -> Dec 20 with no new image: still black ice."""
+    """Dec 1 snow 5 cm, Dec 5 dark image with cracks -> Dec 20 with no new image: still skateable."""
     _no_december_low_sun(tmp_repo)  # Dec 5 must not fall in the low-sun window
     snow = {DEC1: 5.0}
     assert _run_with_weather(tmp_repo, DEC5, FakeClient(s2=[DARK_DEC5]), snow_on=snow) == 0
     assert status_of(tmp_repo)["lakes"]["w1"]["label"] == "likely_black_ice"
     hist = json.loads((tmp_repo / "state/s2_history.json").read_text(encoding="utf-8"))
-    assert hist == {"w1": {"2025-12-05": "dark"}}
+    assert hist == {"w1": {"2025-12-05": "cracked"}}
 
     client = None if dec20_client == "none" else FakeClient(s2=[])
     env = {k: v for k, v in ENV.items()}  # no CDSE creds: weather + history only
@@ -544,7 +562,7 @@ def test_clearing_remembered_past_lookback(tmp_repo, dec20_client):
     w1 = status_of(tmp_repo)["lakes"]["w1"]
     assert w1["label"] == "likely_black_ice"
     assert w1["last_clear_day"] == "2025-12-05"
-    assert "dark on Dec 5 image" in w1["reason"]
+    assert "crack network seen on Dec 5 image" in w1["reason"]
 
 
 def test_s2_history_drops_previous_season(tmp_repo, mocked):
@@ -555,7 +573,7 @@ def test_s2_history_drops_previous_season(tmp_repo, mocked):
         encoding="utf-8")
     assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
     hist = json.loads((tmp_repo / "state/s2_history.json").read_text(encoding="utf-8"))
-    assert hist == {"w1": {"2025-10-20": "white", "2025-11-11": "dark"}}
+    assert hist == {"w1": {"2025-10-20": "white", "2025-11-11": "cracked"}}
 
 
 def test_corrupt_s2_history_is_ignored(tmp_repo, mocked):
@@ -566,7 +584,7 @@ def test_corrupt_s2_history_is_ignored(tmp_repo, mocked):
         encoding="utf-8")
     assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
     hist = json.loads((tmp_repo / "state/s2_history.json").read_text(encoding="utf-8"))
-    assert hist == {"w1": {"2025-11-11": "dark"}}
+    assert hist == {"w1": {"2025-11-11": "cracked"}}
 
 
 def test_last_checked_records_imaged_lakes_and_drops_old_season(tmp_repo, mocked):
@@ -750,7 +768,7 @@ def test_landsat_look_saved_scored_and_thumbnailed(tmp_repo, mocked):
     client = FakeClient(s2=[], ls=[LSObs(day, 0.95, 0.09, 0.08, 0.01, -6.0)])
     assert run(RUN, tmp_repo, ENV, session(), client) == 0
     hist = json.loads((tmp_repo / "state/ls_history.json").read_text(encoding="utf-8"))
-    assert hist == {"w1": {day.isoformat(): "dark"}}
+    assert hist == {"w1": {day.isoformat(): "ice"}}
     lake = status_of(tmp_repo)["lakes"]["w1"]
     assert lake["label"] == "likely_black_ice"
     assert "Landsat image" in lake["reason"]
@@ -930,7 +948,7 @@ def test_status_has_explore_fields_from_reports_and_photos(tmp_repo, mocked):
     w1 = status_of(tmp_repo)["lakes"]["w1"]
     assert w1["featured_photo"] == "new"
     assert w1["came_in"] == RUN.isoformat()  # in today, no earlier history
-    assert w1["timeline"][0]["text"] == "Dark on image"
+    assert w1["timeline"][0]["text"] == "Crack network seen"
 
 
 def test_lake_photo_saved_with_the_thumbnail_and_published(tmp_repo, mocked):

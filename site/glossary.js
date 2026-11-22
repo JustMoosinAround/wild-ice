@@ -5,10 +5,10 @@ export const GLOSSARY = [
   {
     title: "Lake colours",
     items: [
-      { term: "Likely black ice", text: "Thick enough to skate (2+ in, estimated), little or no snow since the surface last cleared, and a clear satellite image since freeze-up shows bare ice." },
+      { term: "Likely skateable", text: "Thick enough to skate (2+ in, estimated), little or no snow since the surface last cleared, and something confirms bare ice since freeze-up: a crack network, a below-freezing Landsat surface, frozen radar, or a skater's report. Ice isn't always black: glacial lakes look turquoise." },
       { term: "Skateable, rough", text: "Someone skated it recently but graded the ice D or worse." },
       { term: "Freezing", text: "Ice is forming but the estimate is still under 2 in." },
-      { term: "Unknown", text: "Probably thick enough, but no clear satellite image since freeze-up, or the evidence disagrees." },
+      { term: "Unknown", text: "Probably thick enough, but nothing confirms it yet: no clear image since freeze-up, or only a dark image, which could be ice or open water." },
       { term: "Snow covered", text: "Snow on the ice: from a station, the weather model, a report or a white satellite image." },
       { term: "Open water", text: "No ice yet, or a report or warm satellite reading says it's open." },
     ],
@@ -39,12 +39,13 @@ export const GLOSSARY = [
     items: [
       { term: "Air and water", text: "Daily mean air temperature with the low–high band, and the model's estimate of the lake's water temperature." },
       { term: "Ice and snowfall", text: "The model's ice thickness estimate and daily new snow (measured at a nearby station when there is one)." },
-      { term: "Markers", text: "Dots along the top of the ice panel: clear satellite images (cracks, dark, snow, grey, open water), skater reports, and freeze-ups. Tap a day to read them." },
+      { term: "Markers", text: "Dots along the top of the ice panel: clear satellite images (cracks, below-freezing ice, dark, snow, grey, open water), skater reports, and freeze-ups. Tap a day to read them." },
     ],
   },
   {
     title: "Terms",
     items: [
+      { term: "Dark image", text: "A clear satellite image where the lake looks dark. Black ice and open water both look dark, so a dark image on its own doesn't count as ice." },
       { term: "Crack network", text: "Thin white lines across the ice (cracks and pressure ridges) on a clear satellite image. Open water and snow cover can't show them, so they mean bare ice, even on turquoise glacial lakes." },
       { term: "Freeze-up", text: "The day the model's ice first reaches about 2 cm. Satellite images from before it show open water, so they don't count as ice." },
       { term: "Thaw degree-day", text: "One degree (C) above freezing for one day. Ice melts roughly 0.4–1.1 cm per thaw degree-day, faster in warm wind or sun." },

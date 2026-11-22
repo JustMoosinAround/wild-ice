@@ -94,7 +94,7 @@ def test_snow_report_holds_until_dark_image():
     rep = Report(RUN - timedelta(days=3), "snow", "")
     sc = apply_report(_score(), rep, _ice(), {}, RUN, CFG)
     assert sc.label is Label.SNOW_COVERED
-    cleared = {RUN - timedelta(days=1): SurfaceClass.DARK}
+    cleared = {RUN - timedelta(days=1): SurfaceClass.CRACKED}
     sc = apply_report(_score(), rep, _ice(), cleared, RUN, CFG)
     assert sc.label is Label.LIKELY_BLACK_ICE
 

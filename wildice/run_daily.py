@@ -46,7 +46,8 @@ log = logging.getLogger(__name__)
 TIMEZONE = "America/Anchorage"
 OPS_TITLE = "Wild ice job failed"
 OPS_MARKER_ENV = "WILDICE_OPS_MARKER"  # file written after a successful ops push
-THUMB_LABELS = (Label.LIKELY_BLACK_ICE, Label.FREEZING)
+# Unknown too: a dark look still waiting for confirmation is worth a picture.
+THUMB_LABELS = (Label.LIKELY_BLACK_ICE, Label.FREEZING, Label.UNKNOWN)
 REQUESTS_PER_LAKE = 3  # at most one S2 + one S1 + one Landsat statistics request
 _clock = time.monotonic  # replaced in tests
 FATAL_CLIENT_STATUS = frozenset({401, 403, 429})  # auth / rate limit: stop the run

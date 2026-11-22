@@ -28,6 +28,9 @@ class FakeClient:
             raise self.fail
         return list(self.s2)
 
+    def truecolor_png(self, geometry, day, sensor="s2", width=256, height=256, bounds=None):
+        return b""  # no crack network
+
     def s1_stats(self, geometry, start, end):
         self.calls.append(("s1", start, end))
         return []
@@ -85,8 +88,34 @@ def _obs(root, observed, day=DAY, lake="w1"):
     return p
 
 
+def _cracked_png():
+    import io
+    import numpy as np
+    from PIL import Image
+    a = np.full((300, 300), 0.12)
+    for k in range(10, 300, 25):
+        a[k:k + 2, :] = 0.3
+        a[:, k:k + 1] = 0.3
+    v = (a * 2.5 * 255).astype(np.uint8)
+    buf = io.BytesIO()
+    Image.fromarray(np.dstack([v, v, v, np.full_like(v, 255)])).save(buf, format="PNG")
+    return buf.getvalue()
+
+
+class _CrackClient(FakeClient):
+    """The dark look shows a crack network, so it's confirmed ice."""
+    def truecolor_png(self, geometry, day, sensor="s2", width=256, height=256, bounds=None):
+        return _cracked_png()
+
+
 def _dark():
-    return FakeClient(s2=[S2Obs(DAY - timedelta(days=1), 0.95, 0.05, 0.05, 0.02)])
+    return _CrackClient(s2=[S2Obs(DAY - timedelta(days=1), 0.95, 0.05, 0.05, 0.02)])
+
+
+def test_dark_look_without_cracks_is_unknown(root, fake_weather):
+    rows = run_backtest(_obs(root, "skated"), root, requests.Session(),
+                        FakeClient(s2=[S2Obs(DAY - timedelta(days=1), 0.95, 0.05, 0.05, 0.02)]))
+    assert rows[0].predicted is Label.UNKNOWN
 
 
 def test_skated_day_matches(root, fake_weather):

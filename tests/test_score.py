@@ -73,10 +73,10 @@ def test_freezing():
     assert score_lake(lake, ice(h=4), None, RUN, cfg).label is Label.FREEZING
 
 
-def test_black_ice_fresh_dark_high():
-    s = score_lake(lake, ice(), img(1, DARK), RUN, cfg)
+def test_dark_with_frozen_radar_fresh_high():
+    s = score_lake(lake, ice(), img(1, DARK, s1=[S1Obs(RUN - timedelta(days=1), -15)], base=-20), RUN, cfg)
     assert (s.label, s.confidence) == (Label.LIKELY_BLACK_ICE, Confidence.HIGH)
-    assert s.reason.startswith("2+ in of ice (est.)") and "dark on" in s.reason
+    assert s.reason.startswith("2+ in of ice (est.)") and "dark on Feb 9 image, radar says frozen" in s.reason
     assert s.last_clear_day == RUN - timedelta(days=1)
 
 
@@ -108,7 +108,7 @@ def test_grey_is_unknown():
 
 def test_likely_reset_caps_medium():
     r = ResetEvent(RUN - timedelta(days=8), ResetKind.LIKELY)
-    s = score_lake(lake, ice(reset=r), img(1, DARK), RUN, cfg)
+    s = score_lake(lake, ice(reset=r), img(1, DARK, s1=[S1Obs(RUN - timedelta(days=1), -15)], base=-20), RUN, cfg)
     assert s.label is Label.LIKELY_BLACK_ICE and s.confidence is Confidence.MEDIUM
     assert "no snow since rain/thaw on Feb 2" in s.reason
 
@@ -143,11 +143,10 @@ def test_radar_phrase_absent_for_open_water():
     assert s.label is Label.OPEN_WATER and "radar" not in s.reason
 
 
-def test_radar_open_caps_dark_at_medium():
+def test_dark_with_open_radar_stays_unknown():
     im = img(1, DARK, s1=[S1Obs(RUN - timedelta(days=1), -19.5)], base=-20)
     s = score_lake(lake, ice(), im, RUN, cfg)
-    assert (s.label, s.confidence) == (Label.LIKELY_BLACK_ICE, Confidence.MEDIUM)
-    assert s.reason.endswith("radar does not confirm ice")
+    assert s.label is Label.UNKNOWN and "could be ice or open water" in s.reason
 
 
 def test_radar_frozen_keeps_dark_high():
@@ -170,7 +169,7 @@ def test_radar_uses_latest_s1_only():
 
 def test_low_sun_dark_capped_at_medium():
     run = date(2025, 12, 10)
-    im = ImageryStats((S2Obs(run - timedelta(days=1), *DARK),), (), None)
+    im = ImageryStats((S2Obs(run - timedelta(days=1), *DARK),), (S1Obs(run - timedelta(days=1), -15),), -20)
     s = score_lake(lake, ice(), im, run, cfg)
     assert (s.label, s.confidence) == (Label.LIKELY_BLACK_ICE, Confidence.MEDIUM)
     assert s.reason.endswith("low sun")
@@ -180,7 +179,7 @@ def test_low_sun_window_wraps_new_year():
     for day, inside in ((date(2025, 11, 24), False), (date(2025, 11, 25), True),
                         (date(2025, 12, 31), True), (date(2026, 1, 1), True),
                         (date(2026, 1, 15), True), (date(2026, 1, 16), False)):
-        im = ImageryStats((S2Obs(day, *DARK),), (), None)
+        im = ImageryStats((S2Obs(day, *DARK),), (S1Obs(day, -15),), -20)
         s = score_lake(lake, ice(), im, day + timedelta(days=1), cfg)
         assert (s.confidence is Confidence.MEDIUM) is inside, day
         assert ("low sun" in s.reason) is inside, day
@@ -191,8 +190,7 @@ def test_low_sun_and_radar_both_noted():
     im = ImageryStats((S2Obs(run - timedelta(days=1), *DARK),),
                       (S1Obs(run, -19.5),), -20)
     s = score_lake(lake, ice(), im, run, cfg)
-    assert s.confidence is Confidence.MEDIUM
-    assert "radar does not confirm ice" in s.reason and "low sun" in s.reason
+    assert s.label is Label.UNKNOWN and "could be ice or open water" in s.reason
 
 
 def test_low_sun_does_not_touch_snow_label():
@@ -203,11 +201,11 @@ def test_low_sun_does_not_touch_snow_label():
 
 
 def test_season_history_supplies_last_clear_image():
-    hist = {RUN - timedelta(days=15): SurfaceClass.DARK}
+    hist = {RUN - timedelta(days=15): SurfaceClass.CRACKED}
     s = score_lake(lake, ice(), None, RUN, cfg, s2_history=hist)
     assert (s.label, s.confidence) == (Label.LIKELY_BLACK_ICE, Confidence.MEDIUM)
     assert s.last_clear_day == RUN - timedelta(days=15)
-    assert f"dark on {RUN - timedelta(days=15):%b} {(RUN - timedelta(days=15)).day} image" \
+    assert f"crack network seen on {RUN - timedelta(days=15):%b} {(RUN - timedelta(days=15)).day} image" \
         in s.reason
 
 
@@ -225,7 +223,7 @@ def ls(days_ago, g, r, sw, temp_c, valid=.9):
 
 def test_classify_ls():
     assert classify_ls(ls(0, .5, .5, .05, -12), cfg) is SurfaceClass.WHITE
-    assert classify_ls(ls(0, .1, .09, .01, -6), cfg) is SurfaceClass.DARK
+    assert classify_ls(ls(0, .1, .09, .01, -6), cfg) is SurfaceClass.ICE
     assert classify_ls(ls(0, .1, .09, .01, 3), cfg) is SurfaceClass.WATER  # above freezing
     assert classify_ls(ls(0, .25, .25, .1, -5), cfg) is SurfaceClass.GREY
     assert classify_ls(ls(0, .1, .09, .01, -6, valid=.5), cfg) is None  # cloudy
@@ -273,7 +271,7 @@ def test_newer_landsat_look_beats_older_sentinel2():
 
 def test_valid_ls_classes_and_optical_merge():
     im = ImageryStats((), (), None, (ls(0, .1, .09, .01, -6), ls(1, .1, .09, .01, -6, valid=.1)))
-    assert valid_ls_classes(im, cfg) == {D: SurfaceClass.DARK}
+    assert valid_ls_classes(im, cfg) == {D: SurfaceClass.ICE}
     assert optical_classes({D: SurfaceClass.WHITE}, {D: SurfaceClass.DARK,
                                                      D - timedelta(1): SurfaceClass.GREY}) == {
         D: SurfaceClass.WHITE, D - timedelta(1): SurfaceClass.GREY}
@@ -300,5 +298,31 @@ def test_dark_image_from_before_freeze_up_is_open_water_not_ice():
     s = score_lake(lake, st, img(10, DARK), RUN, cfg)
     assert s.label is Label.UNKNOWN
     assert "no clear image since freeze-up" in s.reason
-    # a dark image after freeze-up still counts
-    assert score_lake(lake, st, img(1, DARK), RUN, cfg).label is Label.LIKELY_BLACK_ICE
+    # a confirmed image after freeze-up still counts
+    assert score_lake(lake, st, None, RUN, cfg, s2_history={RUN - timedelta(days=1): SurfaceClass.CRACKED}
+                      ).label is Label.LIKELY_BLACK_ICE
+
+
+# A dark image alone can be open water: it needs a second sign ---------------------
+
+def test_landsat_dark_and_below_freezing_is_ice():
+    assert classify_ls(ls(0, .1, .09, .01, -6), cfg) is SurfaceClass.ICE
+    # dark between the ice and open-water readings: can't tell
+    assert classify_ls(ls(0, .1, .09, .01, 0.5), cfg) is SurfaceClass.DARK
+
+
+def test_dark_sentinel2_alone_is_unknown_could_be_open_water():
+    s = score_lake(lake, ice(), img(1, DARK), RUN, cfg)
+    assert s.label is Label.UNKNOWN
+    assert "dark on Feb 9 image: could be ice or open water" in s.reason
+
+
+def test_dark_plus_frozen_radar_is_skateable():
+    im = img(1, DARK, s1=[S1Obs(RUN - timedelta(days=1), -15)], base=-20)
+    assert score_lake(lake, ice(), im, RUN, cfg).label is Label.LIKELY_BLACK_ICE
+
+
+def test_cold_landsat_or_cracks_are_skateable():
+    im = ImageryStats((), (), None, (ls(1, .1, .09, .01, -6),))
+    s = score_lake(lake, ice(), im, RUN, cfg)
+    assert s.label is Label.LIKELY_BLACK_ICE and "below freezing on Feb 9 Landsat image" in s.reason

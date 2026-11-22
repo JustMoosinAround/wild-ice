@@ -12,6 +12,7 @@ import yaml
 
 from wildice.catalog import load_catalog
 from wildice.config import load_config
+from wildice.cracks import check_cracks
 from wildice.icemodel import run_ice_model
 from wildice.imagery import CopernicusClient, fetch_imagery, s1_baseline
 from wildice.models import Confidence, Label, SourceUnavailable
@@ -53,6 +54,15 @@ def _error_row(lake_id, day, observed, msg: str) -> Row:
 
 def _as_date(value) -> date:
     return value if isinstance(value, date) else date.fromisoformat(str(value))
+
+
+class _NoBudget:
+    """Backtests are run by hand: no monthly request cap."""
+    def remaining(self) -> int:
+        return 10**9
+
+    def record(self, n: int = 1) -> None:
+        pass
 
 
 def run_backtest(obs_path: Path, root: Path, session, client) -> list[Row]:
@@ -103,10 +113,16 @@ def run_backtest(obs_path: Path, root: Path, session, client) -> list[Row]:
                 base = (s1_baseline(client, lake, ice.freeze_up)
                         if ice.freeze_up is not None else None)
                 img = fetch_imagery(client, lake, day, cfg, base)
-                ice = run_ice_model(wx, cfg, optical_classes(valid_s2_classes(img, cfg),
+                # as in the daily run: a dark look counts as ice only with a crack network
+                hist = {lake.id: valid_s2_classes(img, cfg)}
+                check_cracks(client, {lake.id: lake}, {lake.id: img}, {lake.id: ice}, hist, {},
+                             cfg, _NoBudget())
+                ice = run_ice_model(wx, cfg, optical_classes(hist[lake.id],
                                                              valid_ls_classes(img, cfg)),
                                     lake.area_acres, depth_m=lake.depth_m)
-            sc = score_lake(lake, ice, img, day, cfg)
+                sc = score_lake(lake, ice, img, day, cfg, s2_history=hist[lake.id])
+            else:
+                sc = score_lake(lake, ice, img, day, cfg)
         except SourceUnavailable as exc:
             rows.append(_error_row(lake_id, day, observed, str(exc)))
             continue

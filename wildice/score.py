@@ -48,7 +48,9 @@ def classify_ls(obs: LSObs, cfg: Config) -> SurfaceClass | None:
     if ndsi >= im.snow_ndsi and brightness >= im.ls_snow_brightness:
         return SurfaceClass.WHITE
     if brightness <= im.ls_dark_brightness:
-        return SurfaceClass.WATER if obs.temp_c >= im.ls_open_water_c else SurfaceClass.DARK
+        if obs.temp_c >= im.ls_open_water_c:
+            return SurfaceClass.WATER
+        return SurfaceClass.ICE if obs.temp_c <= im.ls_ice_c else SurfaceClass.DARK
     return SurfaceClass.GREY
 
 
@@ -116,6 +118,10 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
     radar_frozen = bool(latest_s1 and not s2_in_window
                         and s1_frozen(latest_s1, imagery.s1_baseline_db, cfg))
 
+    # A dark image can be black ice or open water: it counts only with frozen radar.
+    dark_confirmed = bool(latest_cls is SurfaceClass.DARK and latest_s1 is not None
+                          and s1_frozen(latest_s1, imagery.s1_baseline_db, cfg))
+
     snow = ice.snow_since_reset_cm
     cover = cfg.snow.cover_cm
     if ice.last_snow_day is None:
@@ -129,8 +135,8 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
         label = Label.SNOW_COVERED
     elif h < cfg.ice.skate_cm:
         label = Label.FREEZING
-    elif snow <= cover and (latest_cls in (SurfaceClass.DARK, SurfaceClass.CRACKED)
-                            or radar_frozen):
+    elif snow <= cover and (latest_cls in (SurfaceClass.CRACKED, SurfaceClass.ICE)
+                            or dark_confirmed or radar_frozen):
         label = Label.LIKELY_BLACK_ICE
     else:
         label = Label.UNKNOWN
@@ -175,8 +181,12 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
         parts.append(f"open water (above freezing) on {_fmt(last_clear_day)} {image}")
     elif latest_cls is SurfaceClass.CRACKED:
         parts.append(f"crack network seen on {_fmt(last_clear_day)} {image}")
+    elif latest_cls is SurfaceClass.ICE:
+        parts.append(f"below freezing on {_fmt(last_clear_day)} {image}")
+    elif latest_cls is SurfaceClass.DARK and dark_confirmed:
+        parts.append(f"dark on {_fmt(last_clear_day)} {image}, radar says frozen")
     elif latest_cls is SurfaceClass.DARK:
-        parts.append(f"dark on {_fmt(last_clear_day)} {image}")
+        parts.append(f"dark on {_fmt(last_clear_day)} {image}: could be ice or open water")
     elif latest_cls is SurfaceClass.WHITE:
         parts.append(f"white on {_fmt(last_clear_day)} {image}")
     elif radar_frozen and label is Label.LIKELY_BLACK_ICE:

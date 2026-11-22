@@ -111,7 +111,7 @@ def apply_report(score: Score, report: Report | None, ice: IceState,
             elif report.rating == "skated" or report.grade is not None:
                 label, conf = Label.ROUGH_ICE, Confidence.HIGH
     elif report.rating == "snow":
-        cleared = any(d > report.day and c in (SurfaceClass.DARK, SurfaceClass.CRACKED) for d, c in s2_classes.items())
+        cleared = any(d > report.day and c in (SurfaceClass.CRACKED, SurfaceClass.ICE) for d, c in s2_classes.items())
         if not cleared:
             label, conf = Label.SNOW_COVERED, Confidence.HIGH
     elif report.rating == "water" and label is Label.OPEN_WATER:

@@ -64,7 +64,7 @@ function panel(s, title, unit, lo, hi, draw, zeroLine) {
 const range = (a) => [Math.min(...a), Math.max(...a)];
 
 // Events to mark on the graph (snow is already the bars). Timeline from status.json.
-const MARK = { "Crack network seen": "mk-crack", "Dark on image": "mk-dark", "Dark ice on image": "mk-dark", "White (snow) on image": "mk-white",
+const MARK = { "Crack network seen": "mk-crack", "Below-freezing ice on image": "mk-ice", "Dark on image": "mk-dark", "Dark ice on image": "mk-dark", "White (snow) on image": "mk-white",
   "Grey on image": "mk-grey", "Open water on image": "mk-water" };
 export function chartMarkers(timeline) {
   return (timeline || []).filter((e) => e.kind !== "snow").map((e) => ({
@@ -122,7 +122,7 @@ export function renderWeatherChart(s, mount, markers = []) {
   legend2.className = "wx-legend";
   legend2.append(key("k-ice", "Ice (est.)"), key("k-snow", "Snowfall"));
   const seen = new Set(markers.filter((m) => s.day.includes(m.day)).map((m) => m.cls));
-  const MK_TEXT = [["mk-crack", "Cracks seen"], ["mk-dark", "Dark image"], ["mk-white", "Snow image"],
+  const MK_TEXT = [["mk-crack", "Cracks seen"], ["mk-ice", "Below-freezing ice"], ["mk-dark", "Dark image"], ["mk-white", "Snow image"],
     ["mk-grey", "Grey image"], ["mk-water", "Open water image"], ["mk-report", "Report"], ["mk-reset", "Froze / refroze"]];
   for (const [cls, text] of MK_TEXT) if (seen.has(cls)) legend2.append(key("k-mark " + cls, text));
 

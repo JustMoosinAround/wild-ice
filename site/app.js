@@ -17,14 +17,14 @@ import { TURNSTILE_SITEKEY, WORKER_URL } from "./config.js";
 const STYLE = {
   open_water: { fill: "#3b82f6", line: "#1d4ed8", text: "Open water" },
   freezing: { fill: "#14b8a6", line: "#0f766e", text: "Freezing" },
-  likely_black_ice: { fill: "#0f172a", line: "#facc15", text: "Likely black ice" },
+  likely_black_ice: { fill: "#0f172a", line: "#facc15", text: "Likely skateable" },
   rough_ice: { fill: "#78716c", line: "#facc15", text: "Skateable, rough" },
   snow_covered: { fill: "#f8fafc", line: "#6b7280", text: "Snow covered" },
   unknown: { fill: "#9ca3af", line: "#6b7280", text: "Unknown" },
 };
 // Map key, best skating first.
 const KEY = [
-  ["likely_black_ice", "Thick enough to skate, little snow, and a satellite sees ice"],
+  ["likely_black_ice", "Thick enough, little snow, and cracks, a cold satellite reading, radar or a skater confirm ice"],
   ["rough_ice", "Someone skated it but graded the ice D or worse"],
   ["freezing", "Ice forming, still too thin to skate"],
   ["unknown", "Thick enough, but no clear satellite look yet"],

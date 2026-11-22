@@ -232,3 +232,4 @@ button.save.on { background: #fee2e2; border-color: #dc2626; color: #991b1b; }
 .glossary dd { margin: 2px 0 0; color: #334155; font-size: 14px; }
 .key-more, .foot a { color: var(--accent); font-size: 13px; display: inline-block; padding: 6px 0; }
 .foot { margin-top: 24px; }
+.mk-ice { fill: #0891b2; } .wx-key .k-mark.mk-ice { background: #0891b2; }

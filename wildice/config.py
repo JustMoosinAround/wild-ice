@@ -73,6 +73,7 @@ class ImageryCfg:
     ls_snow_brightness: float  # Landsat's own thresholds (top-of-atmosphere reflectance)
     ls_dark_brightness: float
     ls_open_water_c: float  # a dark Landsat look at or above this is open water
+    ls_ice_c: float         # ...at or below this is ice; between the two it can't tell
 
 
 @dataclass(frozen=True)
@@ -204,7 +205,7 @@ def load_config(path: Path) -> Config:
             max_lakes_per_day=int, max_minutes_per_run=float, max_scene_cloud_pct=float, patchy_texture=float, patch_days=int,
             crack_min_frac=float, crack_res_m=float, crack_max_px=int, crack_checks_per_run=int,
             low_sun_start=_mmdd, low_sun_end=_mmdd,
-            ls_snow_brightness=float, ls_dark_brightness=float, ls_open_water_c=float)),
+            ls_snow_brightness=float, ls_dark_brightness=float, ls_open_water_c=float, ls_ice_c=float)),
         ridges=_section(raw, "ridges", RidgesCfg, dict(
             min_span_mi=float, warmup_c=float, window_days=int, thaw_gust_kmh=float,
             points_index=float, big_ice_mi=float, lead_min_span_mi=float,

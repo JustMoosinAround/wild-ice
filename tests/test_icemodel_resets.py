@@ -70,7 +70,7 @@ def test_wind_after_heavy_snow_is_not_possible():
 
 
 def test_dark_image_after_snow_confirms_reset():
-    s = run_ice_model(cold(snow={3: 3}), cfg, {d(5): SurfaceClass.DARK})
+    s = run_ice_model(cold(snow={3: 3}), cfg, {d(5): SurfaceClass.CRACKED})
     assert s.last_reset == ResetEvent(date(2025, 11, 6), ResetKind.CONFIRMED)
     assert s.snow_since_reset_cm == 0
 
@@ -81,23 +81,23 @@ def test_dark_image_without_prior_snow_is_not_reset():
 
 
 def test_white_then_dark_confirms_reset():
-    s = run_ice_model(cold(), cfg, {d(4): SurfaceClass.WHITE, d(6): SurfaceClass.DARK})
+    s = run_ice_model(cold(), cfg, {d(4): SurfaceClass.WHITE, d(6): SurfaceClass.CRACKED})
     assert s.last_reset.kind == ResetKind.CONFIRMED
 
 
 def test_dark_after_likely_reset_upgrades_to_confirmed():
     days = cold(n=5) + [wx(5, 1), wx(6, 1), wx(7, -3), wx(8, -5), wx(9, -5)]
-    s = run_ice_model(days, cfg, {d(9): SurfaceClass.DARK})
+    s = run_ice_model(days, cfg, {d(9): SurfaceClass.CRACKED})
     assert s.last_reset == ResetEvent(d(9), ResetKind.CONFIRMED)
 
 
 def test_reset_clears_possible_and_white_flag():
     # possible on day 5, then confirmed dark day 6 clears it; later dark needs new evidence
     s = run_ice_model(cold(snow={3: 3}, gust={5: 70}), cfg,
-                      {d(6): SurfaceClass.DARK})
+                      {d(6): SurfaceClass.CRACKED})
     assert s.possible_resets == ()
-    s = run_ice_model(cold(), cfg, {d(2): SurfaceClass.WHITE, d(3): SurfaceClass.DARK,
-                                    d(5): SurfaceClass.DARK})
+    s = run_ice_model(cold(), cfg, {d(2): SurfaceClass.WHITE, d(3): SurfaceClass.CRACKED,
+                                    d(5): SurfaceClass.CRACKED})
     assert s.last_reset == ResetEvent(d(3), ResetKind.CONFIRMED)
 
 
@@ -128,7 +128,7 @@ def test_low_sun_dark_does_not_confirm_reset():
 def test_dark_just_outside_low_sun_still_confirms():
     start = date(2025, 11, 10)
     s = run_ice_model(_cold_from(start, 15, snow={3: 3}), cfg,
-                      {date(2025, 11, 24): SurfaceClass.DARK})
+                      {date(2025, 11, 24): SurfaceClass.CRACKED})
     assert s.last_reset == ResetEvent(date(2025, 11, 24), ResetKind.CONFIRMED)
 
 
@@ -136,7 +136,7 @@ def test_low_sun_white_still_counts_for_later_dark():
     start = date(2026, 1, 1)
     s = run_ice_model(_cold_from(start, 25), cfg,
                       {date(2026, 1, 10): SurfaceClass.WHITE,
-                       date(2026, 1, 20): SurfaceClass.DARK})
+                       date(2026, 1, 20): SurfaceClass.CRACKED})
     assert s.last_reset == ResetEvent(date(2026, 1, 20), ResetKind.CONFIRMED)
 
 
@@ -166,3 +166,12 @@ def test_crack_network_confirms_reset_even_in_low_sun():
                       {date(2025, 12, 1): SurfaceClass.CRACKED})
     assert s.last_reset == ResetEvent(date(2025, 12, 1), ResetKind.CONFIRMED)
     assert s.snow_since_reset_cm == 0
+
+
+def test_dark_alone_no_longer_confirms_a_reset_but_cold_landsat_does():
+    start = date(2026, 2, 1)
+    days = _cold_from(start, 15, snow={3: 3})
+    s = run_ice_model(days, cfg, {date(2026, 2, 10): SurfaceClass.DARK})
+    assert s.last_reset.kind == ResetKind.FREEZE_UP and s.snow_since_reset_cm == 3
+    s = run_ice_model(days, cfg, {date(2026, 2, 10): SurfaceClass.ICE})
+    assert s.last_reset == ResetEvent(date(2026, 2, 10), ResetKind.CONFIRMED)

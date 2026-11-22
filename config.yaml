@@ -72,6 +72,9 @@ imagery:  # placeholders, tuned by backtest
   ls_snow_brightness: 0.30
   ls_dark_brightness: 0.15
   ls_open_water_c: 1.5
+  # Owner: dark doesn't mean ice: open water is dark too. A dark Landsat look this cold
+  # (surface temperature, C) is ice; a dark look on its own needs cracks, radar or a report.
+  ls_ice_c: -1.0
 ridges:  # pressure-ridge warnings (lakeice.org); placeholders until we have reports
   min_span_mi: 1.0
   warmup_c: 8

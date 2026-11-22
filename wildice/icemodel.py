@@ -182,8 +182,9 @@ def run_ice_model(
             reset_kind: ResetKind | None = None
             # low sun makes snow look dark, so a dark image then proves nothing
             # A crack network can't be faked by low sun the way a dark snow cover can.
-            bare = (surface == SurfaceClass.CRACKED
-                    or (surface == SurfaceClass.DARK and not in_low_sun(d.day, cfg)))
+            # Owner: a dark image alone can be open water. Only cracks or a below-freezing
+            # Landsat surface show the snow has gone and ice is bare.
+            bare = surface in (SurfaceClass.CRACKED, SurfaceClass.ICE)
             if bare and (
                 snow_cm > cfg.snow.cover_cm
                 or seen_white

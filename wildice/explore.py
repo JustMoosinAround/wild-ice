@@ -15,7 +15,8 @@ IN_LABELS = ("likely_black_ice", "rough_ice")
 
 _REPORT = {"skated": "Skated", "rough": "Skated, rough", "snow": "Snow on the ice reported",
            "water": "Open water reported"}
-_IMAGE = {SurfaceClass.CRACKED: "Crack network seen", SurfaceClass.DARK: "Dark on image",
+_IMAGE = {SurfaceClass.CRACKED: "Crack network seen", SurfaceClass.ICE: "Below-freezing ice on image",
+          SurfaceClass.DARK: "Dark on image",
           SurfaceClass.WHITE: "White (snow) on image", SurfaceClass.GREY: "Grey on image",
           SurfaceClass.WATER: "Open water on image"}
 _RESET = {ResetKind.FREEZE_UP: "Froze up", ResetKind.LIKELY: "Thaw or rain, then refroze",
