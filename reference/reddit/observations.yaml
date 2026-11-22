@@ -37,8 +37,27 @@ observations:
     quote: "A 39-mile wild ice overnight on Skilak Lake ... January 25-26, 2024"
     url: https://old.reddit.com/r/nordicskating/comments/1ak53de/
 
+  # --- from Arctic Shift (posts and comments), 2026-11-22 ---
+  - {lake_id: r1555333, day: 2024-01-29, observed: skated, day_stated: false, quote: "Cold day of skating through hoar frost on Skilak Lake ... over 4 inches", url: https://old.reddit.com/r/nordicskating/comments/1ae2xka/}
+  - {lake_id: r1568485, day: 2024-11-21, observed: skated, day_stated: true, quote: "Beautiful ice on Lower Trail Lake ... November 21, 2024", url: https://old.reddit.com/r/nordicskating/comments/1gxv9v5/}
+  - {lake_id: w49200373, day: 2025-01-01, observed: skated, day_stated: true, quote: "Brought in the new year Nordic skating ... Eklutna ... just around 2 inches", url: https://old.reddit.com/r/nordicskating/comments/1hwravy/}
+  - {lake_id: w49200373, day: 2025-01-04, observed: skated, day_stated: true, quote: "Clear skies, smooth ice ... filmed last weekend (Eklutna)", url: https://old.reddit.com/r/nordicskating/comments/1hydxl5/}
+  - {lake_id: r2875736, day: 2025-01-17, observed: skated, day_stated: false, quote: "mid-season ... Kenai Peninsula (Hidden Lake, Lower Ohmer Lake, Jerome Lake)", url: https://old.reddit.com/r/nordicskating/comments/1i3ruik/}
+  - {lake_id: w203891995, day: 2025-01-17, observed: skated, day_stated: false, quote: "mid-season ... Kenai Peninsula (Hidden Lake, Lower Ohmer Lake, Jerome Lake)", url: https://old.reddit.com/r/nordicskating/comments/1i3ruik/}
+  - {lake_id: r1555333, day: 2025-02-15, observed: skated, day_stated: false, quote: "This whole section of Skilak Lake looks like it's coated in glacial silt", url: https://old.reddit.com/r/nordicskating/comments/1ipv8ob/}
+  - {lake_id: r2375186, day: 2025-11-11, observed: skated, day_stated: false, quote: "Saw potter marsh and westchester are skatable (comment, second-hand)", url: https://old.reddit.com/r/nordicskating/comments/1ottc3k/}
+  - {lake_id: w284700420, day: 2025-11-14, observed: skated, day_stated: true, quote: "Skating on Byers Lake yesterday ... beautiful clear ice", url: https://old.reddit.com/r/nordicskating/comments/1oy5pau/}
+  - {lake_id: w217233544, day: 2025-12-14, observed: skated, day_stated: true, quote: "Jean Lake Today", url: https://old.reddit.com/r/nordicskating/comments/1pm4fm4/}
+  - {lake_id: w351056287, day: 2025-12-14, observed: skated, day_stated: true, quote: "Arc Lake in Soldotna was also skatable (comment)", url: https://old.reddit.com/r/nordicskating/comments/1pm4fm4/}
+  - {lake_id: r1569302, day: 2025-12-16, observed: skated, day_stated: true, quote: "My wife made it out there on Tuesday (Grant Lake, comment)", url: https://old.reddit.com/r/nordicskating/comments/1pqzi2c/}
+  - {lake_id: r1527882, day: 2026-03-14, observed: skated, day_stated: false, quote: "Skating on Kenai Lake last week ... ice still thick and solid (even if most of it is snow-covered now)", url: https://old.reddit.com/r/nordicskating/comments/1rzjkr7/}
+
 # Reports that name no catalog lake (not compared):
 unmatched:
+  - {day: 2025-11-12, place: "Potter Marsh", note: "marsh, not in catalog", url: https://old.reddit.com/r/nordicskating/comments/1oux3ko/}
+  - {day: 2025-11-11, place: "Green Lake (Powerline Pass)", note: "F- ice; not in catalog (catalog Green Lake is a different one)", url: https://old.reddit.com/r/nordicskating/comments/1ottc3k/}
+  - {day: 2025-01-17, place: "Lower Ohmer Lake", note: "not in catalog", url: https://old.reddit.com/r/nordicskating/comments/1i3ruik/}
+  - {day: 2026-01-23, place: "Palmer Hay Flats", note: "wetland", url: https://old.reddit.com/r/nordicskating/comments/1qlijc1/}
   - {day: 2026-10-26, place: "Ermine Lake (K'esugi)", note: "ice stars; snowed the next day; not in catalog (trail access)", url: https://old.reddit.com/r/nordicskating/comments/1xfkoy8/}
   - {day: 2025-11-10, place: "Schroff Lake, Ermine Lake, Summit Lake (Broad Pass)", note: "not in catalog / outside region", url: https://old.reddit.com/r/nordicskating/comments/1ottc3k/}
   - {day: 2026-02-26, place: "Spring Creek near Rabbit Slough", note: "creek, not a catalog lake", url: https://old.reddit.com/r/nordicskating/comments/1rf5q6y/}

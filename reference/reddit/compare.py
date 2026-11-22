@@ -2,7 +2,8 @@
 
     CDSE_CLIENT_ID=... CDSE_CLIENT_SECRET=... python -m reference.reddit.compare
 
-Reads reference/reddit/observations.yaml, asks Copernicus for clear Sentinel-2 and
+Reads reference/reddit/observations.yaml (from a saved search page and the Arctic Shift
+archive of r/nordicskating), asks Copernicus for clear Sentinel-2 and
 Landsat looks within a week of each day (the same check as the Strava skating
 reference) and writes reference/reddit/REPORT.md. Nothing in the daily run reads
 this folder; delete it to roll back.
