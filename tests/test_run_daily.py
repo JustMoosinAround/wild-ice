@@ -930,7 +930,7 @@ def test_status_has_explore_fields_from_reports_and_photos(tmp_repo, mocked):
     w1 = status_of(tmp_repo)["lakes"]["w1"]
     assert w1["featured_photo"] == "new"
     assert w1["came_in"] == RUN.isoformat()  # in today, no earlier history
-    assert w1["timeline"][0]["text"] == "Dark ice on image"
+    assert w1["timeline"][0]["text"] == "Dark on image"
 
 
 def test_lake_photo_saved_with_the_thumbnail_and_published(tmp_repo, mocked):

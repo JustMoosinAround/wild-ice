@@ -1,7 +1,4 @@
-// Lake page pieces: the hero (photo, name, label, badges, Save) and the
-// "What we know, and when" timeline.
-import { shortDate } from "../explore.js";
-
+// Lake page hero: photo, name, label, badges, Save.
 function el(tag, props = {}, ...kids) {
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(props)) {
@@ -24,13 +21,4 @@ export function heroSection(opts) {
   return el("div", { class: "hero" }, img,
     el("div", { class: "hero-head" }, el("h2", { text: (d.pinned ? "★ " : "") + d.name }), save),
     el("div", { class: "hero-chips" }, opts.chip, ...opts.badges.map((b) => el("span", { class: "badge", text: b }))));
-}
-
-export function timelineSection(d) {
-  const events = d.timeline || [];
-  if (!events.length) return null;
-  return el("section", { class: "timeline", "aria-label": "What we know, and when" },
-    el("h3", { text: "What we know, and when" }),
-    el("ol", {}, ...events.map((e) => el("li", { class: "tl-" + e.kind },
-      el("span", { class: "tl-day", text: shortDate(e.day) }), el("span", { text: e.text })))));
 }

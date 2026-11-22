@@ -1,7 +1,7 @@
-import { renderWeatherChart } from "./chart.js";
+import { chartMarkers, renderWeatherChart } from "./chart.js";
 import { searchLakes } from "./search.js";
 import { renderExplore } from "./views/explore-view.js";
-import { heroSection, timelineSection } from "./views/lake-page.js";
+import { heroSection } from "./views/lake-page.js";
 import { renderMine } from "./views/mine-view.js";
 import { renderUpload } from "./views/upload-view.js";
 import { badges } from "./explore.js";
@@ -436,9 +436,15 @@ function renderPanel(id, statusText) {
     saved: savedIds.has(id), onSave: VIEW_ONLY ? null : () => toggleSave(id) }));
   panel.prepend(el("button", { class: "close", "aria-label": "Close", text: "×", onclick: closePanel }));
   panel.classList.add("page");
-  const tl = timelineSection(d);
-  if (tl) panel.append(tl);
-  panel.append(el("p", { class: "meta", text: d.reason }));
+  // Hazards as short chips; tap one for the full note.
+  if ((d.hazards || []).length) {
+    panel.append(el("div", { class: "hazards" }, ...d.hazards.map((h) =>
+      el("details", { class: "hazard" }, el("summary", { text: "⚠ " + h.label }), el("p", { text: h.text })))));
+  }
+  // The graph tells the story: weather, water, ice, snow, and the clear images and reports.
+  const chart = el("div", { class: "wx-mount" });
+  panel.append(chart);
+  loadChart(id, chart);
   if (d.warning) panel.append(el("p", { class: "warn", text: d.warning }));
   if (canLog()) panel.append(reportSection(id));
   if (WORKER_URL) panel.append(iceLogSection(id));
@@ -464,9 +470,6 @@ function renderPanel(id, statusText) {
     panel.append(el("div", { class: "strip-ends" },
       el("span", { text: shortDay(recent[0].day) }), el("span", { text: "Today" })));
   }
-  const chart = el("div", { class: "wx-mount" });
-  panel.append(chart);
-  loadChart(id, chart);
   if (d.patch_thumb) {
     // Grey ice next to black patches: shade the black part (open water or newer, thinner ice).
     panel.append(el("figure", { class: "patch" },
@@ -506,7 +509,7 @@ function loadChart(id, mount) {
       .then((r) => (r.ok ? r.json() : null)).catch(() => null));
   }
   seriesCache.get(id).then((s) => {
-    if (s && s.day && mount.isConnected) renderWeatherChart(s, mount);
+    if (s && s.day && mount.isConnected) renderWeatherChart(s, mount, chartMarkers(info(id)?.timeline));
   });
 }
 

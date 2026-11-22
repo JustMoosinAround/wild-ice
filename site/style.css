@@ -210,3 +210,17 @@ button.save.on { background: #fee2e2; border-color: #dc2626; color: #991b1b; }
   #panel.page { left: auto; right: 12px; width: 440px; top: auto; border-radius: 14px; }
   .hero { margin-left: calc(-1 * var(--gutter)); margin-right: calc(-1 * var(--gutter)); }
 }
+
+/* graph markers and hazard chips */
+.wx-mark { stroke: #fff; stroke-width: 1.5; }
+.mk-crack { fill: #7c3aed; } .mk-dark { fill: #0f172a; } .mk-white { fill: #e2e8f0; stroke: #64748b; }
+.mk-grey { fill: #94a3b8; } .mk-water { fill: #2563eb; } .mk-report { fill: #16a34a; } .mk-reset { fill: #f59e0b; }
+.wx-key .k-mark { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.wx-key .k-mark.mk-crack { background: #7c3aed; } .wx-key .k-mark.mk-dark { background: #0f172a; }
+.wx-key .k-mark.mk-white { background: #e2e8f0; border: 1px solid #64748b; } .wx-key .k-mark.mk-grey { background: #94a3b8; }
+.wx-key .k-mark.mk-water { background: #2563eb; } .wx-key .k-mark.mk-report { background: #16a34a; } .wx-key .k-mark.mk-reset { background: #f59e0b; }
+.hazards { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.hazard summary { list-style: none; cursor: pointer; font-size: 13px; padding: 4px 10px; border-radius: 999px; background: #fef3c7; color: #78350f; min-height: 32px; display: flex; align-items: center; }
+.hazard summary::-webkit-details-marker { display: none; }
+.hazard[open] { flex-basis: 100%; }
+.hazard p { font-size: 13px; color: #78350f; margin: 6px 4px 2px; }

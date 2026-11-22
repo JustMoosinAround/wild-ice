@@ -27,7 +27,7 @@ from wildice.models import (
 )
 from wildice.prefs import load_prefs
 from wildice.cracks import check_cracks
-from wildice.explore import came_in, timeline
+from wildice.explore import came_in, hazards, timeline
 from wildice.hazards import (big_ice_note, lead_note, new_ice_note, ridge_note, slush_note,
                              thaw_note)
 from wildice.icelog import fetch_export, merge_reports, reports_from_export
@@ -414,7 +414,7 @@ def _explore(scores: dict[str, Score], explore_in: dict[str, tuple], history: di
             featured[p.get("lake_id")] = p
     out = {}
     for lake_id, sc in scores.items():
-        rep, classes, snow_ev, reset = explore_in.get(lake_id, (None, {}, None, None))
+        rep, classes, snow_ev, reset, hz = explore_in.get(lake_id, (None, {}, None, None, []))
         out[lake_id] = {
             "came_in": (lambda d: d.isoformat() if d else None)(
                 came_in(history.get(lake_id, []), str(sc.label), run_date)),
@@ -422,6 +422,7 @@ def _explore(scores: dict[str, Score], explore_in: dict[str, tuple], history: di
                             if rep else None),
             "featured_photo": (featured.get(lake_id) or {}).get("public_id"),
             "timeline": timeline(rep, classes or {}, snow_ev, reset),
+            "hazards": hz,
         }
     return out
 
@@ -569,15 +570,16 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
             hit = latest_measured(measured.get(st.id, {}), run_date, cfg.snowobs.note_days) if st else None
             snow_note = (f"measured {hit[1]:.0f} cm new snow at {st.name} ({st.source}), "
                          f"{hit[0]:%b} {hit[0].day}") if hit else None
-            notes = [n for n in (snow_note, thaw_note(lake, days, ice, run_date, cfg),
-                                 new_ice_note(ice, run_date, cfg), slush_note(ice, cfg),
-                                 lead_note(lake, days, ice, run_date, cfg),
-                                 ridge_note(lake, days, ice, run_date, cfg),
-                                 big_ice_note(lake, days, ice, run_date, cfg)) if n]
+            kinds = [("thaw", thaw_note(lake, days, ice, run_date, cfg)),
+                     ("new_ice", new_ice_note(ice, run_date, cfg)), ("slush", slush_note(ice, cfg)),
+                     ("lead", lead_note(lake, days, ice, run_date, cfg)),
+                     ("ridge", ridge_note(lake, days, ice, run_date, cfg)),
+                     ("big_ice", big_ice_note(lake, days, ice, run_date, cfg))]
+            notes = [n for n in (snow_note, *(t for _, t in kinds)) if n]
             scores[lake.id] = (replace(sc, reason="; ".join([sc.reason, *notes]))
                                if notes else sc)
             snow_ev = (hit[0], hit[1], st.name) if hit else None
-            explore_in[lake.id] = (rep, hist, snow_ev, ice.last_reset)
+            explore_in[lake.id] = (rep, hist, snow_ev, ice.last_reset, hazards(kinds))
         _save_texture_history(texture_path, texture_history)
 
         if client is not None:

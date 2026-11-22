@@ -15,7 +15,7 @@ IN_LABELS = ("likely_black_ice", "rough_ice")
 
 _REPORT = {"skated": "Skated", "rough": "Skated, rough", "snow": "Snow on the ice reported",
            "water": "Open water reported"}
-_IMAGE = {SurfaceClass.CRACKED: "Crack network seen", SurfaceClass.DARK: "Dark ice on image",
+_IMAGE = {SurfaceClass.CRACKED: "Crack network seen", SurfaceClass.DARK: "Dark on image",
           SurfaceClass.WHITE: "White (snow) on image", SurfaceClass.GREY: "Grey on image",
           SurfaceClass.WATER: "Open water on image"}
 _RESET = {ResetKind.FREEZE_UP: "Froze up", ResetKind.LIKELY: "Thaw or rain, then refroze",
@@ -61,3 +61,23 @@ def timeline(report, classes: Mapping[date, SurfaceClass],
         events.append((reset.day, "reset", _RESET.get(reset.kind, "Reset")))
     events.sort(key=lambda e: (-e[0].toordinal(), _ORDER[e[1]]))
     return [{"day": d.isoformat(), "kind": k, "text": t} for d, k, t in events[:limit]]
+
+
+_HAZARD = {"new_ice": "New ice", "slush": "Slush", "lead": "Lead risk", "ridge": "Pressure ridges",
+           "big_ice": "Big ice"}
+
+
+def hazards(notes) -> list[dict]:
+    """Short labels for the lake page's hazard chips, each with its full note.
+    `notes` is [(kind, text or None)] in the order the daily run makes them."""
+    out = []
+    for kind, text in notes:
+        if not text:
+            continue
+        if kind == "thaw":
+            label = "Rotten ice risk" if text.startswith("rotten") else "Thaw-weakened"
+        else:
+            label = _HAZARD.get(kind)
+        if label:
+            out.append({"label": label, "text": text[0].upper() + text[1:]})
+    return out

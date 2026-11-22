@@ -58,6 +58,7 @@ def build_status(lakes: list[Lake], scores: dict[str, Score], pinned: frozenset[
             "last_report": explore.get(lake.id, {}).get("last_report"),
             "featured_photo": explore.get(lake.id, {}).get("featured_photo"),
             "timeline": list(explore.get(lake.id, {}).get("timeline", [])),
+            "hazards": list(explore.get(lake.id, {}).get("hazards", [])),
         }
     return {
         "run_date": run_date.isoformat(),

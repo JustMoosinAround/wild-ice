@@ -48,3 +48,14 @@ def test_timeline_has_no_names_or_notes():
     t = timeline(rep, {}, None, None)
     assert t == [{"day": "2026-11-21", "kind": "report", "text": "Open water reported"}]
     assert "secret" not in str(t)
+
+
+def test_hazard_labels_are_short_and_keep_the_full_note():
+    from wildice.explore import hazards
+    got = hazards([("thaw", "rotten ice risk: 60 thaw degree-days (C) since the last cold spell; thawed ice can fail"),
+                   ("thaw", "thaw-weakened ice: 10 thaw degree-days"), ("new_ice", "new ice (froze about Nov 20): thin spots"),
+                   ("slush", "8 cm of snow on ~10 cm ice"), ("lead", "lead risk today: gusts"), ("ridge", "pressure ridges likely"),
+                   ("big_ice", "big ice (4.6 mi): expect leads"), ("thaw", None)])
+    assert [h["label"] for h in got] == ["Rotten ice risk", "Thaw-weakened", "New ice", "Slush", "Lead risk",
+                                         "Pressure ridges", "Big ice"]
+    assert got[0]["text"].startswith("Rotten ice risk: 60 thaw")

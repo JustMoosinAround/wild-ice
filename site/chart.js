@@ -63,7 +63,17 @@ function panel(s, title, unit, lo, hi, draw, zeroLine) {
 
 const range = (a) => [Math.min(...a), Math.max(...a)];
 
-export function renderWeatherChart(s, mount) {
+// Events to mark on the graph (snow is already the bars). Timeline from status.json.
+const MARK = { "Crack network seen": "mk-crack", "Dark on image": "mk-dark", "Dark ice on image": "mk-dark", "White (snow) on image": "mk-white",
+  "Grey on image": "mk-grey", "Open water on image": "mk-water" };
+export function chartMarkers(timeline) {
+  return (timeline || []).filter((e) => e.kind !== "snow").map((e) => ({
+    day: e.day, text: e.text,
+    cls: e.kind === "report" ? "mk-report" : e.kind === "image" ? (MARK[e.text] || "mk-grey") : "mk-reset",
+  }));
+}
+
+export function renderWeatherChart(s, mount, markers = []) {
   const n = s.day.length;
   if (!n) return;
   const idx = [...Array(n).keys()];
@@ -86,6 +96,15 @@ export function renderWeatherChart(s, mount) {
       g.append(svg("rect", { x: x(i) - bw / 2, y: top, width: bw, height: Math.max(1, base - top), rx: 1.5, class: "wx-snow" }));
     });
     g.append(line(idx.map(x), s.ice_cm.map(y), "wx-ice"));
+    for (const m of markers) {
+      const i = s.day.indexOf(m.day);
+      if (i < 0) continue;
+      const mk = svg("circle", { cx: x(i), cy: PAD.t + 5, r: 5, class: "wx-mark " + m.cls });
+      const t = svg("title", {});
+      t.textContent = m.text;
+      mk.append(t);
+      g.append(mk);
+    }
   }, false);
 
   const key = (cls, text) => {
@@ -102,6 +121,10 @@ export function renderWeatherChart(s, mount) {
   const legend2 = document.createElement("div");
   legend2.className = "wx-legend";
   legend2.append(key("k-ice", "Ice (est.)"), key("k-snow", "Snowfall"));
+  const seen = new Set(markers.filter((m) => s.day.includes(m.day)).map((m) => m.cls));
+  const MK_TEXT = [["mk-crack", "Cracks seen"], ["mk-dark", "Dark image"], ["mk-white", "Snow image"],
+    ["mk-grey", "Grey image"], ["mk-water", "Open water image"], ["mk-report", "Report"], ["mk-reset", "Froze / refroze"]];
+  for (const [cls, text] of MK_TEXT) if (seen.has(cls)) legend2.append(key("k-mark " + cls, text));
 
   const tip = document.createElement("div");
   tip.className = "wx-tip";
@@ -140,6 +163,7 @@ export function renderWeatherChart(s, mount) {
     row("water (est.)", s.water_c[i] + " °C");
     row("ice (est.)", s.ice_cm[i] + " cm");
     row("snowfall", s.snow_cm[i] + " cm");
+    for (const m of markers) if (m.day === s.day[i]) { const r = document.createElement("div"); r.textContent = m.text; tip.append(r); }
     tip.hidden = false;
   };
   const hide = () => {

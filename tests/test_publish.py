@@ -21,7 +21,7 @@ def test_status_schema(tmp_path):
     e = s["lakes"]["w123"]
     assert set(e) == {"name", "label", "confidence", "reason", "thickness_cm", "last_clear_day",
                       "browser_url", "thumb", "pinned", "hidden", "warning", "history",
-                      "came_in", "last_report", "featured_photo", "timeline"}
+                      "came_in", "last_report", "featured_photo", "timeline", "hazards"}
     assert (e["name"], e["label"], e["confidence"], e["reason"]) == ("Foo", "likely_black_ice", "high", "why")
     assert e["thickness_cm"] == 12.0 and e["last_clear_day"] == "2025-11-11"
     assert "fromTime=2025-11-11" in e["browser_url"]
@@ -95,3 +95,10 @@ def test_status_carries_explore_fields():
     assert s["w123"]["came_in"] == "2025-11-10" and s["w123"]["featured_photo"] == "p1"
     assert s["w123"]["last_report"]["grade"] == "B+" and len(s["w123"]["timeline"]) == 1
     assert (s["w9"]["came_in"], s["w9"]["last_report"], s["w9"]["featured_photo"], s["w9"]["timeline"]) == (None, None, None, [])
+
+
+def test_status_carries_hazards():
+    sc = {"w123": Score("w123", Label.LIKELY_BLACK_ICE, Confidence.HIGH, "why", 12.0, date(2025, 11, 11))}
+    ex = {"w123": {"hazards": [{"label": "Big ice", "text": "Big ice (4.6 mi): expect leads"}]}}
+    s = build_status([lake], sc, frozenset(), frozenset(), {}, RUN, None, explore=ex)["lakes"]["w123"]
+    assert s["hazards"] == [{"label": "Big ice", "text": "Big ice (4.6 mi): expect leads"}]
