@@ -33,5 +33,6 @@ export function renderMine(mount, opts) {
     kids.push(sk.length ? el("ol", { class: "skate-list" }, ...sk)
       : el("p", { class: "meta", text: "Lakes you report skating, or upload a track for, show here." }));
   }
+  kids.push(el("p", { class: "meta foot" }, el("a", { href: opts.glossaryHref || "#glossary", text: "Glossary: what the colours, badges and warnings mean" })));
   mount.replaceChildren(...kids);
 }

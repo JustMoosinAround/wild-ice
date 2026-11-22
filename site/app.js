@@ -2,6 +2,7 @@ import { chartMarkers, renderWeatherChart } from "./chart.js";
 import { searchLakes } from "./search.js";
 import { renderExplore } from "./views/explore-view.js";
 import { heroSection } from "./views/lake-page.js";
+import { GLOSSARY } from "./glossary.js";
 import { renderMine } from "./views/mine-view.js";
 import { renderUpload } from "./views/upload-view.js";
 import { badges } from "./explore.js";
@@ -620,6 +621,7 @@ function addKey() {
       fsw.style.cssText = "background:#3b82f6;border-color:#1d4ed8;opacity:.3";
       faded.append(fsw, el("span", { text: "Faded: hidden lake" }));
       box.append(faded);
+      box.append(el("a", { class: "key-more", href: "#glossary", text: "Glossary" }));
     }
     L.DomEvent.disableClickPropagation(box);
     L.DomEvent.disableScrollPropagation(box);
@@ -637,6 +639,7 @@ function routeHash() {
     return;
   }
   if (location.hash === "#review") { showReview(); return; }
+  if (location.hash === "#glossary") { showGlossary(); return; }
   if (location.hash === "#skateable") { showTab("explore"); return; }
   const t = location.hash.match(/^#tab=(\w+)$/);
   if (t) { showTab(t[1]); return; }
@@ -709,7 +712,7 @@ function renderTab() {
       openLake: (id) => openLake(id, true), photoUrl,
     });
   } else if (tab === "mine") {
-    renderMine($("mine-view"), { status, saved: [...savedIds], skated: skatedRows, joined: !!getDevice(store),
+    renderMine($("mine-view"), { glossaryHref: "#glossary", status, saved: [...savedIds], skated: skatedRows, joined: !!getDevice(store),
       labelText: (l) => (STYLE[l] || STYLE.unknown).text, openLake: (id) => openLake(id, true) });
   } else if (tab === "upload") {
     renderUpload($("upload-view"), { joined: canLog(), features, storage: store,
@@ -745,6 +748,11 @@ async function setPref(id, action) {
     build();
   }
   if (currentId === id) renderPanel(id, r && r.status === 200 ? "Saved: the map updates after the next daily run" : "Couldn't save, try again");
+}
+
+function showGlossary() {
+  openPage("Glossary", ...GLOSSARY.map((sec) => el("section", { class: "glossary" }, el("h3", { text: sec.title }),
+    el("dl", {}, ...sec.items.flatMap((i) => [el("dt", { text: i.term }), el("dd", { text: i.text })])))));
 }
 
 function openPage(title, ...kids) {
