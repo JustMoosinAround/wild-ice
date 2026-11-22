@@ -334,10 +334,10 @@ async function sendQueue() {
   setStatus(msg);
 }
 
-// Public part of the Ice Log: featured photos and comments, for everyone.
+// Field Notes (public part): featured photos and comments, for everyone.
 function iceLogSection(id) {
-  const box = el("section", { class: "icelog", "aria-label": "Ice Log" });
-  box.append(el("h3", { text: "Ice Log" }));
+  const box = el("section", { class: "icelog", "aria-label": "Field Notes" });
+  box.append(el("h3", { text: "Field Notes" }));
   const photos = el("div", { class: "featured" });
   const list = el("ol", { class: "comments" });
   box.append(photos, el("p", { class: "disc", text: status.disclaimer || "Rough estimate only — check ice yourself." }), list, commentForm(id, list));
@@ -838,7 +838,7 @@ async function main() {
   }
   window.addEventListener("online", sendQueue);
   const dropped = clearLegacy(store); // the old GitHub token never stays on a phone
-  if (dropped) showMsg(`${dropped} old unsent change(s) from before the Ice Log were dropped.`);
+  if (dropped) showMsg(`${dropped} old unsent change(s) from an older version were dropped.`);
   if (WORKER_URL) {
     checkDevice(ICELOG).then((state) => {
       if (state === "revoked") {
