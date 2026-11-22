@@ -1,0 +1,47 @@
+# Skating days reported on r/nordicskating (public posts), Southcentral Alaska.
+# WALLED OFF: nothing in the daily run, alerts or labels reads this file. It is only
+# for `python -m reference.reddit.compare` and `python -m wildice.backtest <this file>`.
+# Delete reference/reddit/ to roll it back.
+#
+# day_stated: true  = the post gives the skating date
+#             false = the post date is used (skated that day or a few days before)
+observations:
+  - lake_id: r1569302          # Grant Lake (Moose Pass)
+    day: 2025-12-19
+    observed: skated
+    day_stated: false
+    quote: "Grant Lake, Alaska set in with some amazing ice!"
+    url: https://old.reddit.com/r/nordicskating/comments/1pqzi2c/
+  - lake_id: w218458735        # Kashwitna Lake
+    day: 2025-11-10
+    observed: skated
+    day_stated: false
+    quote: "Wild ice season is off to a good start ... Kashwitna Lake"
+    url: https://old.reddit.com/r/nordicskating/comments/1ottc3k/
+  - lake_id: r21378422         # Portage Lake (Portage Glacier)
+    day: 2024-01-18
+    observed: skated
+    day_stated: true
+    quote: "Beautiful ice at Portage Lake, Alaska, on January 18"
+    url: https://old.reddit.com/r/nordicskating/comments/1atiecc/
+  - lake_id: r1555333          # Skilak Lake
+    day: 2024-01-25
+    observed: skated
+    day_stated: true
+    quote: "A 39-mile wild ice overnight on Skilak Lake ... January 25-26, 2024"
+    url: https://old.reddit.com/r/nordicskating/comments/1ak53de/
+  - lake_id: r1555333
+    day: 2024-01-26
+    observed: skated
+    day_stated: true
+    quote: "A 39-mile wild ice overnight on Skilak Lake ... January 25-26, 2024"
+    url: https://old.reddit.com/r/nordicskating/comments/1ak53de/
+
+# Reports that name no catalog lake (not compared):
+unmatched:
+  - {day: 2026-10-26, place: "Ermine Lake (K'esugi)", note: "ice stars; snowed the next day; not in catalog (trail access)", url: https://old.reddit.com/r/nordicskating/comments/1xfkoy8/}
+  - {day: 2025-11-10, place: "Schroff Lake, Ermine Lake, Summit Lake (Broad Pass)", note: "not in catalog / outside region", url: https://old.reddit.com/r/nordicskating/comments/1ottc3k/}
+  - {day: 2026-02-26, place: "Spring Creek near Rabbit Slough", note: "creek, not a catalog lake", url: https://old.reddit.com/r/nordicskating/comments/1rf5q6y/}
+  - {day: 2026-01-29, place: "Jim Creek area sloughs and lakes", note: "overflow/reset ice; no lake named", url: https://old.reddit.com/r/nordicskating/comments/1qqkrl5/}
+  - {day: 2025-02-10, place: "Susitna Flats", note: "flooded wetland, also 2025-02-23 and 2025-03-17", url: https://old.reddit.com/r/nordicskating/comments/1imh6tv/}
+  - {day: 2022-12-21, place: "Mendenhall Glacier (Juneau)", note: "outside region", url: https://old.reddit.com/r/nordicskating/comments/zrcef8/}

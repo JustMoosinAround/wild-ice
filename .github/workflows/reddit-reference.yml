@@ -1,0 +1,35 @@
+name: reddit-reference
+
+# Walled off: run by hand only. Compares r/nordicskating skating reports
+# (reference/reddit/observations.yaml) with satellite looks and the model. Writes
+# nothing to the repo: the report is in the job log and summary. Delete this file
+# and reference/reddit/ to roll it back.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install .
+      - name: Satellite looks and model replay
+        env:
+          CDSE_CLIENT_ID: ${{ secrets.CDSE_CLIENT_ID }}
+          CDSE_CLIENT_SECRET: ${{ secrets.CDSE_CLIENT_SECRET }}
+        run: |
+          python -m reference.reddit.compare
+          {
+            cat reference/reddit/REPORT.md
+            echo
+            echo '## Model replay (backtest)'
+            echo '```'
+            python -m wildice.backtest reference/reddit/observations.yaml
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"

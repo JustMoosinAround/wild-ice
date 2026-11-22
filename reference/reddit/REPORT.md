@@ -1,0 +1,11 @@
+# r/nordicskating reports vs. satellite (walled off)
+
+Clear Sentinel-2 / Landsat looks within 7 days of each reported day. Not used by the daily run.
+
+| Day | Lake | Day stated? | Clear looks | Post |
+|---|---|---|---|---|
+| 2025-12-19 | Grant Lake (r1569302) | post date | error: copernicus unavailable: token: 401 Client Error: Unauthorized for url: https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token [invalid_client (Invalid client or Invalid client credentials)] [client ID doesn't start with 'sh-' (Copernicus Data Space OAuth client IDs do)] | [link](https://old.reddit.com/r/nordicskating/comments/1pqzi2c/) |
+| 2025-11-10 | Kashwitna Lake (w218458735) | post date | error: copernicus unavailable: token: 401 Client Error: Unauthorized for url: https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token [invalid_client (Invalid client or Invalid client credentials)] [client ID doesn't start with 'sh-' (Copernicus Data Space OAuth client IDs do)] | [link](https://old.reddit.com/r/nordicskating/comments/1ottc3k/) |
+| 2024-01-18 | Portage Lake (r21378422) | yes | error: copernicus unavailable: token: 401 Client Error: Unauthorized for url: https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token [invalid_client (Invalid client or Invalid client credentials)] [client ID doesn't start with 'sh-' (Copernicus Data Space OAuth client IDs do)] | [link](https://old.reddit.com/r/nordicskating/comments/1atiecc/) |
+| 2024-01-25 | Skilak Lake (r1555333) | yes | error: copernicus unavailable: token: 401 Client Error: Unauthorized for url: https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token [invalid_client (Invalid client or Invalid client credentials)] [client ID doesn't start with 'sh-' (Copernicus Data Space OAuth client IDs do)] | [link](https://old.reddit.com/r/nordicskating/comments/1ak53de/) |
+| 2024-01-26 | Skilak Lake (r1555333) | yes | error: copernicus unavailable: token: 401 Client Error: Unauthorized for url: https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token [invalid_client (Invalid client or Invalid client credentials)] [client ID doesn't start with 'sh-' (Copernicus Data Space OAuth client IDs do)] | [link](https://old.reddit.com/r/nordicskating/comments/1ak53de/) |
