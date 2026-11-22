@@ -277,3 +277,18 @@ def test_valid_ls_classes_and_optical_merge():
     assert optical_classes({D: SurfaceClass.WHITE}, {D: SurfaceClass.DARK,
                                                      D - timedelta(1): SurfaceClass.GREY}) == {
         D: SurfaceClass.WHITE, D - timedelta(1): SurfaceClass.GREY}
+
+
+def test_crack_network_on_grey_ice_is_likely_black_ice():
+    hist = {RUN - timedelta(days=1): SurfaceClass.CRACKED}
+    s = score_lake(lake, ice(), img(0, None), RUN, cfg, s2_history=hist)
+    assert (s.label, s.confidence) == (Label.LIKELY_BLACK_ICE, Confidence.HIGH)
+    assert "crack network seen on Feb 9 image" in s.reason
+    assert "low sun" not in s.reason
+
+
+def test_crack_network_not_skateable_under_new_snow():
+    hist = {RUN - timedelta(days=3): SurfaceClass.CRACKED}
+    s = score_lake(lake, ice(snow=5, last_snow=RUN - timedelta(days=1)), img(0, None), RUN, cfg,
+                   s2_history=hist)
+    assert s.label is Label.SNOW_COVERED

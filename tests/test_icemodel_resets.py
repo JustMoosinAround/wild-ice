@@ -158,3 +158,11 @@ def test_light_snow_on_a_warm_day_still_counts_toward_a_thaw():
     days = cold(n=5) + [wx(5, 3, snow=0.3), wx(6, 3, snow=0.2), wx(7, -3)]
     s = run_ice_model(days, cfg)
     assert s.last_reset.kind == ResetKind.LIKELY
+
+
+def test_crack_network_confirms_reset_even_in_low_sun():
+    start = date(2025, 11, 20)  # Dec 1 is inside the low-sun window
+    s = run_ice_model(_cold_from(start, 20, snow={5: 3}), cfg,
+                      {date(2025, 12, 1): SurfaceClass.CRACKED})
+    assert s.last_reset == ResetEvent(date(2025, 12, 1), ResetKind.CONFIRMED)
+    assert s.snow_since_reset_cm == 0

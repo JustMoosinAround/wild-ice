@@ -50,6 +50,14 @@ imagery:  # placeholders, tuned by backtest
   # grey-and-black lakes 0.030 (90% over 0.017).
   patchy_texture: 0.015
   patch_days: 21
+  # Crack network (owner, from Skilak Feb 2025): thin white lines of cracks and ridges
+  # mean bare ice; open water and snow cover can't show them. Calibrated on 10 skated,
+  # 2 snowy and 4 open-water days (reference/cracks/RESULTS.md): 7 skated >= 1%,
+  # snow <= 0.6%, open water <= 0.3%.
+  crack_min_frac: 0.01
+  crack_res_m: 10
+  crack_max_px: 1500      # ~9 processing units; checked only on lakes thick enough to skate
+  crack_checks_per_run: 15
   lookback_days: 14
   monthly_request_budget: 9000
   max_lakes_per_day: 150       # cap even when lots of the month's budget is left

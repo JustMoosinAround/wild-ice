@@ -25,3 +25,11 @@ Run: https://github.com/JustMoosinAround/wild-ice/actions/runs/45052548418
 At lines >= 0.010: 7 of 10 skated days, 0 of 2 snow, 0 of 4 open water.
 It catches 5 skated "grey" lakes that the brightness rule calls not-dark.
 Dark OR lines >= 0.010 covers all 10 measurable skated days.
+
+## Switched on (2026-11-22, owner's go-ahead)
+
+Daily run: for each lake at least skate_cm thick with a new clear, not-white
+Sentinel-2 look, fetch that look at ~10 m (max 1500 px, at most 15 per run, each
+look once: data/state/crack_checks.json). Lines >= 1% mark the day "cracked":
+counts as bare ice (likely black ice, confirms a reset, even in low sun) and the
+card says "crack network seen on <day> image".

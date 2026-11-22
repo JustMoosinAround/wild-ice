@@ -109,3 +109,9 @@ def test_rough_report_keeps_label_and_adds_note():
     sc = apply_report(_score(), Report(RUN, "rough", ""), _ice(), {}, RUN, CFG)
     assert sc.label is Label.LIKELY_BLACK_ICE
     assert sc.reason.startswith("You reported rough ice on Nov 4; ")
+
+
+def test_snow_report_cleared_by_crack_network():
+    rep = Report(RUN - timedelta(days=3), "snow", "")
+    cleared = {RUN - timedelta(days=1): SurfaceClass.CRACKED}
+    assert apply_report(_score(), rep, _ice(), cleared, RUN, CFG).label is Label.LIKELY_BLACK_ICE

@@ -26,6 +26,7 @@ class SurfaceClass(StrEnum):
     DARK = "dark"
     GREY = "grey"
     WATER = "water"  # dark and above freezing on Landsat's thermal band
+    CRACKED = "cracked"  # bare ice: a network of white crack/ridge lines (wildice/cracks.py)
 
 
 class ResetKind(StrEnum):

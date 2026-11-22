@@ -126,8 +126,9 @@ class FakeClient:
             raise self.fail
         return list(self.ls)
 
-    def truecolor_png(self, geometry, day, sensor="s2"):
-        self.calls.append(("png", day, day))
+    def truecolor_png(self, geometry, day, sensor="s2", width=256, height=256):
+        # crack checks ask for a bigger image than the 256 px thumbnail
+        self.calls.append(("png", day, day) if (width, height) == (256, 256) else ("crack", day, day))
         self.png_sensors = getattr(self, "png_sensors", []) + [sensor]
         return b"\x89PNG fake"
 
@@ -774,7 +775,7 @@ def _half_black_half_grey_png():
 
 
 class PatchyThumbClient(FakeClient):
-    def truecolor_png(self, geometry, day, sensor="s2"):
+    def truecolor_png(self, geometry, day, sensor="s2", width=256, height=256):
         self.calls.append(("png", day, day))
         return _half_black_half_grey_png()
 
@@ -880,3 +881,36 @@ def test_station_sources_down_run_unchanged(tmp_repo, mocked, caplog):
     assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
     assert status_of(tmp_repo)["lakes"]["w1"]["label"] == "likely_black_ice"
     assert "CoCoRaHS unavailable" in caplog.text
+
+
+class _CrackedClient(FakeClient):
+    def truecolor_png(self, geometry, day, sensor="s2", width=256, height=256):
+        import io
+        import numpy as np
+        from PIL import Image
+        if (width, height) == (256, 256):
+            return super().truecolor_png(geometry, day, sensor, width, height)
+        self.calls.append(("crack", day, day))
+        a = np.full((300, 300), 0.12)
+        for k in range(10, 300, 25):
+            a[k:k + 2, :] = 0.3
+            a[:, k:k + 1] = 0.3
+        v = (a * 2.5 * 255).astype(np.uint8)
+        buf = io.BytesIO()
+        Image.fromarray(np.dstack([v, v, v, np.full_like(v, 255)])).save(buf, format="PNG")
+        return buf.getvalue()
+
+
+def test_grey_look_with_crack_network_reads_as_skateable(tmp_repo, mocked):
+    cold_weather(mocked)
+    client = _CrackedClient(s2=[S2Obs(RUN - timedelta(days=1), 0.95, 0.2, 0.2, 0.1)])
+    assert run(RUN, tmp_repo, ENV, session(), client) == 0
+    w1 = status_of(tmp_repo)["lakes"]["w1"]
+    assert w1["label"] == "likely_black_ice"
+    assert "crack network seen on" in w1["reason"]
+    assert [c for c in client.calls if c[0] == "crack"] == [("crack", RUN - timedelta(days=1),
+                                                             RUN - timedelta(days=1))]
+    # the look is remembered: no second fetch on a rerun
+    again = _CrackedClient(s2=[S2Obs(RUN - timedelta(days=1), 0.95, 0.2, 0.2, 0.1)])
+    assert run(RUN, tmp_repo, ENV, session(), again) == 0
+    assert [c for c in again.calls if c[0] == "crack"] == []

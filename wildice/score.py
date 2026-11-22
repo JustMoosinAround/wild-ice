@@ -93,7 +93,10 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
     """`s2_history` / `ls_history` hold this season's earlier valid Sentinel-2 / Landsat
     classes; today's imagery wins."""
     h = ice.thickness_cm
-    s2_classes = {**(s2_history or {}), **valid_s2_classes(imagery, cfg)}
+    # today's imagery wins, except over a crack network found on the same look
+    s2_history = s2_history or {}
+    s2_classes = {**s2_history, **{d: c for d, c in valid_s2_classes(imagery, cfg).items()
+                                    if s2_history.get(d) is not SurfaceClass.CRACKED}}
     classes = optical_classes(s2_classes,
                               {**(ls_history or {}), **valid_ls_classes(imagery, cfg)})
     last_clear_day = max(classes) if classes else None
@@ -122,7 +125,8 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
         label = Label.SNOW_COVERED
     elif h < cfg.ice.skate_cm:
         label = Label.FREEZING
-    elif snow <= cover and (latest_cls is SurfaceClass.DARK or radar_frozen):
+    elif snow <= cover and (latest_cls in (SurfaceClass.DARK, SurfaceClass.CRACKED)
+                            or radar_frozen):
         label = Label.LIKELY_BLACK_ICE
     else:
         label = Label.UNKNOWN
@@ -164,6 +168,8 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
     image = "Landsat image" if sensor == "ls" else "image"
     if latest_cls is SurfaceClass.WATER:
         parts.append(f"open water (above freezing) on {_fmt(last_clear_day)} {image}")
+    elif latest_cls is SurfaceClass.CRACKED:
+        parts.append(f"crack network seen on {_fmt(last_clear_day)} {image}")
     elif latest_cls is SurfaceClass.DARK:
         parts.append(f"dark on {_fmt(last_clear_day)} {image}")
     elif latest_cls is SurfaceClass.WHITE:

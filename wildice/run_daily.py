@@ -26,6 +26,7 @@ from wildice.models import (
     ImageryStats, Label, Lake, S1Obs, Score, SourceUnavailable, SurfaceClass,
 )
 from wildice.prefs import load_prefs
+from wildice.cracks import check_cracks
 from wildice.hazards import (big_ice_note, lead_note, new_ice_note, ridge_note, slush_note,
                              thaw_note)
 from wildice.icelog import fetch_export, merge_reports, reports_from_export
@@ -464,6 +465,20 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
             today = valid_s2_classes(img, cfg)
             if today:
                 s2_history[lake_id] = {**s2_history.get(lake_id, {}), **today}
+        # Crack network (thin white lines) on today's look = bare ice, even if grey.
+        crack_path = state / "crack_checks.json"
+        crack_checks = _read_json(crack_path)
+        crack_checks = ({k: v for k, v in crack_checks.items() if isinstance(v, dict)}
+                        if isinstance(crack_checks, dict) else {})
+        start = season_start(run_date, cfg).isoformat()
+        crack_checks = {k: {d: f for d, f in v.items() if d >= start}
+                        for k, v in crack_checks.items()}
+        if client is not None:
+            cracked = check_cracks(client, lakes, imagery, ice0, s2_history, crack_checks,
+                                   cfg, budget)
+            if cracked:
+                log.info("crack network on %d lake(s)", len(cracked))
+        _write_json(crack_path, crack_checks)
         _save_s2_history(s2_history_path, s2_history)
         for lake_id, img in imagery.items():
             today = valid_ls_classes(img, cfg)
@@ -487,7 +502,11 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
             tex = texture_by_day(texture_history.get(lake.id), imagery.get(lake.id), cfg)
             if tex:
                 texture_history[lake.id] = tex
-            sc = apply_patches(sc, tex, days, run_date, cfg)
+            # a crack network brightens the same percentiles as grey-and-black patches
+            cracked_days = {d for d, c in s2_history.get(lake.id, {}).items()
+                            if c is SurfaceClass.CRACKED}
+            sc = apply_patches(sc, {d: v for d, v in tex.items() if d not in cracked_days},
+                               days, run_date, cfg)
             sc = apply_report(sc, rep, ice, hist, run_date, cfg)
             st = station_of[lake.id]
             hit = latest_measured(measured.get(st.id, {}), run_date, cfg.snowobs.note_days) if st else None

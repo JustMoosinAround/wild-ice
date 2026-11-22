@@ -181,7 +181,10 @@ def run_ice_model(
                 seen_white = True
             reset_kind: ResetKind | None = None
             # low sun makes snow look dark, so a dark image then proves nothing
-            if surface == SurfaceClass.DARK and not in_low_sun(d.day, cfg) and (
+            # A crack network can't be faked by low sun the way a dark snow cover can.
+            bare = (surface == SurfaceClass.CRACKED
+                    or (surface == SurfaceClass.DARK and not in_low_sun(d.day, cfg)))
+            if bare and (
                 snow_cm > cfg.snow.cover_cm
                 or seen_white
                 or (last_reset is not None and last_reset.kind == ResetKind.LIKELY)
