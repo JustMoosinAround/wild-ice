@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, timedelta
 
 import requests
@@ -33,6 +33,7 @@ class Export:
     prefs: list[dict]
     pending_comments: int
     pending_photos: int
+    featured: list[dict] = field(default_factory=list)  # {lake_id, public_id, created_at}
 
 
 def fetch_export(base_url: str, token: str, since: date,
@@ -46,7 +47,8 @@ def fetch_export(base_url: str, token: str, since: date,
         data = r.json()
         pending = data["pending"]
         return Export(list(data["reports"]), list(data["prefs"]),
-                      int(pending["comments"]), int(pending["photos"]))
+                      int(pending["comments"]), int(pending["photos"]),
+                      list(data.get("featured") or []))
     except requests.HTTPError as exc:
         status = exc.response.status_code if exc.response is not None else "?"
         log.error("ice log unavailable: HTTP %s", status)

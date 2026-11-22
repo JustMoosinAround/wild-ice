@@ -914,3 +914,16 @@ def test_grey_look_with_crack_network_reads_as_skateable(tmp_repo, mocked):
     again = _CrackedClient(s2=[S2Obs(RUN - timedelta(days=1), 0.95, 0.2, 0.2, 0.1)])
     assert run(RUN, tmp_repo, ENV, session(), again) == 0
     assert [c for c in again.calls if c[0] == "crack"] == []
+
+
+def test_status_has_explore_fields_from_reports_and_photos(tmp_repo, mocked):
+    cold_weather(mocked)
+    mocked.add(responses_lib.GET, "https://ice.example/api/export", json={
+        "reports": [], "prefs": [], "pending": {"comments": 0, "photos": 0},
+        "featured": [{"lake_id": "w1", "public_id": "old", "created_at": "2026-11-01T00:00:00Z"},
+                     {"lake_id": "w1", "public_id": "new", "created_at": "2026-11-09T00:00:00Z"}]})
+    assert run(RUN, tmp_repo, ICELOG_ENV, session(), FakeClient()) == 0
+    w1 = status_of(tmp_repo)["lakes"]["w1"]
+    assert w1["featured_photo"] == "new"
+    assert w1["came_in"] == RUN.isoformat()  # in today, no earlier history
+    assert w1["timeline"][0]["text"] == "Dark ice on image"

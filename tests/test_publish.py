@@ -20,7 +20,8 @@ def test_status_schema(tmp_path):
     assert s["disclaimer"] == "Rough estimate only — check ice yourself."
     e = s["lakes"]["w123"]
     assert set(e) == {"name", "label", "confidence", "reason", "thickness_cm", "last_clear_day",
-                      "browser_url", "thumb", "pinned", "hidden", "warning", "history"}
+                      "browser_url", "thumb", "pinned", "hidden", "warning", "history",
+                      "came_in", "last_report", "featured_photo", "timeline"}
     assert (e["name"], e["label"], e["confidence"], e["reason"]) == ("Foo", "likely_black_ice", "high", "why")
     assert e["thickness_cm"] == 12.0 and e["last_clear_day"] == "2025-11-11"
     assert "fromTime=2025-11-11" in e["browser_url"]
@@ -83,3 +84,14 @@ def test_lake_series_keeps_last_days_and_matches_model_rows():
     assert s["day"][0] == (d0 + timedelta(5)).isoformat() and len(s["day"]) == 35
     assert s["t_min"][0] == -6.0 and s["snow_cm"][0] == 0.2 and s["water_c"][0] == 3.3
     assert s["ice_cm"][-1] == 39.0
+
+
+def test_status_carries_explore_fields():
+    sc = {"w123": Score("w123", Label.LIKELY_BLACK_ICE, Confidence.HIGH, "why", 12.0, date(2025, 11, 11))}
+    other = Lake("w9", "Bar", 50, 1, None, 61.0, -149.0, None, None)
+    ex = {"w123": {"came_in": "2025-11-10", "last_report": {"day": "2025-11-11", "rating": "skated", "grade": "B+"},
+                   "featured_photo": "p1", "timeline": [{"day": "2025-11-11", "kind": "report", "text": "Skated (B+)"}]}}
+    s = build_status([lake, other], sc, frozenset(), frozenset(), {}, RUN, None, explore=ex)["lakes"]
+    assert s["w123"]["came_in"] == "2025-11-10" and s["w123"]["featured_photo"] == "p1"
+    assert s["w123"]["last_report"]["grade"] == "B+" and len(s["w123"]["timeline"]) == 1
+    assert (s["w9"]["came_in"], s["w9"]["last_report"], s["w9"]["featured_photo"], s["w9"]["timeline"]) == (None, None, None, [])

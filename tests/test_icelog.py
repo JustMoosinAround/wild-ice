@@ -157,3 +157,11 @@ def test_pending_line_only_when_something_waits():
     assert body.endswith("\n\n1 comment waiting")
     _, body, _ = alert.format_alert(["w1"], LAKES, sc, frozenset(), "https://x")
     assert "waiting" not in body
+
+
+@responses.activate
+def test_fetch_export_reads_featured_photos():
+    feat = [{"lake_id": "w1", "public_id": "p1", "created_at": "2026-11-20T10:00:00Z"}]
+    responses.add(responses.GET, f"{URL}/api/export", json={
+        "reports": [], "prefs": [], "pending": {"comments": 0, "photos": 0}, "featured": feat})
+    assert fetch_export(URL, "tok", SEASON, requests.Session()).featured == feat

@@ -27,6 +27,7 @@ from wildice.models import (
 )
 from wildice.prefs import load_prefs
 from wildice.cracks import check_cracks
+from wildice.explore import came_in, timeline
 from wildice.hazards import (big_ice_note, lead_note, new_ice_note, ridge_note, slush_note,
                              thaw_note)
 from wildice.icelog import fetch_export, merge_reports, reports_from_export
@@ -370,6 +371,29 @@ def _thumbnails(client, lakes: dict[str, Lake], scores: dict[str, Score], prev: 
         _note_patch(lake_id, sc.last_clear_day, png, thumbs_dir, patches)
 
 
+def _explore(scores: dict[str, Score], explore_in: dict[str, tuple], history: dict,
+             export, run_date: date) -> dict[str, dict]:
+    """Per-lake Explore fields: when it came in, last report, newest featured photo,
+    and the what-we-know timeline."""
+    featured: dict[str, dict] = {}
+    for p in (export.featured if export else []):
+        cur = featured.get(p.get("lake_id"))
+        if cur is None or str(p.get("created_at")) > str(cur.get("created_at")):
+            featured[p.get("lake_id")] = p
+    out = {}
+    for lake_id, sc in scores.items():
+        rep, classes, snow_ev, reset = explore_in.get(lake_id, (None, {}, None, None))
+        out[lake_id] = {
+            "came_in": (lambda d: d.isoformat() if d else None)(
+                came_in(history.get(lake_id, []), str(sc.label), run_date)),
+            "last_report": ({"day": rep.day.isoformat(), "rating": rep.rating, "grade": rep.grade}
+                            if rep else None),
+            "featured_photo": (featured.get(lake_id) or {}).get("public_id"),
+            "timeline": timeline(rep, classes or {}, snow_ev, reset),
+        }
+    return out
+
+
 def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.Session,
          client, ntfy: requests.Session) -> int:
     root = Path(root)
@@ -487,6 +511,7 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
         _save_s2_history(ls_history_path, ls_history)
 
         scores: dict[str, Score] = {}
+        explore_in: dict[str, tuple] = {}
         window_start = run_date - timedelta(days=cfg.imagery.lookback_days)
         for lake in lake_list:
             hist = optical_classes(s2_history.get(lake.id), ls_history.get(lake.id))
@@ -519,6 +544,8 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
                                  big_ice_note(lake, days, ice, run_date, cfg)) if n]
             scores[lake.id] = (replace(sc, reason="; ".join([sc.reason, *notes]))
                                if notes else sc)
+            snow_ev = (hit[0], hit[1], st.name) if hit else None
+            explore_in[lake.id] = (rep, hist, snow_ev, ice.last_reset)
         _save_texture_history(texture_path, texture_history)
 
         if client is not None:
@@ -542,7 +569,8 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
     history = {k: [h for h in v if h["day"] != run_date.isoformat()]
                for k, v in publish.load_history(site_data / "history", run_date).items()}
     status = publish.build_status(lake_list, scores, pinned, hidden, history, run_date,
-                                  stale_since=None)
+                                  stale_since=None,
+                                  explore=_explore(scores, explore_in, history, export, run_date))
     for lake_id, entry in status["lakes"].items():
         p = patches.get(lake_id) or {}
         if p.get("mixed") and p.get("day") == entry.get("last_clear_day"):

@@ -1,6 +1,8 @@
 """Build and write the status JSON the map reads."""
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 import copy
 import json
 from datetime import date, timedelta
@@ -32,8 +34,9 @@ def browser_url(lat: float, lon: float, day: date | None, sensor: str = "s2") ->
 
 def build_status(lakes: list[Lake], scores: dict[str, Score], pinned: frozenset[str],
                  hidden: frozenset[str], history: dict[str, list[dict]], run_date: date,
-                 stale_since: date | None) -> dict:
+                 stale_since: date | None, explore: Mapping[str, dict] | None = None) -> dict:
     out: dict[str, dict] = {}
+    explore = explore or {}
     for lake in lakes:
         sc = scores.get(lake.id)
         label = sc.label if sc else Label.UNKNOWN
@@ -51,6 +54,10 @@ def build_status(lakes: list[Lake], scores: dict[str, Score], pinned: frozenset[
             "hidden": lake.id in hidden,
             "warning": lake.warning,
             "history": list(history.get(lake.id, [])),
+            "came_in": explore.get(lake.id, {}).get("came_in"),
+            "last_report": explore.get(lake.id, {}).get("last_report"),
+            "featured_photo": explore.get(lake.id, {}).get("featured_photo"),
+            "timeline": list(explore.get(lake.id, {}).get("timeline", [])),
         }
     return {
         "run_date": run_date.isoformat(),
