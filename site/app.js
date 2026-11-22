@@ -369,7 +369,7 @@ function pasteInvite() {
     input.value = "";
     showInvite(code);
   });
-  return el("details", { class: "invite-paste" }, el("summary", { text: "Have an invite? Join the Ice Log" }), form);
+  return el("details", { class: "invite-paste" }, el("summary", { text: "Have an invite? Join Wild Ice" }), form);
 }
 
 function commentForm(id, list) {
@@ -692,18 +692,18 @@ function openPage(title, ...kids) {
 }
 
 function showInvite(code) {
-  if (!WORKER_URL) { showMsg("The Ice Log isn't set up yet."); return; }
+  if (!WORKER_URL) { showMsg("Reports aren't set up yet."); return; }
   const decision = inviteDecision(getDevice(store));
   if (decision === "refuse") {
     // Never let an invite (e.g. one being tested) replace the owner's key on this phone.
     openPage("Invite link", el("p", { text: "This phone is already the owner's. Send the link to the friend it's for." }));
     return;
   }
-  if (decision === "confirm" && !confirm("This phone is already signed in to the Ice Log. Join again with this new link?")) return;
+  if (decision === "confirm" && !confirm("This phone is already signed in to Wild Ice. Join again with this new link?")) return;
   const name = el("input", { type: "text", maxlength: "40", placeholder: "Your name", "aria-label": "Your name" });
   const msg = el("p", { class: "status" });
   const form = el("form", { class: "comment-form" },
-    el("p", { class: "meta", text: "You're invited to the Wild Ice Ice Log. Your name shows on your comments and on photos the owner features. This invite works once, on this phone." }),
+    el("p", { class: "meta", text: "You're invited to post ice reports, photos and comments on Wild Ice. Your name shows on your comments and on photos the owner features. This invite works once, on this phone." }),
     name, el("button", { class: "act", type: "submit", text: "Join" }), msg);
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -712,7 +712,7 @@ function showInvite(code) {
     if (!r.ok) { msg.textContent = r.error; return; }
     openPage("You're in", el("p", { text: `Welcome, ${r.name}. Tap a lake to log the ice.` }));
   });
-  openPage("Join the Ice Log", form);
+  openPage("Join Wild Ice", form);
   name.focus();
 }
 
