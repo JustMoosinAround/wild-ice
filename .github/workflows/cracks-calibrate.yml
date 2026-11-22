@@ -1,0 +1,23 @@
+name: cracks-calibrate
+
+# Walled off: run by hand only. Scores the crack-line detector on known skated,
+# snowy and open-water days. Writes nothing; results are in the job log.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install .
+      - env:
+          CDSE_CLIENT_ID: ${{ secrets.CDSE_CLIENT_ID }}
+          CDSE_CLIENT_SECRET: ${{ secrets.CDSE_CLIENT_SECRET }}
+        run: python -m reference.cracks.calibrate | tee -a "$GITHUB_STEP_SUMMARY"

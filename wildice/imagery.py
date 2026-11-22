@@ -412,7 +412,8 @@ class CopernicusClient:
             raise SourceUnavailable(SOURCE, f"unexpected Landsat response: {exc}") from exc
         return out
 
-    def truecolor_png(self, geometry: dict, day: date, sensor: str = "s2") -> bytes:
+    def truecolor_png(self, geometry: dict, day: date, sensor: str = "s2",
+                      width: int = THUMB_PX, height: int = THUMB_PX) -> bytes:
         collection, script = TRUECOLOR[sensor]
         body = {
             "input": {
@@ -427,7 +428,7 @@ class CopernicusClient:
                     },
                 }],
             },
-            "output": {"width": THUMB_PX, "height": THUMB_PX,
+            "output": {"width": width, "height": height,
                        "responses": [{"identifier": "default",
                                       "format": {"type": "image/png"}}]},
             "evalscript": _script(script),
