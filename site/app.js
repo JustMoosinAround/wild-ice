@@ -346,7 +346,7 @@ function iceLogSection(id) {
   box.append(el("h3", { text: "Field Notes" }));
   const photos = el("div", { class: "featured" });
   const list = el("ol", { class: "comments" });
-  box.append(photos, el("p", { class: "disc", text: status.disclaimer || "Rough estimate only — check ice yourself." }), list, commentForm(id, list));
+  box.append(photos, list, commentForm(id, list));
   if (!VIEW_ONLY && WORKER_URL && !getDevice(store)) box.append(pasteInvite());
   loadLake(id, ICELOG).then(({ comments, photos: ph }) => {
     if (!box.isConnected) return;
@@ -383,7 +383,7 @@ function commentForm(id, list) {
   const form = el("form", { class: "comment-form" });
   const name = el("input", { type: "text", placeholder: "Your name", "aria-label": "Your name", maxlength: "40", required: "" });
   if (device) name.value = device.name;
-  const text = el("textarea", { placeholder: "Tips for other skaters (no links)", "aria-label": "Comment", maxlength: "500", rows: "3", required: "" });
+  const text = el("textarea", { placeholder: "Add a comment", "aria-label": "Comment", maxlength: "500", rows: "3", required: "" });
   const msg = el("p", { class: "status" });
   const human = el("div", { class: "turnstile" });
   let token = null;
@@ -424,7 +424,7 @@ function renderPanel(id, statusText) {
   const props = (layers.get(id) || {}).feature?.properties || {};
   if (props.area_acres) {
     let size = Math.round(props.area_acres).toLocaleString() + " acres";
-    if (props.depth_m) size += ", about " + Math.round(props.depth_m) + " m deep on average (HydroLAKES estimate)";
+    if (props.depth_m) size += ", about " + Math.round(props.depth_m) + " m deep on average";
     panel.append(el("p", { class: "meta", text: size }));
   }
   const chip = el("span", { class: "chip", text: s.text });
@@ -444,7 +444,6 @@ function renderPanel(id, statusText) {
   if (WORKER_URL) panel.append(iceLogSection(id));
   if (d.thickness_cm != null) {
     panel.append(el("p", { class: "est", text: d.thickness_cm >= SKATE_CM ? "est. 2+ in of ice" : "est. " + d.thickness_cm + " cm" }));
-    panel.append(el("p", { class: "disc", text: status.disclaimer || "Rough estimate only — check ice yourself." }));
   }
   // Daily color history, oldest first. Published history stops at yesterday, so add today.
   const days = (d.history || []).filter((h) => h.day !== status.run_date);
@@ -756,6 +755,7 @@ function showInvite(code) {
   const msg = el("p", { class: "status" });
   const form = el("form", { class: "comment-form" },
     el("p", { class: "meta", text: "You're invited to post ice reports, photos and comments on Wild Ice. Your name shows on your comments and on photos the owner features. This invite works once, on this phone." }),
+    el("p", { class: "disc", text: "Ice conditions on Wild Ice are estimates from satellites, weather and other skaters' reports. They can be wrong or out of date, so check the ice yourself before you go out." }),
     name, el("button", { class: "act", type: "submit", text: "Join" }), msg);
   form.addEventListener("submit", async (e) => {
     e.preventDefault();

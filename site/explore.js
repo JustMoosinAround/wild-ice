@@ -51,7 +51,7 @@ export function badges(d, props, ctx) {
   if (r && r.grade) out.push(`Last grade ${r.grade}`);
   if (p.area_acres != null) out.push(`${Math.round(p.area_acres).toLocaleString("en-US")} ac`);
   if (ctx.skated && !ctx.skated.has(d.id)) out.push("New to you");
-  if (isHikeIn(p)) out.push(`Hike-in ~${p.road_mi.toFixed(1)} mi`);
+  if (isHikeIn(p)) out.push(`Approach ~${p.road_mi.toFixed(1)} mi`);
   return out;
 }
 

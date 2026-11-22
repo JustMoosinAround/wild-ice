@@ -36,7 +36,7 @@ export function renderExplore(mount, opts) {
         el("span", { class: "badges" }, ...badges(d, props, ctx).map((b) => el("span", { class: "badge", text: b }))),
         el("span", { class: "evidence" + (ev.old ? " old" : ""), text: ev.text })))));
   }
-  const kids = [head, el("p", { class: "disc", text: status.disclaimer || "Rough estimate only — check ice yourself." })];
+  const kids = [head];
   if (list.length) kids.push(bar, feed);
   else {
     const soon = Object.entries(status.lakes).filter(([, d]) => d.label === "freezing" && !d.hidden)
