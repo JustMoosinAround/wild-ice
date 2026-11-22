@@ -21,9 +21,9 @@ test("empty when nothing is skateable", () => {
   assert.deepEqual(skateableLakes({ e: lakes.e }, {}), []);
 });
 
-test("row text: thickness, when last seen, road distance; no confidence", () => {
+test("row text: when last seen, road distance; no confidence", () => {
   assert.equal(skateMeta({ label: "likely_black_ice", thickness_cm: 22, last_clear_day: "2026-11-05", road_mi: 0.34 }, "Likely black ice"),
-    "~22 cm · seen Nov 5 · 0.3 mi from road");
+    "seen Nov 5 · 0.3 mi from road");
   assert.equal(skateMeta({ label: "rough_ice", thickness_cm: 30, road_mi: 0 }, "Skateable, rough"),
-    "~30 cm · Skateable, rough · no clear image · at the road");
+    "Skateable, rough · no clear image · at the road");
 });

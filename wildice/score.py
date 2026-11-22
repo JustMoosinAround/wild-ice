@@ -152,7 +152,8 @@ def score_lake(lake: Lake, ice: IceState, imagery: ImageryStats | None,
     if caveats and conf is Confidence.HIGH:
         conf = Confidence.MEDIUM
 
-    parts = [f"~{h:.0f} cm est."]
+    # owner: past 2" (skate_cm) the thickness no longer matters for skating
+    parts = ["2+ in of ice (est.)" if h >= cfg.ice.skate_cm else f"~{h:.0f} cm est."]
     if snow > 0:
         if ice.last_reset:
             parts.append(f"{snow:.0f} cm snow since {_fmt(ice.last_reset.day)}")

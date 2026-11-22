@@ -1,6 +1,8 @@
 import { renderWeatherChart } from "./chart.js";
 import { searchLakes } from "./search.js";
 import { skateableLakes, skateMeta } from "./skatelist.js";
+
+const SKATE_CM = 5; // config.yaml ice.skate_cm: past 2" the thickness doesn't matter
 import {
   GRADES, flushReports, getDevice, inviteCodeFromHash, loadLake, ownerCall, postComment, prepPhoto,
   queueReport, queuedReports, redeemInvite, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
@@ -432,7 +434,7 @@ function renderPanel(id, statusText) {
   if (d.warning) panel.append(el("p", { class: "warn", text: d.warning }));
   if (canLog()) panel.append(reportSection(id));
   if (d.thickness_cm != null) {
-    panel.append(el("p", { class: "est", text: "est. " + d.thickness_cm + " cm" }));
+    panel.append(el("p", { class: "est", text: d.thickness_cm >= SKATE_CM ? "est. 2+ in of ice" : "est. " + d.thickness_cm + " cm" }));
     panel.append(el("p", { class: "disc", text: status.disclaimer || "Rough estimate only — check ice yourself." }));
   }
   // Daily color history, oldest first. Published history stops at yesterday, so add today.

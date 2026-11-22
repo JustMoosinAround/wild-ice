@@ -109,7 +109,7 @@ def test_cracked_grey_look_becomes_cracked_and_is_checked_once():
 
 def test_no_lines_thin_ice_white_or_no_budget_leave_it_alone():
     imagery = {"w1": ImageryStats((GREY_OBS,), (), None)}
-    for png, cm, n in ((_img(0.12), 20, 10), (_img(0.12, line=0.3), 5, 10),
+    for png, cm, n in ((_img(0.12), 20, 10), (_img(0.12, line=0.3), 3, 10),
                        (_img(0.12, line=0.3), 20, 0)):
         client, hist = _Client(_png(png)), {"w1": {GREY_OBS.day: SurfaceClass.GREY}}
         check_cracks(client, {"w1": _lake()}, imagery, {"w1": _ice(cm)}, hist, {}, CFG, _Budget(n))

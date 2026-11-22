@@ -11,7 +11,7 @@ def test_loads_repo_config():
     assert cfg.filters.min_area_acres_at_road == 5
     assert cfg.filters.max_road_miles == 2
     assert cfg.filters.max_trail_miles == 1
-    assert cfg.ice.skate_cm == 10
+    assert cfg.ice.skate_cm == 5
     assert cfg.snow.cover_cm == 2
     assert cfg.imagery.min_valid_fraction == 0.7
     assert cfg.region.bbox == (59.3, -152.5, 62.8, -144.0)
@@ -27,7 +27,7 @@ def test_missing_key_raises(tmp_path):
 
 
 def test_missing_nested_key_names_it(tmp_path):
-    text = Path("config.yaml").read_text().replace("  skate_cm: 10\n", "")
+    text = Path("config.yaml").read_text().replace(next(l for l in Path("config.yaml").read_text().splitlines(True) if l.startswith("  skate_cm:")), "")
     p = tmp_path / "c.yaml"
     p.write_text(text)
     with pytest.raises(ConfigError, match="skate_cm"):

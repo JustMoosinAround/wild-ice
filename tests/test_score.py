@@ -70,13 +70,13 @@ def test_white_image_high():
 
 
 def test_freezing():
-    assert score_lake(lake, ice(h=6), None, RUN, cfg).label is Label.FREEZING
+    assert score_lake(lake, ice(h=4), None, RUN, cfg).label is Label.FREEZING
 
 
 def test_black_ice_fresh_dark_high():
     s = score_lake(lake, ice(), img(1, DARK), RUN, cfg)
     assert (s.label, s.confidence) == (Label.LIKELY_BLACK_ICE, Confidence.HIGH)
-    assert "~12 cm est." in s.reason and "dark on" in s.reason
+    assert s.reason.startswith("2+ in of ice (est.)") and "dark on" in s.reason
     assert s.last_clear_day == RUN - timedelta(days=1)
 
 

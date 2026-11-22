@@ -22,10 +22,10 @@ export function shortDate(iso) {
   return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
-// The line under a lake's name: thickness, when a satellite last saw it, road distance.
+// The line under a lake's name: when a satellite last saw it and road distance
+// (owner: past 2" the thickness doesn't matter, so it isn't shown).
 export function skateMeta(d, labelText) {
   const parts = [];
-  if (d.thickness_cm != null) parts.push(`~${d.thickness_cm} cm`);
   if (d.label !== "likely_black_ice") parts.push(labelText);
   parts.push(d.last_clear_day ? `seen ${shortDate(d.last_clear_day)}` : "no clear image");
   if (d.road_mi != null) parts.push(d.road_mi < 0.1 ? "at the road" : `${d.road_mi.toFixed(1)} mi from road`);

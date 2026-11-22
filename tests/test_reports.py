@@ -53,10 +53,10 @@ def test_open_water_report_restarts_ice():
     ice = ice_with_report(wx, CFG, None, None, Report(RUN, "water", ""), trace)
     assert ice.thickness_cm == 0.0
     assert trace[-1] == (RUN, 0.0, 0.0) and len(trace) == len(wx)
-    # two cold days later a little ice is back, but not skateable
+    # two cold days later a little new ice is back, far less than before
     wx2 = _cold(date(2026, 10, 1), RUN + timedelta(days=2))
     ice2 = ice_with_report(wx2, CFG, None, None, Report(RUN, "water", ""))
-    assert 0 < ice2.thickness_cm < CFG.ice.skate_cm
+    assert 0 < ice2.thickness_cm < 12
 
 
 def test_other_reports_leave_ice_alone():

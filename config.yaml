@@ -12,7 +12,7 @@ ice:
   # Ashton (1989) thin-ice growth: heat transfer from ice to air, W/m^2/K.
   # 20 fits St. Lawrence River data; calmer lakes grow ice slower (lower value).
   ashton_h: 20
-  skate_cm: 10
+  skate_cm: 5    # owner: past 2" of ice, thickness doesn't matter for skating
   open_cm: 2
   # Lake water temperature on season_start. Water trails the air by a lag that grows
   # with lake size, so ice starts only once the water has cooled to 0 C. 7 C matches
