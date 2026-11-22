@@ -136,17 +136,17 @@ button.act.rep { display: flex; align-items: center; justify-content: center; ga
 .leaflet-control-attribution { font-size: 10px; line-height: 1.3; max-width: calc(100vw - 8px); }
 
 /* app shell: tabs and views */
-:root { --tabs-h: 58px; }
+:root { --tabs-h: 58px; --sat: env(safe-area-inset-top, 0px); --sab: env(safe-area-inset-bottom, 0px); }
 #views { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
 #views > .view { flex: 1; overflow-y: auto; padding: 8px var(--gutter) 24px; -webkit-overflow-scrolling: touch; }
 #map.off { display: none; }
-#tabs { display: flex; border-top: 1px solid var(--line); background: var(--bg); padding-bottom: env(safe-area-inset-bottom); z-index: 1100; }
+#tabs { display: flex; border-top: 1px solid var(--line); background: var(--bg); padding-bottom: var(--sab); z-index: 1100; }
 #tabs button { flex: 1; min-height: var(--tabs-h); border: 0; background: none; color: var(--muted); font: inherit; font-size: 12px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; }
 #tabs button span { font-size: 20px; line-height: 1; }
 #tabs button[aria-current="page"] { color: var(--accent); font-weight: 600; }
-body:not([data-tab="map"]) .toggle { display: none; }
-#panel { bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom)); max-height: calc(100% - var(--tabs-h) - 80px); }
+body:not(.embed):not([data-tab="map"]) .toggle { display: none; }
+#panel { bottom: calc(var(--tabs-h) + var(--sab)); max-height: calc(100% - var(--tabs-h) - var(--sab) - var(--sat) - 80px); }
 body.embed #tabs { display: none; }
 body.embed #panel { bottom: 0; }
 
@@ -175,7 +175,7 @@ button.act.small { min-height: 40px; padding: 0 16px; font-size: 15px; }
 .evidence.old { color: var(--muted); font-weight: 400; }
 
 /* lake page */
-#panel.page { max-height: calc(100% - var(--tabs-h) - 8px); z-index: 1200; }
+#panel.page { max-height: calc(100% - var(--tabs-h) - var(--sab) - var(--sat) - 8px); z-index: 1200; }
 .hero { margin: -12px calc(-1 * var(--gutter)) 8px; }
 .hero-photo { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; background: #e2e8f0;
   border-top-left-radius: 14px; border-top-right-radius: 14px; }

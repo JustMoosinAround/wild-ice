@@ -130,12 +130,42 @@ function segDistM(lat, lon, a, b) {
   return Math.hypot(ax + t * dx, ay + t * dy);
 }
 
-function onLake(polys, lat, lon) {
-  for (const poly of polys) {
-    if (inRing(poly[0], lon, lat) && !poly.slice(1).some((h) => inRing(h, lon, lat))) return true;
-    for (const ring of poly) for (let i = 1; i < ring.length; i++) if (segDistM(lat, lon, ring[i - 1], ring[i]) <= SHORE_SLACK_M) return true;
+function inPolys(polys, lat, lon) {
+  return polys.some((poly) => inRing(poly[0], lon, lat) && !poly.slice(1).some((h) => inRing(h, lon, lat)));
+}
+
+const CELL_LAT = 0.001, CELL_LON = 0.002; // ~110 m cells at 61 N
+const SLACK_LAT = SHORE_SLACK_M / 110540;
+
+// A per-lake lookup that answers "is this point on the lake (or within SHORE_SLACK_M
+// of it)?" quickly: shoreline segments are bucketed into ~110 m cells, and cells with
+// no shoreline nearby take one cached inside/outside answer.
+function lakeIndex(polys, box) {
+  const slackLon = SHORE_SLACK_M / (111320 * Math.cos((box[1] * Math.PI) / 180));
+  const segs = new Map();
+  const key = (i, j) => i * 1e6 + j;
+  for (const poly of polys) for (const ring of poly) for (let k = 1; k < ring.length; k++) {
+    const a = ring[k - 1], b = ring[k];
+    const i0 = Math.floor((Math.min(a[1], b[1]) - SLACK_LAT) / CELL_LAT), i1 = Math.floor((Math.max(a[1], b[1]) + SLACK_LAT) / CELL_LAT);
+    const j0 = Math.floor((Math.min(a[0], b[0]) - slackLon) / CELL_LON), j1 = Math.floor((Math.max(a[0], b[0]) + slackLon) / CELL_LON);
+    for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
+      const kk = key(i, j);
+      if (!segs.has(kk)) segs.set(kk, []);
+      segs.get(kk).push([a, b]);
+    }
   }
-  return false;
+  const cellInside = new Map();
+  return (lat, lon) => {
+    if (lon < box[0] || lon > box[2] || lat < box[1] || lat > box[3]) return false;
+    const i = Math.floor(lat / CELL_LAT), j = Math.floor(lon / CELL_LON), kk = key(i, j);
+    const near = segs.get(kk);
+    if (!near) {
+      if (!cellInside.has(kk)) cellInside.set(kk, inPolys(polys, (i + 0.5) * CELL_LAT, (j + 0.5) * CELL_LON));
+      return cellInside.get(kk);
+    }
+    for (const [a, b] of near) if (segDistM(lat, lon, a, b) <= SHORE_SLACK_M) return true;
+    return inPolys(polys, lat, lon);
+  };
 }
 
 function bbox(polys) {
@@ -154,21 +184,25 @@ export function matchLakes(points, features) {
   const gaps = points.slice(1).map((p, i) => { const s = (p.t - points[i].t) / 1000; return s > 0 && s <= MAX_GAP_S ? s : 0; });
   const total = gaps.reduce((a, b) => a + b, 0);
   if (total <= 0) return [];
-  const lats = points.map((p) => p.lat), lons = points.map((p) => p.lon);
-  const tb = [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)];
+  const tb = [Infinity, Infinity, -Infinity, -Infinity]; // a loop: spreading 100k+ points overflows the stack
+  for (const p of points) {
+    if (p.lon < tb[0]) tb[0] = p.lon; if (p.lat < tb[1]) tb[1] = p.lat;
+    if (p.lon > tb[2]) tb[2] = p.lon; if (p.lat > tb[3]) tb[3] = p.lat;
+  }
   const out = [];
   for (const f of features) {
     const polys = rings(f.geometry);
     if (!polys.length) continue;
     const b = bbox(polys);
     if (b[0] > tb[2] || b[2] < tb[0] || b[1] > tb[3] || b[3] < tb[1]) continue;
-    const inside = points.map((p) => onLake(polys, p.lat, p.lon));
+    const on = lakeIndex(polys, b);
+    const inside = points.map((p) => on(p.lat, p.lon));
     let secs = 0;
-    const on = [];
-    gaps.forEach((g, i) => { if (g && inside[i] && inside[i + 1]) { secs += g; on.push(i); } });
+    const onIdx = [];
+    gaps.forEach((g, i) => { if (g && inside[i] && inside[i + 1]) { secs += g; onIdx.push(i); } });
     const minutes = secs / 60, share = secs / total;
     if (minutes < MIN_MINUTES || share < MIN_SHARE) continue;
-    const mid = points[on[Math.floor(on.length / 2)]];
+    const mid = points[onIdx[Math.floor(onIdx.length / 2)]];
     out.push({ lakeId: f.properties.id, name: f.properties.name, minutes: Math.round(minutes),
       share: Math.round(share * 1000) / 1000, day: alaskaDay(mid.t), point: { lat: mid.lat, lon: mid.lon } });
   }

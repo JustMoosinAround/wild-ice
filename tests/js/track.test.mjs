@@ -78,3 +78,18 @@ test("a GPX without times and a broken .gz give readable errors", async () => {
   const good = new File([gpx(pts(3, 61, -149))], "ride.gpx");
   assert.equal((await readTrackFile(good)).length, 3);
 });
+
+test("a very long track over a big lake is quick and doesn't overflow", () => {
+  // a detailed shoreline: 4000-vertex circle-ish lake
+  const ring = Array.from({ length: 4001 }, (_, i) => {
+    const a = (i / 4000) * 2 * Math.PI;
+    return [-149.5 + 0.05 * Math.cos(a), 61.0 + 0.025 * Math.sin(a)];
+  });
+  const big = { type: "Feature", properties: { id: "w9", name: "Big" }, geometry: { type: "Polygon", coordinates: [ring] } };
+  const p = Array.from({ length: 200000 }, (_, i) => ({ lat: 61.0 + 0.01 * Math.sin(i / 5000), lon: -149.5 + 0.02 * Math.cos(i / 7000), t: START + i * 1000 }));
+  const t0 = Date.now();
+  const m = matchLakes(p, [big]);
+  const ms = Date.now() - t0;
+  assert.equal(m[0].lakeId, "w9");
+  assert.ok(ms < 1500, `took ${ms} ms`);
+});
