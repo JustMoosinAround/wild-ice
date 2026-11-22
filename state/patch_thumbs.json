@@ -3344,5 +3344,138 @@
     "grey": 0.0,
     "white": 0.0,
     "mixed": false
+  },
+  "w296812471": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w296812474": {
+    "day": "2026-11-05",
+    "black": 0.996,
+    "grey": 0.004,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w296835302": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w296887852": {
+    "day": "2026-11-05",
+    "black": 0.001,
+    "grey": 0.999,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w296887853": {
+    "day": "2026-11-05",
+    "black": 0.0,
+    "grey": 1.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w296887854": {
+    "day": "2026-11-05",
+    "black": 0.001,
+    "grey": 0.999,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w296972702": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w393524103": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w393525322": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w393525327": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w483147485": {
+    "day": "2026-10-27",
+    "black": 0.0,
+    "grey": 1.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w483174410": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w509472896": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w509472897": {
+    "day": "2026-11-05",
+    "black": 0.995,
+    "grey": 0.005,
+    "white": 0.0,
+    "mixed": false
+  },
+  "r13816004": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w1032709615": {
+    "day": "2026-11-05",
+    "black": 1.0,
+    "grey": 0.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w1032709616": {
+    "day": "2026-11-05",
+    "black": 0.0,
+    "grey": 1.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w1032709617": {
+    "day": "2026-11-05",
+    "black": 0.0,
+    "grey": 1.0,
+    "white": 0.0,
+    "mixed": false
+  },
+  "w1032709618": {
+    "day": "2026-11-05",
+    "black": 0.0,
+    "grey": 1.0,
+    "white": 0.0,
+    "mixed": false
   }
 }
