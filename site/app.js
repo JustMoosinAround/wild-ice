@@ -1,11 +1,14 @@
 import { renderWeatherChart } from "./chart.js";
 import { searchLakes } from "./search.js";
 import { renderExplore } from "./views/explore-view.js";
+import { heroSection, timelineSection } from "./views/lake-page.js";
+import { renderMine } from "./views/mine-view.js";
+import { badges } from "./explore.js";
 
 const SKATE_CM = 5; // config.yaml ice.skate_cm: past 2" the thickness doesn't matter
 import {
   GRADES, flushReports, getDevice, inviteCodeFromHash, loadLake, ownerCall, postComment, prepPhoto,
-  queueReport, queuedReports, redeemInvite, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
+  queueReport, queuedReports, redeemInvite, getSaved, setSaved, getSkated, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
 } from "./icelog.js";
 import { TURNSTILE_SITEKEY, WORKER_URL } from "./config.js";
 
@@ -417,8 +420,6 @@ function renderPanel(id, statusText) {
   const s = STYLE[d.label] || STYLE.unknown;
   const panel = $("panel");
   panel.replaceChildren();
-  panel.append(el("button", { class: "close", "aria-label": "Close", text: "×", onclick: closePanel }));
-  panel.append(el("h2", { text: (d.pinned ? "★ " : "") + d.name }));
   const props = (layers.get(id) || {}).feature?.properties || {};
   if (props.area_acres) {
     let size = Math.round(props.area_acres).toLocaleString() + " acres";
@@ -429,10 +430,17 @@ function renderPanel(id, statusText) {
   chip.style.background = s.fill;
   chip.style.borderColor = s.line;
   chip.style.color = ["snow_covered", "unknown"].includes(d.label) ? "#0f172a" : "#fff";
-  panel.append(el("div", {}, chip));
+  panel.prepend(heroSection({ d, photo: photoUrl(d), chip,
+    badges: badges({ id, ...d }, { [id]: props }, { runDate: status.run_date, skated }).filter((b) => !/ ac$/.test(b)),
+    saved: savedIds.has(id), onSave: () => toggleSave(id) }));
+  panel.prepend(el("button", { class: "close", "aria-label": "Close", text: "×", onclick: closePanel }));
+  panel.classList.add("page");
+  const tl = timelineSection(d);
+  if (tl) panel.append(tl);
   panel.append(el("p", { class: "meta", text: d.reason }));
   if (d.warning) panel.append(el("p", { class: "warn", text: d.warning }));
   if (canLog()) panel.append(reportSection(id));
+  if (WORKER_URL) panel.append(iceLogSection(id));
   if (d.thickness_cm != null) {
     panel.append(el("p", { class: "est", text: d.thickness_cm >= SKATE_CM ? "est. 2+ in of ice" : "est. " + d.thickness_cm + " cm" }));
     panel.append(el("p", { class: "disc", text: status.disclaimer || "Rough estimate only — check ice yourself." }));
@@ -471,7 +479,6 @@ function renderPanel(id, statusText) {
   if (typeof d.browser_url === "string" && d.browser_url.startsWith("https://")) {
     panel.append(el("a", { class: "cop", href: d.browser_url, target: "_blank", rel: "noopener", text: "Open in Copernicus Browser" }));
   }
-  if (WORKER_URL) panel.append(iceLogSection(id));
   if (VIEW_ONLY) {
     panel.hidden = false;
     return;
@@ -647,7 +654,29 @@ function propsById() {
 const TABS = ["explore", "map", "mine", "upload"];
 const CHIP_KEY = "wildice.chip";
 let tab = "explore";
-let skated = null; // Set of lake ids this phone's skater has skated (Task 7), or null
+let skated = null; // Set of lake ids this phone's skater has skated, or null (not joined / not loaded)
+let skatedRows = null;
+let savedIds = new Set();
+
+async function loadMine() {
+  const [sv, sk] = await Promise.all([getSaved(ICELOG), getDevice(store) ? getSkated(ICELOG) : Promise.resolve(null)]);
+  savedIds = new Set(sv);
+  skatedRows = sk;
+  skated = sk ? new Set(sk.map((r) => r.lake_id)) : null;
+  renderTab();
+}
+
+async function toggleSave(id) {
+  const on = !savedIds.has(id);
+  on ? savedIds.add(id) : savedIds.delete(id);
+  if (currentId === id) renderPanel(id);
+  const ok = await setSaved(id, on, ICELOG);
+  if (!ok) {
+    on ? savedIds.delete(id) : savedIds.add(id);
+    if (currentId === id) renderPanel(id, "Couldn't save, try again");
+  }
+  if (tab === "mine") renderTab();
+}
 
 function readChip() { try { return store.getItem(CHIP_KEY) || "just_in"; } catch { return "just_in"; } }
 
@@ -664,7 +693,8 @@ function renderTab() {
       openLake: (id) => openLake(id, true), photoUrl,
     });
   } else if (tab === "mine") {
-    $("mine-view").replaceChildren(el("h2", { text: "My lakes" }), el("p", { class: "meta", text: "Saved lakes show here." }));
+    renderMine($("mine-view"), { status, saved: [...savedIds], skated: skatedRows, joined: !!getDevice(store),
+      labelText: (l) => (STYLE[l] || STYLE.unknown).text, openLake: (id) => openLake(id, true) });
   } else if (tab === "upload") {
     $("upload-view").replaceChildren(el("h2", { text: "Upload a track" }), el("p", { class: "meta", text: "Coming soon." }));
   }
@@ -702,6 +732,7 @@ async function setPref(id, action) {
 function openPage(title, ...kids) {
   currentId = null;
   const panel = $("panel");
+  panel.classList.remove("page");
   panel.replaceChildren(
     el("button", { class: "close", "aria-label": "Close", text: "×", onclick: closePanel }),
     el("h2", { text: title }), ...kids);
@@ -886,6 +917,7 @@ async function main() {
       showTab(b.dataset.tab);
     });
     showTab(location.hash.startsWith("#lake=") ? "map" : "explore");
+    loadMine();
   }
   routeHash();
 }

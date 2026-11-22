@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   GRADES, isGoodGrade, getDevice, setDevice, clearDevice, queueReport, queuedReports,
   flushReports, loadLake, postComment, redeemInvite, inviteCodeFromHash, inviteCodeFromText,
-  makeReport, checkDevice, clearLegacy, inviteDecision,
+  makeReport, checkDevice, clearLegacy, inviteDecision, getSaved, setSaved, getSkated,
 } from "../../site/icelog.js";
 
 function memStore() {
@@ -227,4 +227,38 @@ test("inviteDecision protects an already-signed-in phone", () => {
   assert.equal(inviteDecision(null), "join");
   assert.equal(inviteDecision({ role: "friend" }), "confirm");
   assert.equal(inviteDecision({ role: "owner" }), "refuse");
+});
+
+
+test("saved lakes sync through the worker when this phone has joined", async () => {
+  const s = memStore();
+  setDevice(s, { key: "dev", name: "Pat", role: "friend" });
+  const f = fakeFetch((url, init) => [200, init.method === "GET" || !init.method ? { lakes: ["w1"] } : { ok: true }]);
+  assert.deepEqual(await getSaved({ fetch: f, storage: s, base: BASE }), ["w1"]);
+  await setSaved("w2", true, { fetch: f, storage: s, base: BASE });
+  await setSaved("w1", false, { fetch: f, storage: s, base: BASE });
+  assert.equal(f.calls[1].url, `${BASE}/api/saved`);
+  assert.deepEqual(f.calls[1].body, { lake_id: "w2" });
+  assert.equal(f.calls[2].init.method, "DELETE");
+  assert.equal(f.calls[2].url, `${BASE}/api/saved/w1`);
+  assert.equal(f.calls[2].init.headers.Authorization, "Bearer dev");
+});
+
+test("without an invite, saved lakes stay on the phone and nothing is fetched", async () => {
+  const s = memStore();
+  const f = fakeFetch(() => [500, {}]);
+  await setSaved("w2", true, { fetch: f, storage: s, base: BASE });
+  await setSaved("w3", true, { fetch: f, storage: s, base: BASE });
+  await setSaved("w2", false, { fetch: f, storage: s, base: BASE });
+  assert.deepEqual(await getSaved({ fetch: f, storage: s, base: BASE }), ["w3"]);
+  assert.deepEqual(await getSkated({ fetch: f, storage: s, base: BASE }), []);
+  assert.equal(f.calls.length, 0);
+});
+
+test("skated list comes from the worker", async () => {
+  const s = memStore();
+  setDevice(s, { key: "dev", name: "Pat", role: "friend" });
+  const f = fakeFetch(() => [200, { lakes: [{ lake_id: "w1", day: "2026-01-05" }] }]);
+  assert.deepEqual(await getSkated({ fetch: f, storage: s, base: BASE }), [{ lake_id: "w1", day: "2026-01-05" }]);
+  assert.equal(f.calls[0].url, `${BASE}/api/me/skated`);
 });

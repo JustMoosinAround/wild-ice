@@ -232,3 +232,47 @@ export function inviteCodeFromText(text) {
   if (i >= 0) return inviteCodeFromHash(t.slice(i));
   return /^[A-Za-z0-9_-]{8,128}$/.test(t) ? t : null;
 }
+
+// --- My lakes -------------------------------------------------------------------
+// Joined phones keep saved lakes in the worker (synced across their phones); other
+// phones keep them in this browser only. Neither calls the worker without a key.
+const SAVED_KEY = "wildice.saved";
+
+export async function getSaved({ fetch, storage, base }) {
+  const device = getDevice(storage);
+  if (!device) return read(storage, SAVED_KEY, []);
+  try {
+    const res = await call(base, "/api/saved", { fetch, token: device.key });
+    return res.status === 200 ? res.data.lakes || [] : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function setSaved(lakeId, on, { fetch, storage, base }) {
+  const device = getDevice(storage);
+  if (!device) {
+    const cur = read(storage, SAVED_KEY, []).filter((id) => id !== lakeId);
+    write(storage, SAVED_KEY, on ? [...cur, lakeId] : cur);
+    return true;
+  }
+  try {
+    const res = on
+      ? await call(base, "/api/saved", { fetch, method: "POST", body: { lake_id: lakeId }, token: device.key })
+      : await call(base, `/api/saved/${encodeURIComponent(lakeId)}`, { fetch, method: "DELETE", token: device.key });
+    return res.status === 200;
+  } catch {
+    return false;
+  }
+}
+
+export async function getSkated({ fetch, storage, base }) {
+  const device = getDevice(storage);
+  if (!device) return [];
+  try {
+    const res = await call(base, "/api/me/skated", { fetch, token: device.key });
+    return res.status === 200 ? res.data.lakes || [] : [];
+  } catch {
+    return [];
+  }
+}
