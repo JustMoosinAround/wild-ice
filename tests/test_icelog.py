@@ -165,3 +165,11 @@ def test_fetch_export_reads_featured_photos():
     responses.add(responses.GET, f"{URL}/api/export", json={
         "reports": [], "prefs": [], "pending": {"comments": 0, "photos": 0}, "featured": feat})
     assert fetch_export(URL, "tok", SEASON, requests.Session()).featured == feat
+
+
+def test_track_report_is_kept_with_its_minutes():
+    on = row(lat=61.0005, lon=-149.4995, gps_source="device", track_minutes=42)
+    got = reports_from_export([on], LAKES, RUN, SEASON, CFG)
+    assert got["w1"].track_minutes == 42 and got["w1"].verified == "ok"
+    far = row(lat=62.0, lon=-149.0, gps_source="device", track_minutes=42)
+    assert reports_from_export([far], LAKES, RUN, SEASON, CFG) == {}

@@ -87,8 +87,9 @@ def reports_from_export(rows: Iterable[Mapping], lakes: Mapping[str, Lake], run_
                 verified = "no_gps"
             elif lake.interior is not None and _distance_m(lake, lat, lon) > cfg.icelog.max_gps_m:
                 continue  # wrong lake
+        tm = row.get("track_minutes")
         report = Report(day, rating, str(row.get("note") or ""), grade=grade, source=source,
-                        verified=verified)
+                        verified=verified, track_minutes=int(tm) if isinstance(tm, int) else None)
         kept[lake.id].append((day, str(row.get("created_at") or ""), report))
     out: dict[str, Report] = {}
     week_start = run_date - timedelta(days=6)
@@ -98,7 +99,7 @@ def reports_from_export(rows: Iterable[Mapping], lakes: Mapping[str, Lake], run_
         newest = items[-1][2]
         out[lake_id] = Report(newest.day, newest.rating, newest.note, grade=newest.grade,
                               source=newest.source, verified=newest.verified,
-                              week_count=max(1, week))
+                              week_count=max(1, week), track_minutes=newest.track_minutes)
     return out
 
 

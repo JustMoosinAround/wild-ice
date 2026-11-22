@@ -43,6 +43,7 @@ class Report:
     source: str = "owner"      # "owner" or "friend" (friends' notes are never shown publicly)
     verified: str = "ok"       # "ok" or "no_gps" (friend report without a location)
     week_count: int = 1        # reports on this lake in the last 7 days
+    track_minutes: int | None = None  # from an uploaded GPX/FIT track
 
 
 def good_grade(grade: str, minimum: str) -> bool:
