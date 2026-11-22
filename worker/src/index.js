@@ -6,6 +6,7 @@ import { postComment } from "./comments.js";
 import { getLake } from "./lakes.js";
 import { getReview, postPref, reviewComment, reviewPhoto, reviewReport } from "./review.js";
 import { scheduled } from "./cron.js";
+import { deleteSaved, getSaved, getSkated, postSaved } from "./saved.js";
 
 const ROUTES = [
   ["POST", /^\/api\/bootstrap$/, bootstrap],
@@ -23,6 +24,10 @@ const ROUTES = [
   ["POST", /^\/api\/review\/photos\/([\w-]+)$/, reviewPhoto],
   ["POST", /^\/api\/review\/reports\/([\w-]+)$/, reviewReport],
   ["POST", /^\/api\/prefs$/, postPref],
+  ["GET", /^\/api\/saved$/, getSaved],
+  ["POST", /^\/api\/saved$/, postSaved],
+  ["DELETE", /^\/api\/saved\/([\w-]+)$/, deleteSaved],
+  ["GET", /^\/api\/me\/skated$/, getSkated],
 ];
 
 async function route(request, env, ctx) {

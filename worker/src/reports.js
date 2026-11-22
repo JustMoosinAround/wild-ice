@@ -52,9 +52,16 @@ export function validateReport(body, today = alaskaDay()) {
   if (note.length > MAX_NOTE) bad(`Note is over ${MAX_NOTE} characters`);
   const day = body.day == null ? today : body.day;
   if (typeof day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(Date.parse(day))) bad("Bad day");
+  let trackMinutes = null;
+  if (body.track_minutes != null) {
+    trackMinutes = body.track_minutes;
+    if (!Number.isInteger(trackMinutes) || trackMinutes < 10 || trackMinutes > 1440) bad("Bad track time");
+    if (body.gps == null) bad("A track report needs a location");
+  }
   const age = daysBetween(day, today);
   if (age < 0) bad("That day hasn't happened yet");
-  if (age > MAX_AGE_DAYS) bad(`Reports must be from the last ${MAX_AGE_DAYS} days`);
+  // An uploaded track proves the day, so old trips (history) are allowed.
+  if (age > MAX_AGE_DAYS && trackMinutes === null) bad(`Reports must be from the last ${MAX_AGE_DAYS} days`);
   let gps = null;
   if (body.gps != null) {
     const { lat, lon, source } = body.gps;
@@ -64,7 +71,7 @@ export function validateReport(body, today = alaskaDay()) {
     gps = { lat, lon, source };
   }
   const photo = body.photo == null ? null : decodePhoto(body.photo);
-  return { idem, lake_id: body.lake_id, rating: body.rating, grade, note, day, gps, photo };
+  return { idem, lake_id: body.lake_id, rating: body.rating, grade, note, day, gps, photo, trackMinutes };
 }
 
 export async function postReport(env, request) {
@@ -90,10 +97,10 @@ export async function postReport(env, request) {
   try {
     await env.DB.prepare(
       `INSERT INTO reports (id, idem_key, friend_id, lake_id, day, created_at, rating, grade, note,
-                            lat, lon, gps_source, photo_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                            lat, lon, gps_source, photo_id, track_minutes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(id, r.idem, who.id, r.lake_id, r.day, now(), r.rating, r.grade, r.note,
-      r.gps?.lat ?? null, r.gps?.lon ?? null, r.gps?.source ?? null, photoId).run();
+      r.gps?.lat ?? null, r.gps?.lon ?? null, r.gps?.source ?? null, photoId, r.trackMinutes).run();
   } catch (err) {
     // A simultaneous resend won the UNIQUE(idem_key) race: answer with its id.
     const row = await env.DB.prepare("SELECT id FROM reports WHERE idem_key = ?").bind(r.idem).first();
@@ -120,7 +127,7 @@ export async function getPhoto(env, request, publicId) {
 export async function exportReports(env, since) {
   const { results } = await env.DB.prepare(
     `SELECT r.id, r.lake_id, r.day, r.created_at, r.rating, r.grade, r.note, r.lat, r.lon,
-            r.gps_source, f.role
+            r.gps_source, r.track_minutes, f.role
      FROM reports r JOIN friends f ON f.id = r.friend_id
      WHERE r.day >= ? ORDER BY r.created_at`,
   ).bind(since).all();
@@ -135,5 +142,8 @@ export async function getExport(env, request) {
     reports: await exportReports(env, since),
     prefs: await exportPrefs(env),
     pending: await pendingCounts(env),
+    featured: (await env.DB.prepare(
+      `SELECT lake_id, public_id, COALESCE(decided_at, created_at) AS created_at
+       FROM photos WHERE status = 'featured' ORDER BY created_at`).all()).results,
   });
 }
