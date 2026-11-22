@@ -1,6 +1,6 @@
 import { renderWeatherChart } from "./chart.js";
 import { searchLakes } from "./search.js";
-import { skateableLakes } from "./skatelist.js";
+import { skateableLakes, skateMeta } from "./skatelist.js";
 import {
   GRADES, flushReports, getDevice, inviteCodeFromHash, loadLake, ownerCall, postComment, prepPhoto,
   queueReport, queuedReports, redeemInvite, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
@@ -427,7 +427,7 @@ function renderPanel(id, statusText) {
   chip.style.background = s.fill;
   chip.style.borderColor = s.line;
   chip.style.color = ["snow_covered", "unknown"].includes(d.label) ? "#0f172a" : "#fff";
-  panel.append(el("div", {}, chip, el("span", { class: "meta", text: "  " + d.confidence + " confidence" })));
+  panel.append(el("div", {}, chip));
   panel.append(el("p", { class: "meta", text: d.reason }));
   if (d.warning) panel.append(el("p", { class: "warn", text: d.warning }));
   if (canLog()) panel.append(reportSection(id));
@@ -634,32 +634,31 @@ function routeHash() {
   if (info(id)) openLake(id, true);
 }
 
-function areaById() {
+function propsById() {
   const out = {};
-  for (const f of features) out[f.properties.id] = f.properties.area_acres;
+  for (const f of features) out[f.properties.id] = f.properties;
   return out;
 }
 
 // Every lake that looks skateable today, best first; tap one to open it.
 function showSkateable() {
-  const list = skateableLakes(status.lakes, areaById());
+  const list = skateableLakes(status.lakes, propsById());
   const items = el("ol", { class: "skate-list" });
   for (const d of list) {
     const s = STYLE[d.label] || STYLE.unknown;
     const sw = el("i", { class: "sw" });
     sw.style.background = s.fill;
     sw.style.borderColor = s.line;
-    const est = d.thickness_cm != null ? `~${d.thickness_cm} cm · ` : "";
     items.append(el("li", {}, el("button", { type: "button", class: "skate-row", onclick: () => openLake(d.id, true) },
       sw, el("span", { class: "nm" }, el("b", { text: (d.pinned ? "★ " : "") + d.name }),
-        el("span", { class: "meta", text: est + s.text + " · " + d.confidence + " confidence" })))));
+        el("span", { class: "meta", text: skateMeta(d, s.text) })))));
   }
   openPage(list.length ? `Skateable today (${list.length})` : "Nothing looks skateable today",
     el("p", { class: "disc", text: status.disclaimer || "Rough estimate only — check ice yourself." }), items);
 }
 
 function addSkateButton() {
-  const n = skateableLakes(status.lakes, areaById()).length;
+  const n = skateableLakes(status.lakes, propsById()).length;
   if (!n) return;
   $("bar").append(el("a", { class: "review-link", href: "#skateable", text: `Skateable (${n})` }));
 }
