@@ -10,6 +10,7 @@ const GRADED = new Set(["skated", "rough"]);
 const MAX_PHOTO_BYTES = 1.5 * 1024 * 1024;
 const MAX_NOTE = 300;
 const MAX_AGE_DAYS = 14;
+const MAX_TRACK_AGE_DAYS = 3653; // ~10 years of history from a Strava export
 
 export function alaskaDay(date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -62,6 +63,7 @@ export function validateReport(body, today = alaskaDay()) {
   if (age < 0) bad("That day hasn't happened yet");
   // An uploaded track proves the day, so old trips (history) are allowed.
   if (age > MAX_AGE_DAYS && trackMinutes === null) bad(`Reports must be from the last ${MAX_AGE_DAYS} days`);
+  if (age > MAX_TRACK_AGE_DAYS) bad("Tracks must be from the last 10 years");
   let gps = null;
   if (body.gps != null) {
     const { lat, lon, source } = body.gps;

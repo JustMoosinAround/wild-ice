@@ -60,6 +60,8 @@ describe("track reports", () => {
     expect((await call("POST", "/api/reports", { body: report({ track_minutes: 42 }), token: fk })).status).toBe(400);
     const r = await call("POST", "/api/reports", { body: report({ track_minutes: 42, gps, day: "2024-01-25" }), token: fk });
     expect(r.status).toBe(200);
+    // but not older than 10 years
+    expect((await call("POST", "/api/reports", { body: report({ track_minutes: 42, gps, day: "2015-01-25" }), token: fk })).status).toBe(400);
     // a plain report still can't be that old
     expect((await call("POST", "/api/reports", { body: report({ day: "2024-01-25" }), token: fk })).status).toBe(400);
     const rows = (await exportBody()).reports;

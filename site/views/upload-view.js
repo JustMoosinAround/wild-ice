@@ -52,11 +52,14 @@ function fileCard(file, opts) {
       return;
     }
     let pick = matches[0], rating = "skated", grade = null;
-    const pickers = matches.length > 1 ? el("div", { class: "row" }, ...matches.map((m) => {
-      const b = el("button", { type: "button", class: "act" + (m === pick ? " sel" : ""),
-        text: `${m.name || m.lakeId} · ${m.minutes} min`, onclick: () => { pick = m; redraw(); } });
-      return b;
-    })) : null;
+    const posted = [];
+    let pickers = null;
+    function makePickers() {
+      pickers = matches.length > 1 ? el("div", { class: "row" }, ...matches.map((m) => el("button", {
+        type: "button", class: "act", text: `${m.name || m.lakeId} · ${m.minutes} min`,
+        onclick: () => { pick = m; redraw(); } }))) : null;
+    }
+    makePickers();
     const gradeSel = el("select", { "aria-label": "Ice grade", class: "grade-sel" },
       el("option", { value: "", text: "Grade (optional)" }), ...GRADES.map((g) => el("option", { value: g, text: g })));
     gradeSel.addEventListener("change", () => { grade = gradeSel.value || null; });
@@ -67,12 +70,23 @@ function fileCard(file, opts) {
         class: "act" + (r === rating ? " sel" : ""), text: t, onclick: () => { rating = r; redraw(); } })));
     const send = el("button", { type: "button", class: "act on", text: "Post report", onclick: () => {
       opts.queue(makeReport({ lakeId: pick.lakeId, rating, grade, note: note.value, day: pick.day,
-        trackMinutes: pick.minutes, point: pick.point }));
+        trackMinutes: pick.minutes, point: pick.point, storage: opts.storage }));
+      posted.push(`${pick.name || pick.lakeId}, ${shortDate(pick.day)}, ${pick.minutes} min`);
+      // A track over several lakes: offer the others next.
+      matches = matches.filter((m) => m !== pick);
+      if (matches.length) {
+        pick = matches[0];
+        note.value = "";
+        makePickers();
+        redraw();
+        return;
+      }
       card.replaceChildren(el("b", { text: file.name }),
-        el("p", { class: "meta", text: `Posted: ${pick.name || pick.lakeId}, ${shortDate(pick.day)}, ${pick.minutes} min.` }));
+        ...posted.map((t) => el("p", { class: "meta", text: `Posted: ${t}.` })));
     } });
     function redraw() {
-      card.replaceChildren(el("b", { text: `${pick.name || pick.lakeId}` }),
+      card.replaceChildren(...posted.map((t) => el("p", { class: "meta", text: `Posted: ${t}.` })),
+        el("b", { text: `${pick.name || pick.lakeId}` }),
         el("p", { class: "meta", text: `${shortDate(pick.day)} ${pick.day.slice(0, 4)} · ${pick.minutes} min on the ice · ${file.name}` }),
         pickers, ratings, gradeSel, note, send, msg);
       if (pickers) [...pickers.children].forEach((b, i) => b.classList.toggle("sel", matches[i] === pick));

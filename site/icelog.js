@@ -32,7 +32,9 @@ export function queuedReports(storage) { return read(storage, QUEUE_KEY, []); }
 // Add a report to the send queue. Its idem_key lets the worker save a resend once.
 export function queueReport(storage, report) {
   const q = queuedReports(storage);
-  q.push({ ...report, idem_key: crypto.randomUUID() });
+  const idem = report.idem_key || crypto.randomUUID();
+  if (q.some((r) => r.idem_key === idem)) return; // the same track file again
+  q.push({ ...report, idem_key: idem });
   let photos = q.filter((r) => r.photo).length;
   for (const r of q) {
     if (photos <= MAX_QUEUED_PHOTOS) break;
@@ -117,7 +119,14 @@ async function sendAll({ fetch, storage, base }) {
 }
 
 // The report to queue: keeps the day it was logged (it may be sent days later).
-export function makeReport({ lakeId, rating, grade, note, photo, gps, day, trackMinutes, point }) {
+// A per-phone random tag, so two skaters' identical track reports don't share a key.
+function phoneSalt(storage) {
+  let salt = read(storage, "wildice.salt", null);
+  if (!salt) { salt = crypto.randomUUID().slice(0, 8); write(storage, "wildice.salt", salt); }
+  return salt;
+}
+
+export function makeReport({ lakeId, rating, grade, note, photo, gps, day, trackMinutes, point, storage }) {
   const r = { lake_id: lakeId, rating };
   if (grade && (rating === "skated" || rating === "rough")) r.grade = grade;
   const n = (note || "").trim().slice(0, 300);
@@ -126,7 +135,11 @@ export function makeReport({ lakeId, rating, grade, note, photo, gps, day, track
   // A track's point on the lake beats a photo's GPS; both beat the phone's location.
   const where = point ? { lat: point.lat, lon: point.lon, source: "device" }
     : photo && photo.gps ? { ...photo.gps, source: "photo" } : gps;
-  if (trackMinutes) r.track_minutes = Math.round(trackMinutes);
+  if (trackMinutes) {
+    r.track_minutes = Math.round(trackMinutes);
+    // Same file uploaded twice = same report: the worker saves a key once.
+    r.idem_key = `trk-${storage ? phoneSalt(storage) : "x"}-${lakeId}-${day}-${r.track_minutes}`;
+  }
   if (where) r.gps = where;
   r.day = day;
   return r;
@@ -241,15 +254,28 @@ export function inviteCodeFromText(text) {
 // phones keep them in this browser only. Neither calls the worker without a key.
 const SAVED_KEY = "wildice.saved";
 
+const SAVED_CACHE = "wildice.saved.cache";
+
 export async function getSaved({ fetch, storage, base }) {
   const device = getDevice(storage);
-  if (!device) return read(storage, SAVED_KEY, []);
+  const local = read(storage, SAVED_KEY, []);
+  if (!device) return local;
+  // Lakes saved on this phone before joining move to the worker once.
+  if (local.length) {
+    const sent = [];
+    for (const id of local) if (await setSaved(id, true, { fetch, storage, base })) sent.push(id);
+    write(storage, SAVED_KEY, local.filter((id) => !sent.includes(id)));
+  }
   try {
     const res = await call(base, "/api/saved", { fetch, token: device.key });
-    return res.status === 200 ? res.data.lakes || [] : [];
-  } catch {
-    return [];
-  }
+    if (res.status === 200) {
+      const lakes = res.data.lakes || [];
+      write(storage, SAVED_CACHE, lakes);
+      return lakes;
+    }
+  } catch { /* offline: fall through to the last good list */ }
+  const cached = read(storage, SAVED_CACHE, []);
+  return [...cached, ...read(storage, SAVED_KEY, []).filter((id) => !cached.includes(id))];
 }
 
 export async function setSaved(lakeId, on, { fetch, storage, base }) {
@@ -263,6 +289,10 @@ export async function setSaved(lakeId, on, { fetch, storage, base }) {
     const res = on
       ? await call(base, "/api/saved", { fetch, method: "POST", body: { lake_id: lakeId }, token: device.key })
       : await call(base, `/api/saved/${encodeURIComponent(lakeId)}`, { fetch, method: "DELETE", token: device.key });
+    if (res.status === 200) {
+      const cached = read(storage, SAVED_CACHE, []).filter((id) => id !== lakeId);
+      write(storage, SAVED_CACHE, on ? [...cached, lakeId] : cached);
+    }
     return res.status === 200;
   } catch {
     return false;

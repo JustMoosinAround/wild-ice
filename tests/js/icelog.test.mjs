@@ -270,3 +270,36 @@ test("a report from a track carries its minutes and the lake point", () => {
   assert.deepEqual(r.gps, { lat: 60.42, lon: -150.3, source: "device" });
   assert.equal(r.day, "2025-02-08");
 });
+
+test("a track report has a stable key, so uploading the same file twice queues it once", () => {
+  const s = memStore();
+  setDevice(s, { key: "dev", name: "Pat", role: "friend" });
+  const a = makeReport({ lakeId: "w1", rating: "skated", day: "2025-02-08", trackMinutes: 42, point: { lat: 1, lon: 2 }, storage: s });
+  const b = makeReport({ lakeId: "w1", rating: "skated", day: "2025-02-08", trackMinutes: 42, point: { lat: 1, lon: 2 }, storage: s });
+  assert.ok(a.idem_key && a.idem_key === b.idem_key && a.idem_key.length <= 64);
+  queueReport(s, a);
+  queueReport(s, b);
+  assert.equal(queuedReports(s).length, 1);
+  assert.equal(queuedReports(s)[0].idem_key, a.idem_key);
+});
+
+test("lakes saved before joining move to the worker on the first sync", async () => {
+  const s = memStore();
+  const none = fakeFetch(() => [500, {}]);
+  await setSaved("w7", true, { fetch: none, storage: s, base: BASE });
+  setDevice(s, { key: "dev", name: "Pat", role: "friend" });
+  const f = fakeFetch((url, init) => [200, init.method === "POST" ? { ok: true } : { lakes: ["w1", "w7"] }]);
+  assert.deepEqual(await getSaved({ fetch: f, storage: s, base: BASE }), ["w1", "w7"]);
+  assert.deepEqual(f.calls.filter((c) => c.init.method === "POST").map((c) => c.body), [{ lake_id: "w7" }]);
+  const g = fakeFetch(() => [200, { lakes: ["w1", "w7"] }]);
+  await getSaved({ fetch: g, storage: s, base: BASE });
+  assert.equal(g.calls.filter((c) => c.init.method === "POST").length, 0);
+});
+
+test("offline, a member still sees the last saved list", async () => {
+  const s = memStore();
+  setDevice(s, { key: "dev", name: "Pat", role: "friend" });
+  await getSaved({ fetch: fakeFetch(() => [200, { lakes: ["w1"] }]), storage: s, base: BASE });
+  const down = async () => { throw new TypeError("Failed to fetch"); };
+  assert.deepEqual(await getSaved({ fetch: down, storage: s, base: BASE }), ["w1"]);
+});

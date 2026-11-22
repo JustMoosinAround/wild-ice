@@ -18,8 +18,9 @@ export function heroSection(opts) {
   const { d } = opts;
   const img = opts.photo ? el("img", { class: "hero-photo", src: opts.photo, alt: d.name, loading: "lazy" }) : null;
   if (img) img.addEventListener("error", () => img.remove(), { once: true });
-  const save = el("button", { type: "button", class: "save" + (opts.saved ? " on" : ""),
-    "aria-pressed": String(!!opts.saved), text: opts.saved ? "♥ Saved" : "♡ Save", onclick: opts.onSave });
+  // No onSave (the view-only embed): no Save button.
+  const save = opts.onSave ? el("button", { type: "button", class: "save" + (opts.saved ? " on" : ""),
+    "aria-pressed": String(!!opts.saved), text: opts.saved ? "♥ Saved" : "♡ Save", onclick: opts.onSave }) : null;
   return el("div", { class: "hero" }, img,
     el("div", { class: "hero-head" }, el("h2", { text: (d.pinned ? "★ " : "") + d.name }), save),
     el("div", { class: "hero-chips" }, opts.chip, ...opts.badges.map((b) => el("span", { class: "badge", text: b }))));

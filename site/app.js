@@ -433,7 +433,7 @@ function renderPanel(id, statusText) {
   chip.style.color = ["snow_covered", "unknown"].includes(d.label) ? "#0f172a" : "#fff";
   panel.prepend(heroSection({ d, photo: photoUrl(d), chip,
     badges: badges({ id, ...d }, { [id]: props }, { runDate: status.run_date, skated }).filter((b) => !/ ac$/.test(b)),
-    saved: savedIds.has(id), onSave: () => toggleSave(id) }));
+    saved: savedIds.has(id), onSave: VIEW_ONLY ? null : () => toggleSave(id) }));
   panel.prepend(el("button", { class: "close", "aria-label": "Close", text: "×", onclick: closePanel }));
   panel.classList.add("page");
   const tl = timelineSection(d);
@@ -664,14 +664,26 @@ async function loadMine() {
   renderTab();
 }
 
+// Flip just the Save button: re-rendering the page would reload Field Notes and lose
+// the scroll position.
+function paintSave(id) {
+  const b = currentId === id ? $("panel").querySelector("button.save") : null;
+  if (!b) return;
+  const on = savedIds.has(id);
+  b.classList.toggle("on", on);
+  b.setAttribute("aria-pressed", String(on));
+  b.textContent = on ? "♥ Saved" : "♡ Save";
+}
+
 async function toggleSave(id) {
   const on = !savedIds.has(id);
   on ? savedIds.add(id) : savedIds.delete(id);
-  if (currentId === id) renderPanel(id);
+  paintSave(id);
   const ok = await setSaved(id, on, ICELOG);
   if (!ok) {
     on ? savedIds.delete(id) : savedIds.add(id);
-    if (currentId === id) renderPanel(id, "Couldn't save, try again");
+    paintSave(id);
+    showMsg("Couldn't save, try again");
   }
   if (tab === "mine") renderTab();
 }
@@ -697,7 +709,7 @@ function renderTab() {
     renderMine($("mine-view"), { status, saved: [...savedIds], skated: skatedRows, joined: !!getDevice(store),
       labelText: (l) => (STYLE[l] || STYLE.unknown).text, openLake: (id) => openLake(id, true) });
   } else if (tab === "upload") {
-    renderUpload($("upload-view"), { joined: canLog(), features,
+    renderUpload($("upload-view"), { joined: canLog(), features, storage: store,
       queue: (r) => { queueReport(store, r); sendQueue(); setTimeout(loadMine, 4000); },
       onJoin: () => { showTab("explore"); showMsg("Open any lake and use \"Have an invite? Join Wild Ice\" at the bottom."); } });
   }

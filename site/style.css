@@ -204,3 +204,9 @@ button.save.on { background: #fee2e2; border-color: #dc2626; color: #991b1b; }
 .upload-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #f8fafc; }
 .upload-card .row { margin: 0; }
 .upload-card input[type=text], .grade-sel { width: 100%; min-height: 44px; font-size: 16px; padding: 6px 10px; border: 1px solid #94a3b8; border-radius: 8px; background: var(--bg); color: var(--fg); }
+
+/* wide screens: the lake page is a side sheet, the map stays visible */
+@media (min-width: 900px) {
+  #panel.page { left: auto; right: 12px; width: 440px; top: auto; border-radius: 14px; }
+  .hero { margin-left: calc(-1 * var(--gutter)); margin-right: calc(-1 * var(--gutter)); }
+}
