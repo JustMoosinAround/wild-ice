@@ -601,14 +601,14 @@ function addKey() {
       try { store.setItem(KEY_OPEN, box.open ? "1" : "0"); } catch { /* storage blocked */ }
     });
     box.append(el("summary", { text: "Key" }));
-    for (const [label, desc] of KEY) {
+    for (const [label] of KEY) {
       const s = STYLE[label];
       const sw = el("i", { class: "sw" });
       sw.style.background = s.fill;
       sw.style.borderColor = s.line;
       if (label === "likely_black_ice") sw.style.borderWidth = "3px";
       const row = el("div", { class: "key-row" });
-      row.append(sw, el("span", {}, el("b", { text: s.text }), el("br"), desc));
+      row.append(sw, el("b", { text: s.text })); // names only; the glossary explains each
       box.append(row);
     }
     if (!VIEW_ONLY) {

@@ -72,10 +72,10 @@ button.act.rep { display: flex; align-items: center; justify-content: center; ga
 .key summary::-webkit-details-marker { display: none; }
 .key summary::before { content: "▸"; font-size: 12px; color: var(--muted); }
 .key[open] summary::before { content: "▾"; }
-.key-row { display: flex; align-items: flex-start; gap: 8px; margin: 6px 0; }
+.key-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 14px; }
 .key-row span { color: var(--muted); }
 .key-row b { color: var(--fg); }
-.key .sw { flex: none; width: 20px; height: 14px; margin-top: 2px; border: 1.5px solid; border-radius: 3px; }
+.key .sw { flex: none; width: 20px; height: 14px; border: 1.5px solid; border-radius: 3px; }
 .key .star { flex: none; width: 20px; text-align: center; font-style: normal; font-size: 18px; line-height: 18px; }
 
 /* weather chart */
