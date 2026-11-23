@@ -1,5 +1,5 @@
 // Wild Ice "Ice Log" worker: routing only. See docs/superpowers/specs/2026-11-20-ice-log-design.md.
-import { bootstrap, invite, me, redeem, revoke } from "./auth.js";
+import { bootstrap, invite, join, me, redeem, revoke } from "./auth.js";
 import { HttpError, json, preflight, withCors } from "./http.js";
 import { getExport, getPhoto, postReport } from "./reports.js";
 import { postComment } from "./comments.js";
@@ -13,6 +13,7 @@ import { deleteMe, deleteMyDevice, deleteReport, getAvatar, myDevices, myExport,
 const ROUTES = [
   ["POST", /^\/api\/bootstrap$/, bootstrap],
   ["POST", /^\/api\/invites\/redeem$/, redeem],
+  ["POST", /^\/api\/join$/, join],
   ["GET", /^\/api\/me$/, me],
   ["POST", /^\/api\/invites$/, invite],
   ["POST", /^\/api\/friends\/([\w-]+)\/revoke$/, revoke],

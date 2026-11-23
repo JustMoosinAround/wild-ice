@@ -1,6 +1,7 @@
 // Invites, device keys, roles and the service token. Only SHA-256 hashes are stored.
 import { HttpError, json, now, readJson } from "./http.js";
 import { phoneLabel } from "./account.js";
+import { verifyTurnstile } from "./comments.js";
 
 export async function hash(text) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -146,4 +147,27 @@ export async function revoke(env, request, friendId) {
   ).bind(now(), friendId).run();
   if (r.meta.changes !== 1) throw new HttpError(404, "No such friend");
   return json({ ok: true });
+}
+
+// Open sign-up: a name and a Turnstile check, no invite. At most JOINS_PER_DAY new
+// accounts a day from one connection. The owner can switch any account off in Review.
+const JOINS_PER_DAY = 3;
+export async function join(env, request) {
+  const body = await readJson(request);
+  const name = cleanName(body.name, "");
+  if (!name) throw new HttpError(400, "Add your name");
+  const ip = request.headers.get("CF-Connecting-IP") || "";
+  const joinHash = await hash(`join:${ip}`);
+  const since = new Date(Date.now() - 86400e3).toISOString();
+  const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM friends WHERE join_hash = ? AND created_at > ?")
+    .bind(joinHash, since).first("n");
+  if (n >= JOINS_PER_DAY) throw new HttpError(429, "Too many sign-ups from here today, try again tomorrow");
+  if (!(await verifyTurnstile(env, body.turnstile_token, ip))) throw new HttpError(403, "Please complete the check and try again");
+  const friendId = crypto.randomUUID();
+  await env.DB.prepare("INSERT INTO friends (id, name, role, created_at, join_hash) VALUES (?, ?, 'friend', ?, ?)")
+    .bind(friendId, name, now(), joinHash).run();
+  const key = newToken();
+  await env.DB.prepare("INSERT INTO devices (key_hash, friend_id, created_at, label) VALUES (?, ?, ?, ?)")
+    .bind(await hash(key), friendId, now(), phoneLabel(request.headers.get("User-Agent"))).run();
+  return json({ device_key: key, name, role: "friend" });
 }

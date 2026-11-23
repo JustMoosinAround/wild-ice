@@ -27,7 +27,7 @@ export function renderMine(mount, opts) {
     : el("p", { class: "meta", text: "Tap ♡ Save on a lake to keep it here." }));
   kids.push(el("h3", { text: "Skated" }));
   if (!opts.joined) {
-    kids.push(el("p", { class: "meta", text: "Join with an invite to sync saved lakes across your phones and keep a list of lakes you've skated." }));
+    kids.push(el("p", { class: "meta", text: "Join Wild Ice (free, just your name) to sync saved lakes across your phones and keep a list of lakes you've skated." }));
   } else {
     const sk = (opts.skated || []).map((s) => row(s.lake_id, () => `Last skated ${shortDate(s.day)}`)).filter(Boolean);
     kids.push(sk.length ? el("ol", { class: "skate-list" }, ...sk)

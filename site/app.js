@@ -12,7 +12,7 @@ import { ACCESS, DISTANCES, LABELS, SIZES, SKATE, activeCount, clean, defaults, 
 const SKATE_CM = 5; // config.yaml ice.skate_cm: past 2" the thickness doesn't matter
 import {
   GRADES, flushReports, getDevice, inviteCodeFromHash, loadLake, ownerCall, postComment, prepPhoto,
-  queueReport, queuedReports, redeemInvite, getSaved, setSaved, getSkated, account, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
+  queueReport, queuedReports, redeemInvite, joinOpen, getSaved, setSaved, getSkated, account, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
 } from "./icelog.js";
 import { TURNSTILE_SITEKEY, WORKER_URL } from "./config.js";
 
@@ -467,7 +467,7 @@ function iceLogSection(id) {
   const photos = el("div", { class: "featured" });
   const list = el("ol", { class: "comments" });
   box.append(photos, list, commentForm(id, list));
-  if (!VIEW_ONLY && WORKER_URL && !getDevice(store)) box.append(pasteInvite());
+  if (!VIEW_ONLY && WORKER_URL && !getDevice(store)) box.append(joinPrompt("Join Wild Ice to post ice reports and photos"));
   loadLake(id, ICELOG).then(({ comments, photos: ph }) => {
     if (!box.isConnected) return;
     for (const p of ph || []) {
@@ -485,6 +485,49 @@ function iceLogSection(id) {
   return box;
 }
 
+// A button that opens the sign-up page.
+function joinPrompt(text) {
+  return el("div", { class: "join-prompt" }, el("p", { class: "meta", text }),
+    el("a", { class: "act join-btn", href: "#join", text: "Join Wild Ice" }));
+}
+
+// Sign-up: just a name and a quick bot check.
+function showJoin() {
+  if (!WORKER_URL) { showMsg("Sign-up isn't set up yet."); return; }
+  if (getDevice(store)) { location.hash = "#account"; return; }
+  const name = el("input", { type: "text", maxlength: "40", placeholder: "Your name", "aria-label": "Your name", autocomplete: "name" });
+  const human = el("div", { class: "turnstile" });
+  const msg = el("p", { class: "status" });
+  let token = null;
+  const form = el("form", { class: "comment-form" },
+    el("p", { text: "Post ice reports, photos, trip reports and comments, save lakes and keep a list of the lakes you've skated. Free, no email." }),
+    name, human,
+    el("p", { class: "disc", text: "Ice conditions on Wild Ice are estimates from satellites, weather and other skaters' reports. They can be wrong or out of date, so check the ice yourself before you go out." }),
+    el("button", { class: "act", type: "submit", text: "Join" }), msg);
+  if (TURNSTILE_SITEKEY) {
+    loadScript("https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit").then(() => {
+      if (window.turnstile && human.isConnected) {
+        window.turnstile.render(human, { sitekey: TURNSTILE_SITEKEY, callback: (t) => { token = t; } });
+      }
+    }).catch(() => { msg.textContent = "Couldn't load the check; try again later."; });
+  }
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!name.value.trim()) { msg.textContent = "Add your name"; name.focus(); return; }
+    msg.textContent = "Joining…";
+    const r = await joinOpen(name.value.trim(), token, ICELOG);
+    if (!r.ok) {
+      msg.textContent = r.error;
+      if (window.turnstile) { window.turnstile.reset(human); token = null; }
+      return;
+    }
+    savedIds = new Set(); markSaved(); loadMine(); paintMe();
+    openPage("You're in", el("p", { text: `Welcome, ${r.name}. Tap a lake to log the ice, or upload a track from your watch.` }));
+  });
+  openPage("Join Wild Ice", form, pasteInvite());
+  name.focus();
+}
+
 // "Have an invite?": paste the link here when the app can't open it (home-screen app).
 function pasteInvite() {
   const input = el("input", { type: "text", placeholder: "Paste your invite link", "aria-label": "Invite link", autocomplete: "off" });
@@ -497,7 +540,7 @@ function pasteInvite() {
     input.value = "";
     showInvite(code);
   });
-  return el("details", { class: "invite-paste" }, el("summary", { text: "Have an invite? Join Wild Ice" }), form);
+  return el("details", { class: "invite-paste" }, el("summary", { text: "Adding another phone? Paste its link" }), form);
 }
 
 function commentForm(id, list) {
@@ -759,6 +802,7 @@ function routeHash() {
   if (location.hash === "#review") { showReview(); return; }
   if (location.hash === "#glossary") { showGlossary(); return; }
   if (location.hash === "#account") { showAccount(); return; }
+  if (location.hash === "#join") { showJoin(); return; }
   if (location.hash === "#skateable") { showTab("explore"); return; }
   const t = location.hash.match(/^#tab=(\w+)$/);
   if (t) { closePanel(); showTab(t[1]); return; }
@@ -845,7 +889,7 @@ function renderTab() {
   } else if (tab === "upload") {
     renderUpload($("upload-view"), { joined: canLog(), features, storage: store,
       queue: (r) => { queueReport(store, r); sendQueue(); setTimeout(loadMine, 4000); },
-      onJoin: () => { location.hash = "#account"; } });
+      onJoin: () => { location.hash = "#join"; } });
   }
 }
 
@@ -884,7 +928,7 @@ function showAccount() {
   const body = el("div");
   page.lastChild.replaceWith(body);
   renderAccount(body, {
-    ICELOG, lakeName: (id) => info(id)?.name || id, joinSection: pasteInvite(),
+    ICELOG, lakeName: (id) => info(id)?.name || id, joinSection: joinPrompt("Join to post reports, comments and photos."),
     openLake: (id) => openLake(id, true),
     onChanged: () => paintMe(),
     onSignedOut: () => { savedIds = new Set(); skated = null; markSaved(); paintMe(); closePanel(); showMsg("Signed out on this phone."); renderTab(); },
@@ -1065,9 +1109,11 @@ async function main() {
     // A strip under the host site's header pointing to the full app (opens outside the embed).
     const app = location.origin + location.pathname;
     $("bar").before(el("div", { id: "promo" },
-      el("div", { class: "promo-text" }, el("b", { text: "Wild Ice" }),
-        el("span", { text: "Join the community: add observations and trip reports." })),
-      el("a", { class: "act promo-btn", href: app, target: "_blank", rel: "noopener", text: "Get the app" })));
+      el("a", { class: "promo-brand", href: app, target: "_blank", rel: "noopener" },
+        el("img", { src: "icons/icon-192.png", alt: "", width: "44", height: "44" }),
+        el("span", { class: "promo-text" }, el("b", { text: "Wild Ice" }),
+          el("span", { text: "Join the community. Add observations and trip reports." }))),
+      el("a", { class: "promo-btn", href: app + "#join", target: "_blank", rel: "noopener", text: "Get the app" })));
   } else {
     window.addEventListener("pagehide", commitReport); // don't lose a report in its undo window
   if (isOwner()) {

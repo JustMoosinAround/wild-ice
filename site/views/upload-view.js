@@ -19,8 +19,8 @@ function el(tag, props = {}, ...kids) {
 export function renderUpload(mount, opts) {
   if (!opts.joined) {
     mount.replaceChildren(el("h2", { text: "Upload a track" }),
-      el("p", { class: "meta", text: "Upload a GPX or FIT file from your watch or Strava, and it becomes a trip report on the lake you skated. You need an invite to post reports." }),
-      el("button", { type: "button", class: "act", text: "I have an invite link", onclick: opts.onJoin }));
+      el("p", { class: "meta", text: "Upload a GPX or FIT file from your watch or Strava, and it becomes a trip report on the lake you skated. Join Wild Ice (free, just your name) to post reports." }),
+      el("button", { type: "button", class: "act", text: "Join Wild Ice", onclick: opts.onJoin }));
     return;
   }
   const list = el("div", { class: "uploads" });

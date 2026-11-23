@@ -206,6 +206,18 @@ export async function redeemInvite(code, name, { fetch, storage, base }) {
   }
 }
 
+// Open sign-up: a name and a Turnstile token, no invite needed.
+export async function joinOpen(name, turnstileToken, { fetch, storage, base }) {
+  try {
+    const res = await call(base, "/api/join", { fetch, method: "POST", body: { name, turnstile_token: turnstileToken } });
+    if (res.status !== 200) return { ok: false, error: res.data.error || "Couldn't sign you up, try again" };
+    setDevice(storage, { key: res.data.device_key, name: res.data.name, role: res.data.role });
+    return { ok: true, name: res.data.name, role: res.data.role };
+  } catch {
+    return { ok: false, error: "No connection, try again" };
+  }
+}
+
 // Owner-only calls (review page, pins). Returns {status, data}.
 export function ownerCall(path, { fetch, storage, base, method = "GET", body }) {
   return call(base, path, { fetch, method, body, token: getDevice(storage)?.key });

@@ -32,7 +32,7 @@ export async function renderAccount(page, opts) {
   const o = opts.ICELOG;
   const meRes = await account.me(o);
   if (meRes.status !== 200) {
-    page.replaceChildren(el("p", { class: "meta", text: "Join with an invite link to post reports, comments and photos, and to keep an account." }),
+    page.replaceChildren(el("p", { class: "meta", text: "You haven't joined yet." }),
       opts.joinSection);
     return;
   }
