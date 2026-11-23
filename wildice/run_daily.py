@@ -387,7 +387,7 @@ def _photos(client, lakes: dict[str, Lake], scores: dict[str, Score], prev_lakes
         lake = lakes[lake_id]
         if sc.label not in THUMB_LABELS or sc.last_clear_day is None or lake.interior is None:
             continue
-        path = thumbs_dir / f"{lake_id}-p3.png"  # p3: framed closer, with the shoreline drawn
+        path = thumbs_dir / f"{lake_id}-p4.png"  # p4: framed closer, bold outlined shoreline
         prev_day = (prev_lakes.get(lake_id) or {}).get("last_clear_day")
         if path.exists() and prev_day == sc.last_clear_day.isoformat():
             continue

@@ -12,6 +12,7 @@ from shapely.geometry import mapping, shape
 from wildice.imagery import photo_bbox
 
 OUTLINE = (108, 195, 218)  # the app's ice-cyan accent
+HALO = (4, 9, 12)          # the app's night-black
 SHORE_M = 30  # catalog outlines are shrunk this far from the shore (imagery.shore_buffer_m)
 
 
@@ -30,11 +31,13 @@ def outline_photo(png: bytes, geometry: dict) -> bytes:
     im = Image.open(io.BytesIO(png)).convert("RGB")
     sx, sy = im.width / (box[2] - box[0]), im.height / (box[3] - box[1])
     draw = ImageDraw.Draw(im)
-    width = max(2, round(im.width / 300))
-    for ring in _rings(mapping(grown)):
-        pts = [((x - box[0]) * sx, (box[3] - y) * sy) for x, y in ring]
-        if len(pts) > 1:
-            draw.line(pts + [pts[0]], fill=OUTLINE, width=width, joint="curve")
+    # a dark halo under a bold cyan line: reads on snow, forest and town alike
+    width = max(3, round(im.width / 160))
+    rings = [[((x - box[0]) * sx, (box[3] - y) * sy) for x, y in ring] for ring in _rings(mapping(grown))]
+    for fill, wd in ((HALO, width + 4), (OUTLINE, width)):
+        for pts in rings:
+            if len(pts) > 1:
+                draw.line(pts + [pts[0]], fill=fill, width=wd, joint="curve")
     buf = io.BytesIO()
     im.save(buf, format="PNG")
     return buf.getvalue()
