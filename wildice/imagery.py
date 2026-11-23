@@ -414,9 +414,29 @@ class CopernicusClient:
 
     def lake_photo_png(self, geometry: dict, day: date, sensor: str = "s2") -> bytes:
         """True color of the lake and its surroundings, not cut to the lake: for people."""
+        # Always Sentinel-2 (10 m; Landsat's 30 m looks blocky up close): the clearest
+        # look in the days up to `day`, smoothly upsampled.
         box, w, h = photo_bbox(geometry)
-        return self.truecolor_png(geometry, day, sensor, w, h,
-                                  bounds={"bbox": box, "properties": {"crs": CRS_4326}})
+        collection, script = TRUECOLOR["s2"]
+        body = {
+            "input": {
+                "bounds": {"bbox": box, "properties": {"crs": CRS_4326}},
+                "data": [{
+                    "type": collection,
+                    "dataFilter": {
+                        "timeRange": {
+                            "from": f"{(day - timedelta(days=PHOTO_WINDOW_DAYS)).isoformat()}T00:00:00Z",
+                            "to": f"{(day + timedelta(days=1)).isoformat()}T00:00:00Z"},
+                        "mosaickingOrder": "leastCC",
+                    },
+                    "processing": {"upsampling": "BICUBIC", "downsampling": "BICUBIC"},
+                }],
+            },
+            "output": {"width": w, "height": h,
+                       "responses": [{"identifier": "default", "format": {"type": "image/png"}}]},
+            "evalscript": _script(script),
+        }
+        return self._post(PROCESS_URL, body).content
 
     def truecolor_png(self, geometry: dict, day: date, sensor: str = "s2",
                       width: int = THUMB_PX, height: int = THUMB_PX,
@@ -446,6 +466,8 @@ class CopernicusClient:
 PHOTO_PX = 800      # long side of the people-facing lake photo
 PHOTO_PAD = 0.35    # padding around the lake, as a share of its size on each side
 PHOTO_MIN_M = 500   # ...but at least this much, so small ponds show their surroundings
+PHOTO_MIN_SPAN_M = 4000  # whole photo at least this wide: ~5 m a pixel, Sentinel-2 is 10 m
+PHOTO_WINDOW_DAYS = 10   # clearest Sentinel-2 look in the days up to the clear day
 
 
 def photo_bbox(geometry: dict) -> tuple[list[float], int, int]:
@@ -456,8 +478,8 @@ def photo_bbox(geometry: dict) -> tuple[list[float], int, int]:
     lat = (miny + maxy) / 2
     m_lon = 111_320 * math.cos(math.radians(lat))
     w_m, h_m = (maxx - minx) * m_lon, (maxy - miny) * 110_540
-    pad_x = max(w_m * PHOTO_PAD, PHOTO_MIN_M) / m_lon
-    pad_y = max(h_m * PHOTO_PAD, PHOTO_MIN_M) / 110_540
+    pad_x = max(w_m * PHOTO_PAD, PHOTO_MIN_M, (PHOTO_MIN_SPAN_M - w_m) / 2) / m_lon
+    pad_y = max(h_m * PHOTO_PAD, PHOTO_MIN_M, (PHOTO_MIN_SPAN_M - h_m) / 2) / 110_540
     box = [minx - pad_x, miny - pad_y, maxx + pad_x, maxy + pad_y]
     bw, bh = (box[2] - box[0]) * m_lon, (box[3] - box[1]) * 110_540
     if bw >= bh:

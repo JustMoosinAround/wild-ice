@@ -17,7 +17,7 @@ import { TURNSTILE_SITEKEY, WORKER_URL } from "./config.js";
 const STYLE = {
   open_water: { fill: "#3b82f6", line: "#1d4ed8", text: "Open water" },
   freezing: { fill: "#14b8a6", line: "#0f766e", text: "Freezing" },
-  likely_black_ice: { fill: "#0f172a", line: "#facc15", text: "Likely skateable" },
+  likely_black_ice: { fill: "#2fb3cf", line: "#facc15", text: "Likely skateable" },
   rough_ice: { fill: "#78716c", line: "#facc15", text: "Skateable, rough" },
   snow_covered: { fill: "#f8fafc", line: "#6b7280", text: "Snow covered" },
   unknown: { fill: "#9ca3af", line: "#6b7280", text: "Unknown" },
@@ -27,7 +27,7 @@ const KEY = [
   ["likely_black_ice", "Thick enough, little snow, and cracks, a cold satellite reading, radar or a skater confirm ice"],
   ["rough_ice", "Someone skated it but graded the ice D or worse"],
   ["freezing", "Ice forming, still too thin to skate"],
-  ["unknown", "Thick enough, but no clear satellite look yet"],
+  ["unknown", "Thick enough, but nothing confirms it yet: a dark image alone could be open water"],
   ["snow_covered", "Snow on the ice"],
   ["open_water", "No ice yet"],
 ];
@@ -431,7 +431,7 @@ function renderPanel(id, statusText) {
   const chip = el("span", { class: "chip", text: s.text });
   chip.style.background = s.fill;
   chip.style.borderColor = s.line;
-  chip.style.color = ["snow_covered", "unknown"].includes(d.label) ? "#0f172a" : "#fff";
+  chip.style.color = ["snow_covered", "unknown", "likely_black_ice"].includes(d.label) ? "#04090c" : "#fff";
   panel.prepend(heroSection({ d, photo: photoUrl(d), chip,
     badges: badges({ id, ...d }, { [id]: props }, { runDate: status.run_date, skated }).filter((b) => !/ ac$/.test(b)),
     saved: savedIds.has(id), onSave: VIEW_ONLY ? null : () => toggleSave(id) }));
@@ -642,7 +642,7 @@ function routeHash() {
   if (location.hash === "#glossary") { showGlossary(); return; }
   if (location.hash === "#skateable") { showTab("explore"); return; }
   const t = location.hash.match(/^#tab=(\w+)$/);
-  if (t) { showTab(t[1]); return; }
+  if (t) { closePanel(); showTab(t[1]); return; }
   const m = location.hash.match(/^#lake=(.+)$/);
   if (!m) return;
   const id = decodeURIComponent(m[1]);

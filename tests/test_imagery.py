@@ -655,3 +655,20 @@ def test_lake_photo_is_the_whole_scene_around_the_lake(client):
     w, s, e, n = bounds["bbox"]
     assert w < -150.0 and e > -149.9 and s < 61.0 and n > 61.1  # padded around the lake
     assert max(body["output"]["width"], body["output"]["height"]) == 800
+
+
+@responses.activate
+def test_lake_photo_is_sharp_sentinel2_even_for_a_landsat_day_and_a_tiny_lake(client):
+    add_token()
+    responses.add(responses.POST, PROCESS_URL, body=b"\x89PNG-photo", content_type="image/png")
+    tiny = {"type": "Polygon", "coordinates": [[[-150.0, 61.0], [-149.998, 61.0], [-149.998, 61.001], [-150.0, 61.0]]]}
+    client.lake_photo_png(tiny, date(2025, 11, 3), "ls")
+    body = json.loads(responses.calls[1].request.body)
+    w, s, e, n = body["input"]["bounds"]["bbox"]
+    span_m = max((e - w) * 111320 * 0.4848, (n - s) * 110540)
+    assert span_m >= 4000  # never finer than ~5 m a pixel (Sentinel-2 is 10 m)
+    data = body["input"]["data"][0]
+    assert data["type"] == "sentinel-2-l2a"  # Landsat (30 m) looks blocky
+    assert data["processing"]["upsampling"] == "BICUBIC"
+    tr = data["dataFilter"]["timeRange"]
+    assert tr["from"] < "2025-11-03" and data["dataFilter"]["mosaickingOrder"] == "leastCC"

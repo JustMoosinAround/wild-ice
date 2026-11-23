@@ -373,7 +373,7 @@ def _thumbnails(client, lakes: dict[str, Lake], scores: dict[str, Score], prev: 
     _photos(client, lakes, scores, prev_lakes, thumbs_dir, budget)
 
 
-PHOTO_BACKFILL = 60  # lakes without a photo yet that get one per run
+PHOTO_BACKFILL = 150  # lakes without a photo yet that get one per run (the p2 switch refetches all)
 
 
 def _photos(client, lakes: dict[str, Lake], scores: dict[str, Score], prev_lakes: dict,
@@ -385,7 +385,7 @@ def _photos(client, lakes: dict[str, Lake], scores: dict[str, Score], prev_lakes
         lake = lakes[lake_id]
         if sc.label not in THUMB_LABELS or sc.last_clear_day is None or lake.interior is None:
             continue
-        path = thumbs_dir / f"{lake_id}-photo.png"
+        path = thumbs_dir / f"{lake_id}-p2.png"  # p2: sharper photos (the -photo ones were soft)
         prev_day = (prev_lakes.get(lake_id) or {}).get("last_clear_day")
         if path.exists() and prev_day == sc.last_clear_day.isoformat():
             continue
