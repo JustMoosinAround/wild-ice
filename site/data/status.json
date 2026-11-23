@@ -1,6 +1,6 @@
 {
   "run_date": "2026-11-22",
-  "stale_since": "2026-11-22",
+  "stale_since": null,
   "disclaimer": "Rough estimate only — check ice yourself.",
   "lakes": {
     "w28609293": {
@@ -200,7 +200,7 @@
       "last_clear_day": "2026-11-22",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.166142949999994&lng=-149.93423136882075&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/w28618012.png",
-      "pinned": true,
+      "pinned": false,
       "hidden": false,
       "warning": null,
       "history": [
@@ -581,7 +581,7 @@
       "last_clear_day": "2026-11-22",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.04105535&lng=-149.57977539617292&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": null,
-      "pinned": true,
+      "pinned": false,
       "hidden": false,
       "warning": null,
       "history": [
@@ -680,7 +680,7 @@
       "last_clear_day": "2026-11-06",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.372264200000004&lng=-149.03066759444528&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-06T00:00:00.000Z&toTime=2026-11-06T23:59:59.999Z",
       "thumb": null,
-      "pinned": true,
+      "pinned": false,
       "hidden": false,
       "warning": null,
       "history": [
@@ -789,7 +789,7 @@
       "last_clear_day": "2026-11-22",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.20235285&lng=-149.7601575354912&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/w59020753.png",
-      "pinned": true,
+      "pinned": false,
       "hidden": false,
       "warning": null,
       "history": [
@@ -867,7 +867,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w59020753-p4.png"
+      "photo": "thumbs/w59020753-p5.png"
     },
     "w60785587": {
       "name": "Lake Lucille",
@@ -4789,7 +4789,7 @@
       "last_clear_day": "2026-11-22",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.63245825&lng=-149.50606482317994&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/w111498564.png",
-      "pinned": true,
+      "pinned": false,
       "hidden": false,
       "warning": null,
       "history": [
@@ -4992,7 +4992,7 @@
       "last_clear_day": "2026-11-22",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.4768461&lng=-149.23054710897583&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/r1569302.png",
-      "pinned": true,
+      "pinned": false,
       "hidden": false,
       "warning": null,
       "history": [
@@ -5096,7 +5096,7 @@
       ],
       "patch_thumb": "thumbs/r1569302-patch.png",
       "patch_low_sun": false,
-      "photo": "thumbs/r1569302-p4.png"
+      "photo": "thumbs/r1569302-p5.png"
     },
     "w111525498": {
       "name": "Upper Russian Lake",
@@ -8951,7 +8951,7 @@
       "name": "Finger Lakes",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~4 cm est.; 7 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~4 cm est.; 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 4,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.65025275&lng=-150.8795262304277&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -9041,7 +9041,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -9050,7 +9050,7 @@
       "name": "Finger Lakes",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~4 cm est.; 6 cm snow since Nov 15; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~4 cm est.; 5 cm snow since Nov 15; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 5 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 4,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.63966715&lng=-150.88890558953034&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -9140,7 +9140,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "5 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -9149,7 +9149,7 @@
       "name": "Wolf Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~4 cm est.; 7 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~4 cm est.; 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 4,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.66537135&lng=-150.91118940460984&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -9239,7 +9239,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -9248,7 +9248,7 @@
       "name": "Mink Creek Lake",
       "label": "snow_covered",
       "confidence": "low",
-      "reason": "~4 cm est.; 7 cm snow since Nov 14; no clear image; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~4 cm est.; 6 cm snow since Nov 14; no clear image; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 4,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.678590150000005&lng=-150.87870673435566&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -9328,7 +9328,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -9901,7 +9901,7 @@
       "name": "Sterling 9",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~4 cm est.; 7 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~4 cm est.; 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 4,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.6016852&lng=-150.8698228450046&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -9986,7 +9986,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -10089,7 +10089,7 @@
       "name": "Sunken Island Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~4 cm est.; 7 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~4 cm est.; 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 4,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.59293405&lng=-150.89406179318627&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -10179,7 +10179,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -10188,7 +10188,7 @@
       "name": "Doroshin Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~4 cm est.; 7 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~4 cm est.; 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 4,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.609636699999996&lng=-150.89876803656227&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -10278,7 +10278,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -10381,7 +10381,7 @@
       "name": "Cow Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~4 cm est.; 7 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~4 cm est.; 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 4,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.60526995&lng=-150.85509893874422&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -10471,7 +10471,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -12929,11 +12929,11 @@
     "w191840928": {
       "name": "Eagle Lake",
       "label": "snow_covered",
-      "confidence": "low",
-      "reason": "2+ in of ice (est.); 95 cm snow since Nov 8; no clear image since freeze-up; possible wind clearing Nov 10; 95 cm of snow on ~16 cm ice: heavy enough to flood it, expect slush under the snow",
+      "confidence": "medium",
+      "reason": "2+ in of ice (est.); 95 cm snow since Nov 8; white on Nov 22 image; possible wind clearing Nov 10; patchy on Nov 22 image: grey ice with black patches (open water or newer, thinner ice); 95 cm of snow on ~16 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 16,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=59.826128100000005&lng=-151.13428564826623&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=59.826128100000005&lng=-151.13428564826623&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": null,
       "pinned": false,
       "hidden": false,
@@ -12996,6 +12996,11 @@
       "last_report": null,
       "featured_photo": null,
       "timeline": [
+        {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "White (snow) on image"
+        },
         {
           "day": "2026-11-08",
           "kind": "reset",
@@ -23839,11 +23844,11 @@
     "w218897482": {
       "name": "Point MacKenzie 17",
       "label": "snow_covered",
-      "confidence": "low",
-      "reason": "2+ in of ice (est.); 23 cm snow since Nov 7; no clear image since freeze-up; measured 13 cm new snow at Elmendorf Field (SNOTEL), Nov 19; 23 cm of snow on ~14 cm ice: heavy enough to flood it, expect slush under the snow",
+      "confidence": "medium",
+      "reason": "2+ in of ice (est.); 23 cm snow since Nov 7; no clear image since Nov 14; measured 13 cm new snow at Elmendorf Field (SNOTEL), Nov 19; 23 cm of snow on ~14 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 14,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.3069883&lng=-150.00548120961514&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "last_clear_day": "2026-11-14",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.3069883&lng=-150.00548120961514&themeId=DEFAULT-THEME&datasetId=CDAS_L8_L9_LOTL1&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-14T00:00:00.000Z&toTime=2026-11-14T23:59:59.999Z",
       "thumb": "thumbs/w218897482.png",
       "pinned": false,
       "hidden": false,
@@ -23910,6 +23915,11 @@
           "day": "2026-11-19",
           "kind": "snow",
           "text": "13 cm new snow at Elmendorf Field"
+        },
+        {
+          "day": "2026-11-14",
+          "kind": "image",
+          "text": "Grey on image"
         },
         {
           "day": "2026-11-07",
@@ -24230,7 +24240,7 @@
     "w218897491": {
       "name": "Point MacKenzie 16",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 23 cm snow since Nov 7; no clear image since freeze-up; measured 13 cm new snow at Elmendorf Field (SNOTEL), Nov 19; 23 cm of snow on ~14 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 14,
       "last_clear_day": null,
@@ -27864,7 +27874,7 @@
       "name": "Sterling 4",
       "label": "snow_covered",
       "confidence": "low",
-      "reason": "2+ in of ice (est.); 7 cm snow since Nov 8; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 6 cm snow since Nov 8; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 8,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.50797045&lng=-150.88090255463175&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -27954,7 +27964,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -27963,7 +27973,7 @@
       "name": "Foster Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 7 cm snow since Nov 8; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 6 cm snow since Nov 8; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 8,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.489601050000005&lng=-150.9345449565228&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -28048,7 +28058,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -28057,7 +28067,7 @@
       "name": "Longmere Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 7 cm snow since Nov 13; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 6 cm snow since Nov 13; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 8,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.50098605&lng=-150.9120956740003&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -28142,7 +28152,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -28339,7 +28349,7 @@
       "name": "Whisper Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 7 cm snow since Nov 8; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 6 cm snow since Nov 8; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 8,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.51832335&lng=-150.9097896919033&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -28429,7 +28439,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -28438,7 +28448,7 @@
       "name": "Scout Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~5 cm est.; 7 cm snow since Nov 8; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~5 cm est.; 6 cm snow since Nov 8; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 5,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.5327057&lng=-150.84262728335602&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -28523,7 +28533,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -30079,7 +30089,7 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w230061280-p4.png"
+      "photo": "thumbs/w230061280-p5.png"
     },
     "w230254092": {
       "name": "Portage 7",
@@ -30090,7 +30100,7 @@
       "last_clear_day": "2026-11-22",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.80652675&lng=-148.94184239503474&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/w230254092.png",
-      "pinned": true,
+      "pinned": false,
       "hidden": false,
       "warning": null,
       "history": [
@@ -30286,7 +30296,7 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w233086513-p4.png"
+      "photo": "thumbs/w233086513-p5.png"
     },
     "w233086515": {
       "name": "Portage 11",
@@ -30380,7 +30390,7 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w233086515-p4.png"
+      "photo": "thumbs/w233086515-p5.png"
     },
     "w235233775": {
       "name": "Alexander Lake",
@@ -37634,7 +37644,7 @@
       "name": "Soldotna 12",
       "label": "snow_covered",
       "confidence": "low",
-      "reason": "2+ in of ice (est.); 7 cm snow since Nov 8; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 6 cm snow since Nov 8; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 8,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.53359105&lng=-150.92900148418886&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -37719,7 +37729,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -37728,7 +37738,7 @@
       "name": "Donkey Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~4 cm est.; 6 cm snow since Nov 15; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~4 cm est.; 5 cm snow since Nov 15; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 5 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 4,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.59413345&lng=-150.92992765095198&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -37818,7 +37828,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "5 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -37827,7 +37837,7 @@
       "name": "Eagle Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 8 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 8 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 5,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.60769565&lng=-150.99922932577164&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -37917,7 +37927,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "8 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -37926,7 +37936,7 @@
       "name": "Elephant Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~5 cm est.; 7 cm snow since Nov 15; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~5 cm est.; 5 cm snow since Nov 15; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 5 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 5,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.593941400000006&lng=-150.9932940320598&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -38016,7 +38026,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "5 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -38025,7 +38035,7 @@
       "name": "Sterling 7",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~4 cm est.; 7 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~4 cm est.; 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 4,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.59187545&lng=-150.85994036851946&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -38110,7 +38120,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -38119,7 +38129,7 @@
       "name": "Soldotna 20",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 8 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 8 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 5,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.6158198&lng=-151.01180497576573&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -38204,7 +38214,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "8 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -38213,7 +38223,7 @@
       "name": "Soldotna 19",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 8 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 8 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 5,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.60407305&lng=-150.97949470394917&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -38303,7 +38313,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "8 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -38312,7 +38322,7 @@
       "name": "Beaver Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~5 cm est.; 7 cm snow since Nov 15; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~5 cm est.; 5 cm snow since Nov 15; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 5 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 5,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.66040125&lng=-150.9760321187038&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -38402,7 +38412,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "5 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -49070,7 +49080,7 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w270060932-p4.png"
+      "photo": "thumbs/w270060932-p5.png"
     },
     "w270311488": {
       "name": "Cordova 23",
@@ -49896,7 +49906,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w281310743-p4.png"
+      "photo": "thumbs/w281310743-p5.png"
     },
     "w281310746": {
       "name": "Y Lake",
@@ -51472,7 +51482,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296812469-p4.png"
+      "photo": "thumbs/w296812469-p5.png"
     },
     "w296812471": {
       "name": "Sunshine 2",
@@ -52204,7 +52214,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296887845-p4.png"
+      "photo": "thumbs/w296887845-p5.png"
     },
     "r3948597": {
       "name": "X Lake",
@@ -52293,7 +52303,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/r3948597-p4.png"
+      "photo": "thumbs/r3948597-p5.png"
     },
     "w296887852": {
       "name": "Fish Lake",
@@ -55004,7 +55014,7 @@
       ],
       "patch_thumb": "thumbs/w304751822-patch.png",
       "patch_low_sun": false,
-      "photo": "thumbs/w304751822-p4.png"
+      "photo": "thumbs/w304751822-p5.png"
     },
     "w304751823": {
       "name": "Cordova 3",
@@ -55100,7 +55110,7 @@
       ],
       "patch_thumb": "thumbs/w304751823-patch.png",
       "patch_low_sun": false,
-      "photo": "thumbs/w304751823-p4.png"
+      "photo": "thumbs/w304751823-p5.png"
     },
     "w306076205": {
       "name": "Palmer 10",
@@ -57039,7 +57049,7 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w332622975-p4.png"
+      "photo": "thumbs/w332622975-p5.png"
     },
     "w332981227": {
       "name": "Anchorage 11",
@@ -58693,7 +58703,7 @@
       "name": "Soldotna 6",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 9 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 9 cm of snow on ~6 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~6 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 6,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.50801195&lng=-150.9561077999873&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -58778,7 +58788,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "9 cm of snow on ~6 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~6 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -59168,7 +59178,7 @@
       "name": "Soldotna 7",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 7 cm snow since Nov 8; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 6 cm snow since Nov 8; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 8,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.499210250000004&lng=-150.9487042474907&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -59258,7 +59268,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -64364,7 +64374,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w393506252-p4.png"
+      "photo": "thumbs/w393506252-p5.png"
     },
     "w393507869": {
       "name": "Larson Lake",
@@ -64923,7 +64933,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w393526108-p4.png"
+      "photo": "thumbs/w393526108-p5.png"
     },
     "w393526111": {
       "name": "Sunshine 10",
@@ -65017,7 +65027,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w393526111-p4.png"
+      "photo": "thumbs/w393526111-p5.png"
     },
     "w393526116": {
       "name": "Sunshine 11",
@@ -65101,7 +65111,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w393526116-p4.png"
+      "photo": "thumbs/w393526116-p5.png"
     },
     "w411305850": {
       "name": "Viapan Lake",
@@ -66057,7 +66067,7 @@
       "name": "Sterling 1",
       "label": "snow_covered",
       "confidence": "low",
-      "reason": "~5 cm est.; 7 cm snow since Nov 8; no clear image; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~5 cm est.; 6 cm snow since Nov 8; no clear image; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 5,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.5460795&lng=-150.75691450682677&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -66137,7 +66147,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -66146,7 +66156,7 @@
       "name": "Sterling 6",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 7 cm snow since Nov 8; no clear image; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 6 cm snow since Nov 8; no clear image; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 8,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.543991500000004&lng=-150.9085976667413&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -66226,7 +66236,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~8 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -66235,7 +66245,7 @@
       "name": "Gagara Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~4 cm est.; 7 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~4 cm est.; 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 4,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.56548125&lng=-150.88524136072198&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -66320,7 +66330,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -66329,7 +66339,7 @@
       "name": "Sevena Lake",
       "label": "snow_covered",
       "confidence": "low",
-      "reason": "2+ in of ice (est.); 8 cm snow since Nov 14; no clear image; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 8 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 6 cm snow since Nov 14; no clear image; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 5,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.5510974&lng=-150.96924905006244&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -66409,7 +66419,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "8 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -67343,7 +67353,7 @@
       "name": "Derks Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 9 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 9 cm of snow on ~6 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~6 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 6,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.529414450000004&lng=-150.9684774381023&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -67438,7 +67448,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "9 cm of snow on ~6 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~6 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -67447,7 +67457,7 @@
       "name": "Cisca Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~4 cm est.; 7 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~4 cm est.; 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 4,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.5589188&lng=-150.93466203986995&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -67537,7 +67547,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -67546,7 +67556,7 @@
       "name": "Tree Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~4 cm est.; 7 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~4 cm est.; 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 4,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.5621419&lng=-150.91281107349783&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -67636,7 +67646,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -67936,7 +67946,7 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w440873346-p4.png"
+      "photo": "thumbs/w440873346-p5.png"
     },
     "w440892633": {
       "name": "Seward 3",
@@ -71950,7 +71960,7 @@
     "w453196811": {
       "name": "Chitina 3",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 11 cm snow since Nov 8; no clear image; 11 cm of snow on ~16 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 16,
       "last_clear_day": null,
@@ -72892,7 +72902,7 @@
       ],
       "patch_thumb": "thumbs/w457541989-patch.png",
       "patch_low_sun": false,
-      "photo": "thumbs/w457541989-p4.png"
+      "photo": "thumbs/w457541989-p5.png"
     },
     "r6787312": {
       "name": "Gene Lake",
@@ -89807,7 +89817,7 @@
       "hazards": [],
       "patch_thumb": "thumbs/w573941662-patch.png",
       "patch_low_sun": false,
-      "photo": "thumbs/w573941662-p4.png"
+      "photo": "thumbs/w573941662-p5.png"
     },
     "w575992921": {
       "name": "Knik 18",
@@ -90486,7 +90496,7 @@
       "name": "Finger Lakes",
       "label": "snow_covered",
       "confidence": "low",
-      "reason": "~4 cm est.; 6 cm snow since Nov 15; no clear image; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~4 cm est.; 5 cm snow since Nov 15; no clear image; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 5 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 4,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.6435509&lng=-150.90144608312355&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -90566,7 +90576,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "5 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -92515,7 +92525,7 @@
       "last_clear_day": "2026-11-22",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.85275745&lng=-148.9999681869279&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/r8922352.png",
-      "pinned": true,
+      "pinned": false,
       "hidden": false,
       "warning": null,
       "history": [
@@ -93098,7 +93108,7 @@
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.428669400000004&lng=-150.37468456450287&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
       "thumb": null,
-      "pinned": true,
+      "pinned": false,
       "hidden": false,
       "warning": null,
       "history": [
@@ -93166,7 +93176,7 @@
       "name": "Woodpecker Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 8 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 8 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 5,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.6187546&lng=-150.99455359924556&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -93256,7 +93266,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "8 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -93265,7 +93275,7 @@
       "name": "Sterling 17",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 8 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 8 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 5,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.5799949&lng=-150.9554619436251&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -93355,7 +93365,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "8 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~5 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -93557,7 +93567,7 @@
       "name": "Quake Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~4 cm est.; 7 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~4 cm est.; 6 cm snow since Nov 14; no clear image since freeze-up; measured 5 cm new snow at Soldotna 5.1 E (CoCoRaHS), Nov 19; 6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 4,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.628480800000006&lng=-150.87507190147977&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
@@ -93647,7 +93657,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "7 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "6 cm of snow on ~4 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -94893,7 +94903,7 @@
       "last_clear_day": "2026-11-22",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.4137999&lng=-149.66449587906618&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": null,
-      "pinned": true,
+      "pinned": false,
       "hidden": false,
       "warning": null,
       "history": [
@@ -95550,7 +95560,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/r10764316-p4.png"
+      "photo": "thumbs/r10764316-p5.png"
     },
     "w777271367": {
       "name": "Talkeetna 7",
@@ -98111,7 +98121,7 @@
       ],
       "patch_thumb": "thumbs/w807275666-patch.png",
       "patch_low_sun": false,
-      "photo": "thumbs/w807275666-p4.png"
+      "photo": "thumbs/w807275666-p5.png"
     },
     "w807580985": {
       "name": "Cordova 6",
@@ -98373,7 +98383,7 @@
           "text": "New ice (froze about Nov 21): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w807580987-p4.png"
+      "photo": "thumbs/w807580987-p5.png"
     },
     "r11189332": {
       "name": "Palmer 11",
@@ -99150,7 +99160,7 @@
     "r11258018": {
       "name": "One Mile Lake",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 15 cm snow since Nov 8; no clear image; 15 cm of snow on ~13 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 13,
       "last_clear_day": null,
@@ -99234,7 +99244,7 @@
     "r11258019": {
       "name": "Two Mile Lake",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 11 cm snow since Nov 8; no clear image; 11 cm of snow on ~16 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 16,
       "last_clear_day": null,
@@ -99689,7 +99699,7 @@
     "r11276777": {
       "name": "Chitina 1",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 15 cm snow since Nov 8; no clear image since freeze-up; 15 cm of snow on ~13 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 13,
       "last_clear_day": null,
@@ -99778,7 +99788,7 @@
     "r11276779": {
       "name": "Chitina Lake",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 15 cm snow since Nov 9; no clear image since freeze-up; 15 cm of snow on ~13 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 13,
       "last_clear_day": null,
@@ -104487,7 +104497,7 @@
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.3979731&lng=-149.76059044487153&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
       "thumb": "thumbs/r1569846.png",
-      "pinned": true,
+      "pinned": false,
       "hidden": false,
       "warning": null,
       "history": [
@@ -105972,7 +105982,7 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w1044546132-p4.png"
+      "photo": "thumbs/w1044546132-p5.png"
     },
     "w1044546135": {
       "name": "Portage 5",
@@ -106071,7 +106081,7 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w1044546135-p4.png"
+      "photo": "thumbs/w1044546135-p5.png"
     },
     "w1044546138": {
       "name": "Portage 4",
@@ -106981,7 +106991,7 @@
           "text": "New ice (froze about Nov 21): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w1047462790-p4.png"
+      "photo": "thumbs/w1047462790-p5.png"
     },
     "w1047472144": {
       "name": "Cordova 13",
@@ -107728,7 +107738,7 @@
           "text": "New ice (froze about Nov 21): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w1052509378-p4.png"
+      "photo": "thumbs/w1052509378-p5.png"
     },
     "w1055156527": {
       "name": "Chugiak 1",
@@ -108486,7 +108496,7 @@
       "last_clear_day": "2026-11-22",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.497486699999996&lng=-149.3662306827987&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/r1568486.png",
-      "pinned": true,
+      "pinned": false,
       "hidden": false,
       "warning": null,
       "history": [
@@ -108593,7 +108603,7 @@
           "text": "Big ice (5.3 mi): expect leads, open areas and thinly refrozen leads; want 5 cm more ice than on a small pond"
         }
       ],
-      "photo": "thumbs/r1568486-p4.png"
+      "photo": "thumbs/r1568486-p5.png"
     },
     "w1092883898": {
       "name": "Cordova 11",
@@ -108682,7 +108692,7 @@
           "text": "New ice (froze about Nov 21): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w1092883898-p4.png"
+      "photo": "thumbs/w1092883898-p5.png"
     },
     "w1092883901": {
       "name": "Cordova 20",
@@ -111577,7 +111587,7 @@
       ],
       "patch_thumb": "thumbs/r16544404-patch.png",
       "patch_low_sun": false,
-      "photo": "thumbs/r16544404-p4.png"
+      "photo": "thumbs/r16544404-p5.png"
     },
     "r11121522": {
       "name": "Sheridan Lake",
@@ -111929,7 +111939,7 @@
     "w1222106603": {
       "name": "Point MacKenzie 13",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 23 cm snow since Nov 7; no clear image since freeze-up; measured 13 cm new snow at Elmendorf Field (SNOTEL), Nov 19; 23 cm of snow on ~14 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 14,
       "last_clear_day": null,
@@ -112137,11 +112147,11 @@
     "w1236135580": {
       "name": "Anchorage 3",
       "label": "snow_covered",
-      "confidence": "low",
-      "reason": "2+ in of ice (est.); 23 cm snow since Nov 7; no clear image since freeze-up; measured 13 cm new snow at Elmendorf Field (SNOTEL), Nov 19; 23 cm of snow on ~14 cm ice: heavy enough to flood it, expect slush under the snow",
+      "confidence": "medium",
+      "reason": "2+ in of ice (est.); 23 cm snow since Nov 7; white on Nov 22 image; patchy on Nov 22 image: grey ice with black patches (open water or newer, thinner ice); measured 13 cm new snow at Elmendorf Field (SNOTEL), Nov 19; 23 cm of snow on ~14 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 14,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.27954795&lng=-149.97134391693405&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.27954795&lng=-149.97134391693405&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/w1236135580.png",
       "pinned": false,
       "hidden": false,
@@ -112204,6 +112214,11 @@
       "last_report": null,
       "featured_photo": null,
       "timeline": [
+        {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "White (snow) on image"
+        },
         {
           "day": "2026-11-19",
           "kind": "snow",
@@ -113971,7 +113986,7 @@
           "text": "New ice (froze about Nov 21): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/r18443166-p4.png"
+      "photo": "thumbs/r18443166-p5.png"
     },
     "r18468312": {
       "name": "McKinley Lake",
@@ -115731,7 +115746,7 @@
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.534201350000004&lng=-149.93963344338417&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
       "thumb": "thumbs/r1539147.png",
-      "pinned": true,
+      "pinned": false,
       "hidden": false,
       "warning": null,
       "history": [
@@ -115922,7 +115937,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w1492362033-p4.png"
+      "photo": "thumbs/w1492362033-p5.png"
     },
     "w1512795719": {
       "name": "Caswell 2",
@@ -116022,7 +116037,7 @@
       "last_clear_day": "2026-11-22",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.768875550000004&lng=-148.80608942125812&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": null,
-      "pinned": true,
+      "pinned": false,
       "hidden": false,
       "warning": null,
       "history": [
