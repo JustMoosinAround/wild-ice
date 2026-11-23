@@ -962,3 +962,15 @@ def test_lake_photo_saved_with_the_thumbnail_and_published(tmp_repo, mocked):
     second = FakeClient()
     assert run(RUN, tmp_repo, ENV, session(), second) == 0
     assert [c for c in second.calls if c[0] == "photo"] == []
+
+
+def test_unnamed_lake_gets_a_place_number_that_sticks(tmp_repo, mocked):
+    cold_weather(mocked)
+    geo = json.loads((tmp_repo / "site/data/lakes.geojson").read_text(encoding="utf-8"))
+    geo["features"][0]["properties"]["name"] = None
+    (tmp_repo / "site/data/lakes.geojson").write_text(json.dumps(geo), encoding="utf-8")
+    assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
+    name = status_of(tmp_repo)["lakes"]["w1"]["name"]
+    assert name.rsplit(" ", 1)[1] == "1" and "ac" not in name
+    saved = json.loads((tmp_repo / "state/lake_numbers.json").read_text(encoding="utf-8"))
+    assert saved == {"w1": name}

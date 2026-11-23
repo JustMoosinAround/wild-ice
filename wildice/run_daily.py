@@ -28,6 +28,7 @@ from wildice.models import (
 from wildice.prefs import load_prefs
 from wildice.cracks import check_cracks
 from wildice.explore import came_in, hazards, timeline
+from wildice.numbering import apply_numbers
 from wildice.hazards import (big_ice_note, lead_note, new_ice_note, ridge_note, slush_note,
                              thaw_note)
 from wildice.icelog import fetch_export, merge_reports, reports_from_export
@@ -434,7 +435,8 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
     site_data = root / "site" / "data"
     state = root / "state"
     cfg = load_config(root / "config.yaml")
-    lake_list = load_catalog(site_data / "lakes.geojson")
+    # Unnamed lakes get "Place N" names (wildice/numbering.py), saved so they never change.
+    lake_list = apply_numbers(load_catalog(site_data / "lakes.geojson"), state / "lake_numbers.json")
     lakes = {lake.id: lake for lake in lake_list}
     reports = load_reports(root / "ratings", run_date, season_start(run_date, cfg))
     # Ice Log (friends' and owner's reports, pins, review count) from the worker, if set up.
