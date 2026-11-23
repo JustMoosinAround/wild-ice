@@ -1062,6 +1062,12 @@ async function main() {
   window.addEventListener("hashchange", routeHash);
   if (VIEW_ONLY) {
     document.body.classList.add("embed");
+    // A strip under the host site's header pointing to the full app (opens outside the embed).
+    const app = location.origin + location.pathname;
+    $("bar").before(el("div", { id: "promo" },
+      el("div", { class: "promo-text" }, el("b", { text: "Wild Ice" }),
+        el("span", { text: "Join the community: add observations and trip reports." })),
+      el("a", { class: "act promo-btn", href: app, target: "_blank", rel: "noopener", text: "Get the app" })));
   } else {
     window.addEventListener("pagehide", commitReport); // don't lose a report in its undo window
   if (isOwner()) {
