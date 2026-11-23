@@ -844,9 +844,9 @@ def test_overcast_photo_scenes_cost_no_requests(tmp_repo, mocked, caplog):
 ICELOG_ENV = {**ENV, "ICELOG_URL": "https://ice.example", "ICELOG_TOKEN": "svc"}
 
 
-def _icelog(rsps, reports=(), prefs=(), pending=(0, 0)):
+def _icelog(rsps, reports=(), prefs=(), pending=(0, 0), owner_saved=()):
     rsps.add(responses_lib.GET, "https://ice.example/api/export", json={
-        "reports": list(reports), "prefs": list(prefs),
+        "reports": list(reports), "prefs": list(prefs), "owner_saved": list(owner_saved),
         "pending": {"comments": pending[0], "photos": pending[1]}})
 
 
@@ -873,12 +873,13 @@ def test_friend_d_grade_makes_lake_rough_and_no_alert(tmp_repo, mocked):
     assert ntfy_calls(mocked, "alerts-topic") == 0
 
 
-def test_alert_carries_waiting_count_and_ice_log_pins(tmp_repo, mocked):
+def test_alert_stars_the_owners_saved_lakes_without_starring_them_publicly(tmp_repo, mocked):
     cold_weather(mocked)
-    _icelog(mocked, prefs=[{"lake_id": "w1", "action": "pin", "created_at": "x"}], pending=(2, 1))
+    _icelog(mocked, owner_saved=["w1"], pending=(2, 1))
     assert run(RUN, tmp_repo, ICELOG_ENV, session(), FakeClient()) == 0
-    assert ntfy_bodies(mocked, "alerts-topic")[0].endswith("\n\n2 comments, 1 photo waiting")
-    assert status_of(tmp_repo)["lakes"]["w1"]["pinned"] is True
+    body = ntfy_bodies(mocked, "alerts-topic")[0]
+    assert body.endswith("\n\n2 comments, 1 photo waiting") and "★" in body
+    assert status_of(tmp_repo)["lakes"]["w1"]["pinned"] is False
 
 
 def test_no_ice_log_settings_no_request(tmp_repo, mocked):

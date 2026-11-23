@@ -479,7 +479,8 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
         log.info("ice log: %d report(s) on %d lake(s), %d comment(s) and %d photo(s) waiting",
                  len(export.reports), len(logged), export.pending_comments,
                  export.pending_photos)
-    pinned, hidden = load_prefs(cfg, root / "prefs", export.prefs if export else ())
+    pinned, hidden = load_prefs(cfg, root / "prefs", export.prefs if export else (),
+                                export.owner_saved if export else ())
     pending = (export.pending_comments, export.pending_photos) if export else (0, 0)
     budget = Budget(state / "usage.json", cfg.imagery.monthly_request_budget,
                     today=lambda: run_date)
@@ -633,7 +634,8 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
     # Load before writing, and drop today's entry, so a same-day rerun matches the first run.
     history = {k: [h for h in v if h["day"] != run_date.isoformat()]
                for k, v in publish.load_history(site_data / "history", run_date).items()}
-    status = publish.build_status(lake_list, scores, pinned, hidden, history, run_date,
+    # Watched lakes are the owner's own (My lakes): nothing is starred publicly.
+    status = publish.build_status(lake_list, scores, frozenset(), hidden, history, run_date,
                                   stale_since=None,
                                   explore=_explore(scores, explore_in, history, export, run_date))
     for lake_id, entry in status["lakes"].items():

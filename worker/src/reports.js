@@ -144,6 +144,10 @@ export async function getExport(env, request) {
     reports: await exportReports(env, since),
     prefs: await exportPrefs(env),
     pending: await pendingCounts(env),
+    // The owner's saved lakes: the daily run checks these every day (they were "pins").
+    owner_saved: (await env.DB.prepare(
+      `SELECT s.lake_id FROM saved s JOIN friends f ON f.id = s.friend_id
+       WHERE f.role = 'owner' AND f.revoked_at IS NULL ORDER BY s.created_at`).all()).results.map((r) => r.lake_id),
     featured: (await env.DB.prepare(
       `SELECT lake_id, public_id, COALESCE(decided_at, created_at) AS created_at
        FROM photos WHERE status = 'featured' ORDER BY created_at`).all()).results,

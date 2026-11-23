@@ -117,19 +117,7 @@ site:
   base_url: "https://justmoosinaround.github.io/wild-ice"
 season_start: "10-01"
 # Lakes skated before (from Strava tracks): always checked first and listed first.
-pinned:
-  - r1539147  # Big Lake
-  - w59020753  # Cheney Lake
-  - w28618012  # Conners Lake
-  - r1569846  # Cooper Lake
-  - w49200373  # Eklutna Lake
-  - r1569302  # Grant Lake
-  - r1527882  # Kenai Lake
-  - r21378422  # Portage Lake
-  - w35108034  # Rabbit Lake
-  - r1555333  # Skilak Lake
-  - w111498564  # Summit Lake
-  - r1568486  # Upper Trail Lake
-  - w230254092  # unnamed
-  - r8922352  # unnamed
+# Pins are retired: the 14 pinned lakes became the owner's saved lakes (My lakes, Nov 2026),
+# which the daily run checks every day. Lakes listed here are also checked daily.
+pinned: []
 hidden: []

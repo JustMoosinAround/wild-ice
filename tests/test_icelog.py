@@ -141,12 +141,12 @@ def test_three_reports_this_week_noted():
 
 # --- prefs and the morning alert -------------------------------------------------
 
-def test_export_prefs_pin_a_lake(tmp_path):
+def test_export_pins_are_retired_but_hides_still_apply(tmp_path):
     pinned, hidden = load_prefs(CFG, tmp_path / "none",
                                 extra=[{"lake_id": "w9", "action": "pin"},
                                        {"lake_id": "w8", "action": "hide"},
                                        {"lake_id": "w8", "action": "unhide"}])
-    assert "w9" in pinned and "w8" not in hidden
+    assert "w9" not in pinned and "w8" not in hidden
 
 
 def test_pending_line_only_when_something_waits():

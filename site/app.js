@@ -489,10 +489,6 @@ function renderPanel(id, statusText) {
   if (isOwner()) {
     const prow = el("div", { class: "row" });
     prow.append(el("button", {
-      class: "act" + (d.pinned ? " on" : ""), text: d.pinned ? "★ Pinned" : "Pin",
-      onclick: () => setPref(id, d.pinned ? "unpin" : "pin"),
-    }));
-    prow.append(el("button", {
       class: "act" + (d.hidden ? " on" : ""), text: d.hidden ? "Hidden (tap to show)" : "Hide",
       onclick: () => setPref(id, d.hidden ? "unhide" : "hide"),
     }));
@@ -614,7 +610,7 @@ function addKey() {
     }
     if (!VIEW_ONLY) {
       const star = el("div", { class: "key-row" });
-      star.append(el("i", { class: "star", text: "★" }), el("span", { text: "Pinned lake" }));
+      star.append(el("i", { class: "star", text: "★" }), el("span", { text: "Your saved lake" }));
       box.append(star);
       const faded = el("div", { class: "key-row" });
       const fsw = el("i", { class: "sw" });
@@ -665,6 +661,7 @@ let savedIds = new Set();
 async function loadMine() {
   const [sv, sk] = await Promise.all([getSaved(ICELOG), getDevice(store) ? getSkated(ICELOG) : Promise.resolve(null)]);
   savedIds = new Set(sv);
+  markSaved();
   skatedRows = sk;
   skated = sk ? new Set(sk.map((r) => r.lake_id)) : null;
   renderTab();
@@ -681,13 +678,21 @@ function paintSave(id) {
   b.textContent = on ? "♥ Saved" : "♡ Save";
 }
 
+// ★ on the map and first place in Explore are this viewer's own saved lakes.
+function markSaved() {
+  for (const [id, d] of Object.entries(status.lakes)) d.pinned = !VIEW_ONLY && savedIds.has(id);
+  if (map) build();
+}
+
 async function toggleSave(id) {
   const on = !savedIds.has(id);
   on ? savedIds.add(id) : savedIds.delete(id);
+  markSaved();
   paintSave(id);
   const ok = await setSaved(id, on, ICELOG);
   if (!ok) {
     on ? savedIds.delete(id) : savedIds.add(id);
+    markSaved();
     paintSave(id);
     showMsg("Couldn't save, try again");
   }

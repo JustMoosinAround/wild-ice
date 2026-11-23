@@ -40,8 +40,14 @@ def test_prefs_bad_files_skipped_and_warned(tmp_path, caplog):
     put(tmp_path, "004.json", "w3", "hide")
     with caplog.at_level(logging.WARNING, logger="wildice.prefs"):
         got = load_prefs(cfg, tmp_path)
-    assert got == (frozenset({"w2"}), frozenset({"w3"}))
+    assert got == (frozenset(), frozenset({"w3"}))  # pins are retired
     msgs = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
     assert any("001.json" in m for m in msgs)
     assert any("002.json" in m and "pinn" in m for m in msgs)
     assert len(msgs) == 2
+
+
+def test_owner_saved_lakes_are_the_daily_watch_list_and_old_pins_are_ignored(tmp_path):
+    put(tmp_path, "001.json", "w1", "pin")
+    got = load_prefs(cfg, tmp_path, extra=[{"lake_id": "w5", "action": "pin"}], owner_saved=["w7", "w8"])
+    assert got == (frozenset({"w7", "w8"}), frozenset())

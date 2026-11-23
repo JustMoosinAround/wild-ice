@@ -91,3 +91,14 @@ describe("cors", () => {
     expect(r.headers.get("Access-Control-Allow-Methods")).toContain("DELETE");
   });
 });
+
+describe("export owner_saved", () => {
+  it("lists the owner's saved lakes only", async () => {
+    const ok = await owner();
+    const fk = await friend(ok);
+    await call("POST", "/api/saved", { body: { lake_id: "w1" }, token: ok });
+    await call("POST", "/api/saved", { body: { lake_id: "w2" }, token: fk });
+    const body = await (await call("GET", "/api/export?since=2000-01-01", { token: "test-service" })).json();
+    expect(body.owner_saved).toEqual(["w1"]);
+  });
+});

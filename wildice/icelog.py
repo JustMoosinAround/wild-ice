@@ -34,6 +34,7 @@ class Export:
     pending_comments: int
     pending_photos: int
     featured: list[dict] = field(default_factory=list)  # {lake_id, public_id, created_at}
+    owner_saved: list[str] = field(default_factory=list)  # the owner's "My lakes"
 
 
 def fetch_export(base_url: str, token: str, since: date,
@@ -48,7 +49,8 @@ def fetch_export(base_url: str, token: str, since: date,
         pending = data["pending"]
         return Export(list(data["reports"]), list(data["prefs"]),
                       int(pending["comments"]), int(pending["photos"]),
-                      list(data.get("featured") or []))
+                      list(data.get("featured") or []),
+                      [str(i) for i in (data.get("owner_saved") or [])])
     except requests.HTTPError as exc:
         status = exc.response.status_code if exc.response is not None else "?"
         log.error("ice log unavailable: HTTP %s", status)
