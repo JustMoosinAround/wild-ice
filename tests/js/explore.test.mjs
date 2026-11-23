@@ -69,3 +69,9 @@ test("row text and dates", () => {
   assert.equal(skateMeta({ label: "likely_black_ice", last_clear_day: "2026-11-05", road_mi: 0.34 }, "Likely black ice"),
     "seen Nov 5 · 0.3 mi from road");
 });
+
+test("no acreage badge when the name already carries it", () => {
+  const props = { u: { area_acres: 17.2, road_mi: 0.1 } };
+  assert.deepEqual(badges({ id: "u", name: "Unnamed lake (17 ac)" }, props, { runDate: RUN, skated: null }), []);
+  assert.deepEqual(badges({ id: "u", name: "Jean Lake" }, props, { runDate: RUN, skated: null }), ["17 ac"]);
+});

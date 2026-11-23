@@ -49,7 +49,8 @@ export function badges(d, props, ctx) {
   if (isJustIn(d, ctx.runDate)) out.push("Just in · no tracks yet");
   const r = skatedReport(d);
   if (r && r.grade) out.push(`Last grade ${r.grade}`);
-  if (p.area_acres != null) out.push(`${Math.round(p.area_acres).toLocaleString("en-US")} ac`);
+  // Unnamed lakes already say "(17 ac)" in their name.
+  if (p.area_acres != null && !/\(\d[\d,]* ac\)$/.test(d.name || "")) out.push(`${Math.round(p.area_acres).toLocaleString("en-US")} ac`);
   if (ctx.skated && !ctx.skated.has(d.id)) out.push("New to you");
   if (isHikeIn(p)) out.push(`Approach ~${p.road_mi.toFixed(1)} mi`);
   return out;
