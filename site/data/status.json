@@ -195,10 +195,10 @@
       "name": "Conners Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 25 cm snow since Nov 8; no clear image since freeze-up; patchy on Nov 2 image: grey ice with black patches (open water or newer, thinner ice); measured 10 cm new snow at Anchorage 4.7 SSW (CoCoRaHS), Nov 19; 25 cm of snow on ~13 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 25 cm snow since Nov 8; white on Nov 22 image; patchy on Nov 22 image: grey ice with black patches (open water or newer, thinner ice); measured 10 cm new snow at Anchorage 4.7 SSW (CoCoRaHS), Nov 19; 25 cm of snow on ~13 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 13,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.166142949999994&lng=-149.93423136882075&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.166142949999994&lng=-149.93423136882075&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/w28618012.png",
       "pinned": true,
       "hidden": false,
@@ -261,6 +261,11 @@
       "last_report": null,
       "featured_photo": null,
       "timeline": [
+        {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "White (snow) on image"
+        },
         {
           "day": "2026-11-19",
           "kind": "snow",
@@ -571,10 +576,10 @@
       "name": "Rabbit Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 137 cm snow since Oct 17; white on Oct 28 image; measured 41 cm new snow at Indian Pass (SNOTEL), Nov 19; 137 cm of snow on ~37 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 137 cm snow since Oct 17; white on Nov 22 image; patchy on Nov 22 image: grey ice with black patches (open water or newer, thinner ice); measured 41 cm new snow at Indian Pass (SNOTEL), Nov 19; 137 cm of snow on ~37 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 37,
-      "last_clear_day": "2026-10-28",
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.04105535&lng=-149.57977539617292&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-10-28T00:00:00.000Z&toTime=2026-10-28T23:59:59.999Z",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.04105535&lng=-149.57977539617292&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": null,
       "pinned": true,
       "hidden": false,
@@ -637,6 +642,11 @@
       "last_report": null,
       "featured_photo": null,
       "timeline": [
+        {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "White (snow) on image"
+        },
         {
           "day": "2026-11-19",
           "kind": "snow",
@@ -772,12 +782,12 @@
     },
     "w59020753": {
       "name": "Cheney Lake",
-      "label": "snow_covered",
+      "label": "likely_black_ice",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 36 cm snow since Nov 13; no clear image since freeze-up; measured 17 cm new snow at Anchorage 4.5 E (CoCoRaHS), Nov 19; 36 cm of snow on ~12 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); no snow since clearing on Nov 22; crack network seen on Nov 22 image; radar does not confirm ice; measured 17 cm new snow at Anchorage 4.5 E (CoCoRaHS), Nov 19",
       "thickness_cm": 12,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.20235285&lng=-149.7601575354912&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.20235285&lng=-149.7601575354912&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/w59020753.png",
       "pinned": true,
       "hidden": false,
@@ -836,19 +846,19 @@
           "label": "snow_covered"
         }
       ],
-      "came_in": null,
+      "came_in": "2026-11-22",
       "last_report": null,
       "featured_photo": null,
       "timeline": [
         {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Crack network seen"
+        },
+        {
           "day": "2026-11-19",
           "kind": "snow",
           "text": "17 cm new snow at Anchorage 4.5 E"
-        },
-        {
-          "day": "2026-11-13",
-          "kind": "reset",
-          "text": "Thaw or rain, then refroze"
         },
         {
           "day": "2026-10-28",
@@ -856,13 +866,8 @@
           "text": "Dark on image"
         }
       ],
-      "hazards": [
-        {
-          "label": "Slush",
-          "text": "36 cm of snow on ~12 cm ice: heavy enough to flood it, expect slush under the snow"
-        }
-      ],
-      "photo": null
+      "hazards": [],
+      "photo": "thumbs/w59020753-p2.png"
     },
     "w60785587": {
       "name": "Lake Lucille",
@@ -4867,10 +4872,10 @@
       "name": "Summit Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 30 cm snow since Nov 12; dark on Oct 28 image: could be ice or open water; measured 8 cm new snow at Summit Creek (SNOTEL), Nov 19; 30 cm of snow on ~19 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 30 cm snow since Nov 12; white on Nov 22 image; patchy on Nov 22 image: grey ice with black patches (open water or newer, thinner ice); measured 8 cm new snow at Summit Creek (SNOTEL), Nov 19; 30 cm of snow on ~19 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 19,
-      "last_clear_day": "2026-10-28",
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.63245825&lng=-149.50606482317994&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-10-28T00:00:00.000Z&toTime=2026-10-28T23:59:59.999Z",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.63245825&lng=-149.50606482317994&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/w111498564.png",
       "pinned": true,
       "hidden": false,
@@ -4933,6 +4938,11 @@
       "last_report": null,
       "featured_photo": null,
       "timeline": [
+        {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "White (snow) on image"
+        },
         {
           "day": "2026-11-19",
           "kind": "snow",
@@ -5064,11 +5074,11 @@
     "r1569302": {
       "name": "Grant Lake",
       "label": "unknown",
-      "confidence": "medium",
-      "reason": "2+ in of ice (est.); no snow since freeze-up on Nov 20; no clear image since freeze-up; measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week; big ice (4.6 mi): expect leads, open areas and thinly refrozen leads; want 5 cm more ice than on a small pond",
+      "confidence": "high",
+      "reason": "2+ in of ice (est.); no snow since freeze-up on Nov 20; dark on Nov 22 image: could be ice or open water; measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week; big ice (4.6 mi): expect leads, open areas and thinly refrozen leads; want 5 cm more ice than on a small pond",
       "thickness_cm": 5,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.4768461&lng=-149.23054710897583&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.4768461&lng=-149.23054710897583&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/r1569302.png",
       "pinned": true,
       "hidden": false,
@@ -5132,6 +5142,11 @@
       "featured_photo": null,
       "timeline": [
         {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Dark on image"
+        },
+        {
           "day": "2026-11-20",
           "kind": "reset",
           "text": "Froze up"
@@ -5167,7 +5182,9 @@
           "text": "Big ice (4.6 mi): expect leads, open areas and thinly refrozen leads; want 5 cm more ice than on a small pond"
         }
       ],
-      "photo": "thumbs/r1569302-photo.png"
+      "patch_thumb": "thumbs/r1569302-patch.png",
+      "patch_low_sun": false,
+      "photo": "thumbs/r1569302-p2.png"
     },
     "w111525498": {
       "name": "Upper Russian Lake",
@@ -5367,12 +5384,12 @@
     },
     "r2424742": {
       "name": "Unnamed lake (25 ac)",
-      "label": "snow_covered",
+      "label": "likely_black_ice",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 36 cm snow since Nov 13; no clear image since freeze-up; measured 17 cm new snow at Anchorage 4.5 E (CoCoRaHS), Nov 19; 36 cm of snow on ~12 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); no snow since clearing on Nov 22; crack network seen on Nov 22 image; radar does not confirm ice; measured 17 cm new snow at Anchorage 4.5 E (CoCoRaHS), Nov 19",
       "thickness_cm": 12,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.20235285&lng=-149.7601575354912&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.20235285&lng=-149.7601575354912&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/r2424742.png",
       "pinned": true,
       "hidden": false,
@@ -5431,19 +5448,19 @@
           "label": "snow_covered"
         }
       ],
-      "came_in": null,
+      "came_in": "2026-11-22",
       "last_report": null,
       "featured_photo": null,
       "timeline": [
         {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Crack network seen"
+        },
+        {
           "day": "2026-11-19",
           "kind": "snow",
           "text": "17 cm new snow at Anchorage 4.5 E"
-        },
-        {
-          "day": "2026-11-13",
-          "kind": "reset",
-          "text": "Thaw or rain, then refroze"
         },
         {
           "day": "2026-10-28",
@@ -5451,13 +5468,8 @@
           "text": "Dark on image"
         }
       ],
-      "hazards": [
-        {
-          "label": "Slush",
-          "text": "36 cm of snow on ~12 cm ice: heavy enough to flood it, expect slush under the snow"
-        }
-      ],
-      "photo": null
+      "hazards": [],
+      "photo": "thumbs/r2424742-p2.png"
     },
     "w142744955": {
       "name": "Bridge Creek Reservoir",
@@ -16588,8 +16600,8 @@
       "name": "Arizona Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 30 cm snow since Oct 20; white on Oct 22 image; 30 cm of snow on ~38 cm ice: heavy enough to flood it, expect slush under the snow",
-      "thickness_cm": 38,
+      "reason": "2+ in of ice (est.); 30 cm snow since Oct 20; white on Oct 22 image; 30 cm of snow on ~39 cm ice: heavy enough to flood it, expect slush under the snow",
+      "thickness_cm": 39,
       "last_clear_day": "2026-10-22",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=62.0564457&lng=-146.45473369111306&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-10-22T00:00:00.000Z&toTime=2026-10-22T23:59:59.999Z",
       "thumb": null,
@@ -16668,7 +16680,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "30 cm of snow on ~38 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "30 cm of snow on ~39 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -21134,7 +21146,7 @@
     "w218458644": {
       "name": "Little Beaver Lake",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 21 cm snow since Nov 7; no clear image since freeze-up; measured 10 cm new snow at Wasilla 4.2 WSW (CoCoRaHS), Nov 19; 21 cm of snow on ~16 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 16,
       "last_clear_day": null,
@@ -21233,7 +21245,7 @@
     "w218458645": {
       "name": "Blanket Lake",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 21 cm snow since Nov 7; no clear image since freeze-up; measured 10 cm new snow at Wasilla 4.2 WSW (CoCoRaHS), Nov 19; 21 cm of snow on ~16 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 16,
       "last_clear_day": null,
@@ -21827,7 +21839,7 @@
     "w218458683": {
       "name": "Rocky Lake",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 21 cm snow since Nov 7; no clear image since freeze-up; measured 10 cm new snow at Wasilla 4.2 WSW (CoCoRaHS), Nov 19; 21 cm of snow on ~16 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 16,
       "last_clear_day": null,
@@ -23124,7 +23136,7 @@
     "w218458806": {
       "name": "Pear Lake",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 21 cm snow since Nov 7; no clear image since freeze-up; measured 10 cm new snow at Wasilla 4.2 WSW (CoCoRaHS), Nov 19; 21 cm of snow on ~16 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 16,
       "last_clear_day": null,
@@ -25653,7 +25665,7 @@
           "text": "New ice (froze about Nov 21): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w218897509-photo.png"
+      "photo": null
     },
     "w218897511": {
       "name": "Unnamed lake (15 ac)",
@@ -30315,11 +30327,11 @@
       "name": "Alder Pond",
       "label": "freezing",
       "confidence": "medium",
-      "reason": "~3 cm est.; 1 cm snow since Nov 20; no clear image; measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
+      "reason": "~3 cm est.; 1 cm snow since Nov 20; no clear image since Nov 22; patchy on Nov 22 image: grey ice with black patches (open water or newer, thinner ice); measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
       "thickness_cm": 3,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.80627495&lng=-148.9380312010683&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
-      "thumb": null,
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.80627495&lng=-148.9380312010683&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
+      "thumb": "thumbs/w230061280.png",
       "pinned": false,
       "hidden": false,
       "warning": null,
@@ -30382,6 +30394,11 @@
       "featured_photo": null,
       "timeline": [
         {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Grey on image"
+        },
+        {
           "day": "2026-11-20",
           "kind": "reset",
           "text": "Froze up"
@@ -30398,16 +30415,16 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": null
+      "photo": "thumbs/w230061280-p2.png"
     },
     "w230254092": {
       "name": "Unnamed lake (32 ac)",
       "label": "snow_covered",
-      "confidence": "medium",
-      "reason": "~3 cm est.; 8 cm snow since Nov 20; no clear image since freeze-up; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week; 8 cm of snow on ~3 cm ice: heavy enough to flood it, expect slush under the snow",
+      "confidence": "high",
+      "reason": "~3 cm est.; 8 cm snow since Nov 20; no clear image since Nov 22; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week; 8 cm of snow on ~3 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 3,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.80652675&lng=-148.94184239503474&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.80652675&lng=-148.94184239503474&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/w230254092.png",
       "pinned": true,
       "hidden": false,
@@ -30471,6 +30488,11 @@
       "featured_photo": null,
       "timeline": [
         {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Grey on image"
+        },
+        {
           "day": "2026-11-20",
           "kind": "reset",
           "text": "Froze up"
@@ -30512,11 +30534,11 @@
       "name": "Tangle Pond",
       "label": "freezing",
       "confidence": "medium",
-      "reason": "~3 cm est.; 1 cm snow since Nov 20; no clear image; measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
+      "reason": "~3 cm est.; 1 cm snow since Nov 20; no clear image since Nov 22; patchy on Nov 22 image: grey ice with black patches (open water or newer, thinner ice); measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
       "thickness_cm": 3,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.793478199999996&lng=-148.90135907363444&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
-      "thumb": null,
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.793478199999996&lng=-148.90135907363444&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
+      "thumb": "thumbs/w233086513.png",
       "pinned": false,
       "hidden": false,
       "warning": null,
@@ -30579,6 +30601,11 @@
       "featured_photo": null,
       "timeline": [
         {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Grey on image"
+        },
+        {
           "day": "2026-11-20",
           "kind": "reset",
           "text": "Froze up"
@@ -30595,17 +30622,17 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": null
+      "photo": "thumbs/w233086513-p2.png"
     },
     "w233086515": {
       "name": "Unnamed lake (6 ac)",
       "label": "freezing",
-      "confidence": "medium",
-      "reason": "~3 cm est.; 1 cm snow since Nov 20; no clear image; measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
+      "confidence": "high",
+      "reason": "~3 cm est.; 1 cm snow since Nov 20; no clear image since Nov 22; measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
       "thickness_cm": 3,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.79318765&lng=-148.91015389648814&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
-      "thumb": null,
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.79318765&lng=-148.91015389648814&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
+      "thumb": "thumbs/w233086515.png",
       "pinned": false,
       "hidden": false,
       "warning": null,
@@ -30668,6 +30695,11 @@
       "featured_photo": null,
       "timeline": [
         {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Grey on image"
+        },
+        {
           "day": "2026-11-20",
           "kind": "reset",
           "text": "Froze up"
@@ -30684,7 +30716,7 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": null
+      "photo": "thumbs/w233086515-p2.png"
     },
     "w235233775": {
       "name": "Alexander Lake",
@@ -32487,7 +32519,7 @@
           "text": "New ice (froze about Nov 22): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w252226851-photo.png"
+      "photo": null
     },
     "w257881137": {
       "name": "Edmonds Lake",
@@ -49271,10 +49303,10 @@
       "name": "Unnamed lake (20 ac)",
       "label": "freezing",
       "confidence": "medium",
-      "reason": "~3 cm est.; 1 cm snow since Nov 20; no clear image since freeze-up; measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
+      "reason": "~3 cm est.; 1 cm snow since Nov 20; no clear image since Nov 22; patchy on Nov 22 image: grey ice with black patches (open water or newer, thinner ice); measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
       "thickness_cm": 3,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.79968745&lng=-148.9203795413713&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.79968745&lng=-148.9203795413713&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/w270060932.png",
       "pinned": false,
       "hidden": false,
@@ -49338,6 +49370,11 @@
       "featured_photo": null,
       "timeline": [
         {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Grey on image"
+        },
+        {
           "day": "2026-11-20",
           "kind": "reset",
           "text": "Froze up"
@@ -49364,7 +49401,7 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w270060932-photo.png"
+      "photo": "thumbs/w270060932-p2.png"
     },
     "w270311488": {
       "name": "Unnamed lake (195 ac)",
@@ -50190,7 +50227,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w281310743-photo.png"
+      "photo": "thumbs/w281310743-p2.png"
     },
     "w281310746": {
       "name": "Y Lake",
@@ -51766,7 +51803,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296812469-photo.png"
+      "photo": "thumbs/w296812469-p2.png"
     },
     "w296812471": {
       "name": "Unnamed lake (43 ac)",
@@ -51860,7 +51897,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296812471-photo.png"
+      "photo": null
     },
     "w296812474": {
       "name": "Montana Lake",
@@ -51954,7 +51991,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296812474-photo.png"
+      "photo": null
     },
     "w296835300": {
       "name": "Heritage Lake",
@@ -52043,7 +52080,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296835300-photo.png"
+      "photo": null
     },
     "w296835301": {
       "name": "East Sunshine Lake East Drive",
@@ -52132,7 +52169,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296835301-photo.png"
+      "photo": null
     },
     "w296835302": {
       "name": "Unnamed lake (23 ac)",
@@ -52221,7 +52258,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296835302-photo.png"
+      "photo": null
     },
     "r3948484": {
       "name": "Unnamed lake (13 ac)",
@@ -52315,7 +52352,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/r3948484-photo.png"
+      "photo": null
     },
     "w296878488": {
       "name": "Baldy Lake",
@@ -52409,7 +52446,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296878488-photo.png"
+      "photo": null
     },
     "w296887845": {
       "name": "Unnamed lake (8 ac)",
@@ -52498,7 +52535,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296887845-photo.png"
+      "photo": "thumbs/w296887845-p2.png"
     },
     "r3948597": {
       "name": "X Lake",
@@ -52587,14 +52624,14 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/r3948597-photo.png"
+      "photo": "thumbs/r3948597-p2.png"
     },
     "w296887852": {
       "name": "Fish Lake",
       "label": "unknown",
       "confidence": "medium",
       "reason": "2+ in of ice (est.); no snow since freeze-up on Nov 6; no clear image since freeze-up",
-      "thickness_cm": 19,
+      "thickness_cm": 20,
       "last_clear_day": null,
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=62.2496823&lng=-150.0629485421428&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
       "thumb": "thumbs/w296887852.png",
@@ -52676,7 +52713,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296887852-photo.png"
+      "photo": null
     },
     "w296887853": {
       "name": "Little Question Lake",
@@ -52765,7 +52802,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296887853-photo.png"
+      "photo": null
     },
     "w296887854": {
       "name": "Question Lake",
@@ -52854,7 +52891,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296887854-photo.png"
+      "photo": null
     },
     "w296895882": {
       "name": "Unnamed lake (25 ac)",
@@ -52943,7 +52980,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296895882-photo.png"
+      "photo": null
     },
     "w296895883": {
       "name": "Benka Lake",
@@ -53037,7 +53074,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296895883-photo.png"
+      "photo": null
     },
     "w296972702": {
       "name": "Unnamed lake (8 ac)",
@@ -53131,7 +53168,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w296972702-photo.png"
+      "photo": null
     },
     "w297009034": {
       "name": "Ruth Lake",
@@ -55298,7 +55335,7 @@
       ],
       "patch_thumb": "thumbs/w304751822-patch.png",
       "patch_low_sun": false,
-      "photo": "thumbs/w304751822-photo.png"
+      "photo": "thumbs/w304751822-p2.png"
     },
     "w304751823": {
       "name": "Unnamed lake (30 ac)",
@@ -55394,7 +55431,7 @@
       ],
       "patch_thumb": "thumbs/w304751823-patch.png",
       "patch_low_sun": false,
-      "photo": "thumbs/w304751823-photo.png"
+      "photo": "thumbs/w304751823-p2.png"
     },
     "w306076205": {
       "name": "Unnamed lake (33 ac)",
@@ -55493,7 +55530,7 @@
           "text": "New ice (froze about Nov 22): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w306076205-photo.png"
+      "photo": null
     },
     "w306076211": {
       "name": "Mud Lake",
@@ -55587,7 +55624,7 @@
           "text": "New ice (froze about Nov 22): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w306076211-photo.png"
+      "photo": null
     },
     "w306076237": {
       "name": "Unnamed lake (38 ac)",
@@ -55681,7 +55718,7 @@
           "text": "New ice (froze about Nov 22): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w306076237-photo.png"
+      "photo": null
     },
     "w306076244": {
       "name": "Gull Lake",
@@ -57245,11 +57282,11 @@
       "name": "Unnamed lake (15 ac)",
       "label": "freezing",
       "confidence": "medium",
-      "reason": "~3 cm est.; 1 cm snow since Nov 20; no clear image; measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
+      "reason": "~3 cm est.; 1 cm snow since Nov 20; no clear image since Nov 22; patchy on Nov 22 image: grey ice with black patches (open water or newer, thinner ice); measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
       "thickness_cm": 3,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.810389799999996&lng=-148.93642779531342&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
-      "thumb": null,
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.810389799999996&lng=-148.93642779531342&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
+      "thumb": "thumbs/w332622975.png",
       "pinned": false,
       "hidden": false,
       "warning": null,
@@ -57312,6 +57349,11 @@
       "featured_photo": null,
       "timeline": [
         {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Grey on image"
+        },
+        {
           "day": "2026-11-20",
           "kind": "reset",
           "text": "Froze up"
@@ -57328,7 +57370,7 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": null
+      "photo": "thumbs/w332622975-p2.png"
     },
     "w332981227": {
       "name": "Unnamed lake (41 ac)",
@@ -61238,7 +61280,7 @@
           "text": "Big ice (4.0 mi): expect leads, open areas and thinly refrozen leads; want 5 cm more ice than on a small pond"
         }
       ],
-      "photo": "thumbs/r5705100-photo.png"
+      "photo": null
     },
     "r5705239": {
       "name": "Hock Lake",
@@ -63069,7 +63111,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w389390449-photo.png"
+      "photo": null
     },
     "w389568879": {
       "name": "Unnamed lake (15 ac)",
@@ -64717,7 +64759,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w393506252-photo.png"
+      "photo": "thumbs/w393506252-p2.png"
     },
     "w393507869": {
       "name": "Larson Lake",
@@ -64806,7 +64848,7 @@
           "text": "Big ice (3.0 mi): expect leads, open areas and thinly refrozen leads; want 5 cm more ice than on a small pond; windy: sheets can shift and open new leads"
         }
       ],
-      "photo": "thumbs/w393507869-photo.png"
+      "photo": null
     },
     "w393511266": {
       "name": "Unnamed lake (13 ac)",
@@ -64994,7 +65036,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w393524103-photo.png"
+      "photo": null
     },
     "w393525322": {
       "name": "Unnamed lake (14 ac)",
@@ -65083,7 +65125,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w393525322-photo.png"
+      "photo": null
     },
     "w393525327": {
       "name": "Unnamed lake (44 ac)",
@@ -65182,7 +65224,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w393525327-photo.png"
+      "photo": null
     },
     "w393526108": {
       "name": "Rockys Lakes",
@@ -65276,7 +65318,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w393526108-photo.png"
+      "photo": "thumbs/w393526108-p2.png"
     },
     "w393526111": {
       "name": "Unnamed lake (64 ac)",
@@ -65370,7 +65412,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w393526111-photo.png"
+      "photo": "thumbs/w393526111-p2.png"
     },
     "w393526116": {
       "name": "Unnamed lake (84 ac)",
@@ -65454,7 +65496,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w393526116-photo.png"
+      "photo": "thumbs/w393526116-p2.png"
     },
     "w411305850": {
       "name": "Viapan Lake",
@@ -68206,11 +68248,11 @@
       "name": "Unnamed lake (6 ac)",
       "label": "freezing",
       "confidence": "medium",
-      "reason": "~5 cm est.; 0 cm snow since Nov 20; no clear image; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
+      "reason": "~5 cm est.; 0 cm snow since Nov 20; no clear image since Nov 22; patchy on Nov 22 image: grey ice with black patches (open water or newer, thinner ice); new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
       "thickness_cm": 5,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.8791564&lng=-149.42622685600873&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
-      "thumb": null,
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.8791564&lng=-149.42622685600873&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
+      "thumb": "thumbs/w440873346.png",
       "pinned": false,
       "hidden": false,
       "warning": null,
@@ -68273,6 +68315,11 @@
       "featured_photo": null,
       "timeline": [
         {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Grey on image"
+        },
+        {
           "day": "2026-11-20",
           "kind": "reset",
           "text": "Froze up"
@@ -68284,7 +68331,7 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": null
+      "photo": "thumbs/w440873346-p2.png"
     },
     "w440892633": {
       "name": "Unnamed lake (42 ac)",
@@ -70566,7 +70613,7 @@
     "w442705675": {
       "name": "Unnamed lake (55 ac)",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 24 cm snow since Nov 6; no clear image since freeze-up; 24 cm of snow on ~17 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 17,
       "last_clear_day": null,
@@ -71155,7 +71202,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w451049850-photo.png"
+      "photo": null
     },
     "w451049851": {
       "name": "Secluded Lake",
@@ -71829,10 +71876,10 @@
       "name": "Unnamed lake (54 ac)",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 13 cm snow since Nov 5; dark on Nov 5 image: could be ice or open water; 13 cm of snow on ~14 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 13 cm snow since Nov 5; white on Nov 14 image; 13 cm of snow on ~14 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 14,
-      "last_clear_day": "2026-11-05",
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=62.079985050000005&lng=-150.64220292137537&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-05T00:00:00.000Z&toTime=2026-11-05T23:59:59.999Z",
+      "last_clear_day": "2026-11-14",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=62.079985050000005&lng=-150.64220292137537&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-14T00:00:00.000Z&toTime=2026-11-14T23:59:59.999Z",
       "thumb": "thumbs/w451964006.png",
       "pinned": false,
       "hidden": false,
@@ -71895,6 +71942,11 @@
       "last_report": null,
       "featured_photo": null,
       "timeline": [
+        {
+          "day": "2026-11-14",
+          "kind": "image",
+          "text": "White (snow) on image"
+        },
         {
           "day": "2026-11-05",
           "kind": "image",
@@ -73235,7 +73287,7 @@
       ],
       "patch_thumb": "thumbs/w457541989-patch.png",
       "patch_low_sun": false,
-      "photo": "thumbs/w457541989-photo.png"
+      "photo": "thumbs/w457541989-p2.png"
     },
     "r6787312": {
       "name": "Gene Lake",
@@ -75137,7 +75189,7 @@
     "w483035924": {
       "name": "Jean Lake",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 10 cm snow since Nov 7; no clear image since freeze-up; 10 cm of snow on ~18 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 18,
       "last_clear_day": null,
@@ -75963,7 +76015,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w483147485-photo.png"
+      "photo": null
     },
     "w483174410": {
       "name": "Woman Lake",
@@ -76057,7 +76109,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w483174410-photo.png"
+      "photo": null
     },
     "r7181974": {
       "name": "Whiskey Lake",
@@ -78245,11 +78297,11 @@
     "w491981286": {
       "name": "Unnamed lake (62 ac)",
       "label": "snow_covered",
-      "confidence": "low",
-      "reason": "2+ in of ice (est.); 27 cm snow since Nov 7; no clear image since freeze-up; 27 cm of snow on ~16 cm ice: heavy enough to flood it, expect slush under the snow",
+      "confidence": "medium",
+      "reason": "2+ in of ice (est.); 27 cm snow since Nov 7; white on Nov 15 image; 27 cm of snow on ~16 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 16,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.9580128&lng=-151.12575164978387&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "last_clear_day": "2026-11-15",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.9580128&lng=-151.12575164978387&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-15T00:00:00.000Z&toTime=2026-11-15T23:59:59.999Z",
       "thumb": "thumbs/w491981286.png",
       "pinned": false,
       "hidden": false,
@@ -78312,6 +78364,16 @@
       "last_report": null,
       "featured_photo": null,
       "timeline": [
+        {
+          "day": "2026-11-15",
+          "kind": "image",
+          "text": "White (snow) on image"
+        },
+        {
+          "day": "2026-11-14",
+          "kind": "image",
+          "text": "White (snow) on image"
+        },
         {
           "day": "2026-11-07",
           "kind": "reset",
@@ -78820,10 +78882,10 @@
       "name": "Cygnet Lake",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 72 cm snow since Oct 22; no clear image since Nov 7; measured 3 cm new snow at Trapper Creek 2.2 N (CoCoRaHS), Nov 18; 72 cm of snow on ~21 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "2+ in of ice (est.); 72 cm snow since Oct 22; no clear image since Nov 14; measured 3 cm new snow at Trapper Creek 2.2 N (CoCoRaHS), Nov 18; 72 cm of snow on ~21 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 21,
-      "last_clear_day": "2026-11-07",
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=62.47065025&lng=-150.31852643805013&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-07T00:00:00.000Z&toTime=2026-11-07T23:59:59.999Z",
+      "last_clear_day": "2026-11-14",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=62.47065025&lng=-150.31852643805013&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-14T00:00:00.000Z&toTime=2026-11-14T23:59:59.999Z",
       "thumb": "thumbs/w509368289.png",
       "pinned": false,
       "hidden": false,
@@ -78890,6 +78952,11 @@
           "day": "2026-11-18",
           "kind": "snow",
           "text": "3 cm new snow at Trapper Creek 2.2 N"
+        },
+        {
+          "day": "2026-11-14",
+          "kind": "image",
+          "text": "Grey on image"
         },
         {
           "day": "2026-11-07",
@@ -79017,7 +79084,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w509472896-photo.png"
+      "photo": null
     },
     "w509472897": {
       "name": "Unnamed lake (11 ac)",
@@ -79111,7 +79178,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w509472897-photo.png"
+      "photo": null
     },
     "w510287018": {
       "name": "James Lake",
@@ -80412,7 +80479,7 @@
     "w510297823": {
       "name": "Big Darell Lake",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 10 cm snow since Nov 7; no clear image since freeze-up; 10 cm of snow on ~18 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 18,
       "last_clear_day": null,
@@ -81159,7 +81226,7 @@
     "r7419240": {
       "name": "Milo Lake",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 10 cm snow since Nov 7; no clear image since freeze-up; 10 cm of snow on ~18 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 18,
       "last_clear_day": null,
@@ -82738,7 +82805,7 @@
     "w510540149": {
       "name": "Stepan Lake",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 21 cm snow since Nov 7; no clear image since freeze-up; measured 10 cm new snow at Wasilla 4.2 WSW (CoCoRaHS), Nov 19; 21 cm of snow on ~16 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 16,
       "last_clear_day": null,
@@ -84437,7 +84504,7 @@
       "label": "snow_covered",
       "confidence": "medium",
       "reason": "2+ in of ice (est.); 10 cm snow since Oct 22; white on Oct 27 image; possible wind clearing Oct 30; big ice (3.1 mi): expect leads, open areas and thinly refrozen leads; want 5 cm more ice than on a small pond; windy: sheets can shift and open new leads",
-      "thickness_cm": 46,
+      "thickness_cm": 47,
       "last_clear_day": "2026-10-27",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=62.4634316&lng=-145.929808675&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-10-27T00:00:00.000Z&toTime=2026-10-27T23:59:59.999Z",
       "thumb": null,
@@ -85979,7 +86046,7 @@
     "w520705198": {
       "name": "Unnamed lake (46 ac)",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 21 cm snow since Nov 7; no clear image since freeze-up; measured 10 cm new snow at Wasilla 4.2 WSW (CoCoRaHS), Nov 19; 21 cm of snow on ~16 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 16,
       "last_clear_day": null,
@@ -90000,11 +90067,11 @@
       "name": "Lewis River Slough",
       "label": "freezing",
       "confidence": "medium",
-      "reason": "~4 cm est.; no snow since rain/thaw on Nov 22; no clear image",
+      "reason": "~4 cm est.; no snow since rain/thaw on Nov 22; dark on Nov 22 image: could be ice or open water; patchy on Nov 22 image: grey ice with black patches (open water or newer, thinner ice)",
       "thickness_cm": 4,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.261025950000004&lng=-150.77195140070341&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
-      "thumb": null,
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=61.261025950000004&lng=-150.77195140070341&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
+      "thumb": "thumbs/w573941662.png",
       "pinned": false,
       "hidden": false,
       "warning": null,
@@ -90068,12 +90135,19 @@
       "timeline": [
         {
           "day": "2026-11-22",
+          "kind": "image",
+          "text": "Dark on image"
+        },
+        {
+          "day": "2026-11-22",
           "kind": "reset",
           "text": "Thaw or rain, then refroze"
         }
       ],
       "hazards": [],
-      "photo": null
+      "patch_thumb": "thumbs/w573941662-patch.png",
+      "patch_low_sun": false,
+      "photo": "thumbs/w573941662-p2.png"
     },
     "w575992921": {
       "name": "Unnamed lake (13 ac)",
@@ -91673,7 +91747,7 @@
       ],
       "patch_thumb": "thumbs/r8462753-patch.png",
       "patch_low_sun": false,
-      "photo": "thumbs/r8462753-photo.png"
+      "photo": null
     },
     "w609345984": {
       "name": "Unnamed lake (20 ac)",
@@ -92302,8 +92376,8 @@
       "name": "Unnamed lake (36 ac)",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 30 cm snow since Oct 20; white on Nov 14 image; 30 cm of snow on ~38 cm ice: heavy enough to flood it, expect slush under the snow",
-      "thickness_cm": 38,
+      "reason": "2+ in of ice (est.); 30 cm snow since Oct 20; white on Nov 14 image; 30 cm of snow on ~39 cm ice: heavy enough to flood it, expect slush under the snow",
+      "thickness_cm": 39,
       "last_clear_day": "2026-11-14",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=62.06970425&lng=-146.54023851338528&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-14T00:00:00.000Z&toTime=2026-11-14T23:59:59.999Z",
       "thumb": null,
@@ -92392,7 +92466,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "30 cm of snow on ~38 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "30 cm of snow on ~39 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -92776,10 +92850,10 @@
       "name": "Unnamed lake (21 ac)",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "~3 cm est.; 3 cm snow since Nov 20; no clear image since freeze-up; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week; 3 cm of snow on ~3 cm ice: heavy enough to flood it, expect slush under the snow",
+      "reason": "~3 cm est.; 3 cm snow since Nov 20; no clear image since Nov 22; patchy on Nov 22 image: grey ice with black patches (open water or newer, thinner ice); new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week; 3 cm of snow on ~3 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 3,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.85275745&lng=-148.9999681869279&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.85275745&lng=-148.9999681869279&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/r8922352.png",
       "pinned": true,
       "hidden": false,
@@ -92842,6 +92916,11 @@
       "last_report": null,
       "featured_photo": null,
       "timeline": [
+        {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Grey on image"
+        },
         {
           "day": "2026-11-20",
           "kind": "reset",
@@ -95149,10 +95228,10 @@
       "name": "Kenai Lake",
       "label": "open_water",
       "confidence": "medium",
-      "reason": "~0 cm est.; no snow recorded; dark on Nov 6 image: could be ice or open water; patchy on Nov 6 image: grey ice with black patches (open water or newer, thinner ice); measured 8 cm new snow at Cooper Lake (SNOTEL), Nov 19",
+      "reason": "~0 cm est.; no snow recorded; dark on Nov 22 image: could be ice or open water; patchy on Nov 22 image: grey ice with black patches (open water or newer, thinner ice); measured 8 cm new snow at Cooper Lake (SNOTEL), Nov 19",
       "thickness_cm": 0,
-      "last_clear_day": "2026-11-06",
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.4137999&lng=-149.66449587906618&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-06T00:00:00.000Z&toTime=2026-11-06T23:59:59.999Z",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.4137999&lng=-149.66449587906618&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": null,
       "pinned": true,
       "hidden": false,
@@ -95215,6 +95294,11 @@
       "last_report": null,
       "featured_photo": null,
       "timeline": [
+        {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Dark on image"
+        },
         {
           "day": "2026-11-19",
           "kind": "snow",
@@ -95425,7 +95509,7 @@
           "text": "New ice (froze about Nov 22): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w732494323-photo.png"
+      "photo": null
     },
     "w757934010": {
       "name": "Unnamed lake (9 ac)",
@@ -95806,7 +95890,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/r10764316-photo.png"
+      "photo": "thumbs/r10764316-p2.png"
     },
     "w777271367": {
       "name": "Unnamed lake (36 ac)",
@@ -95900,7 +95984,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w777271367-photo.png"
+      "photo": null
     },
     "w794289061": {
       "name": "Unnamed lake (12 ac)",
@@ -96213,8 +96297,8 @@
       "name": "Unnamed lake (49 ac)",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 25 cm snow since Oct 21; no clear image since Nov 14; 25 cm of snow on ~40 cm ice: heavy enough to flood it, expect slush under the snow",
-      "thickness_cm": 40,
+      "reason": "2+ in of ice (est.); 25 cm snow since Oct 21; no clear image since Nov 14; 25 cm of snow on ~41 cm ice: heavy enough to flood it, expect slush under the snow",
+      "thickness_cm": 41,
       "last_clear_day": "2026-11-14",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=62.13808&lng=-146.16295151274204&themeId=DEFAULT-THEME&datasetId=CDAS_L8_L9_LOTL1&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-14T00:00:00.000Z&toTime=2026-11-14T23:59:59.999Z",
       "thumb": null,
@@ -96308,7 +96392,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "25 cm of snow on ~40 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "25 cm of snow on ~41 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -96921,8 +97005,8 @@
       "name": "Unnamed lake (83 ac)",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 25 cm snow since Oct 21; white on Nov 7 Landsat image; 25 cm of snow on ~40 cm ice: heavy enough to flood it, expect slush under the snow",
-      "thickness_cm": 40,
+      "reason": "2+ in of ice (est.); 25 cm snow since Oct 21; white on Nov 7 Landsat image; 25 cm of snow on ~41 cm ice: heavy enough to flood it, expect slush under the snow",
+      "thickness_cm": 41,
       "last_clear_day": "2026-11-07",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=62.074814599999996&lng=-146.150679695059&themeId=DEFAULT-THEME&datasetId=CDAS_L8_L9_LOTL1&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-07T00:00:00.000Z&toTime=2026-11-07T23:59:59.999Z",
       "thumb": null,
@@ -97016,7 +97100,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "25 cm of snow on ~40 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "25 cm of snow on ~41 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -97915,7 +97999,7 @@
           "text": "New ice (froze about Nov 22): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w805865235-photo.png"
+      "photo": null
     },
     "w806082964": {
       "name": "Unnamed lake (8 ac)",
@@ -98187,7 +98271,7 @@
           "text": "New ice (froze about Nov 22): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w806172598-photo.png"
+      "photo": null
     },
     "w806172599": {
       "name": "Unnamed lake (8 ac)",
@@ -98276,7 +98360,7 @@
           "text": "New ice (froze about Nov 22): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w806172599-photo.png"
+      "photo": null
     },
     "w807275666": {
       "name": "Middle Lake",
@@ -98367,7 +98451,7 @@
       ],
       "patch_thumb": "thumbs/w807275666-patch.png",
       "patch_low_sun": false,
-      "photo": "thumbs/w807275666-photo.png"
+      "photo": "thumbs/w807275666-p2.png"
     },
     "w807580985": {
       "name": "Unnamed lake (17 ac)",
@@ -98540,7 +98624,7 @@
           "text": "New ice (froze about Nov 22): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w807580986-photo.png"
+      "photo": null
     },
     "w807580987": {
       "name": "Unnamed lake (8 ac)",
@@ -98629,7 +98713,7 @@
           "text": "New ice (froze about Nov 21): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w807580987-photo.png"
+      "photo": "thumbs/w807580987-p2.png"
     },
     "r11189332": {
       "name": "Unnamed lake (43 ac)",
@@ -99224,8 +99308,8 @@
       "name": "Unnamed lake (15 ac)",
       "label": "snow_covered",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); 40 cm snow since Oct 17; white on Nov 1 image; 40 cm of snow on ~52 cm ice: heavy enough to flood it, expect slush under the snow",
-      "thickness_cm": 52,
+      "reason": "2+ in of ice (est.); 40 cm snow since Oct 17; white on Nov 1 image; 40 cm of snow on ~53 cm ice: heavy enough to flood it, expect slush under the snow",
+      "thickness_cm": 53,
       "last_clear_day": "2026-11-01",
       "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=62.397598200000004&lng=-145.06768392376085&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-01T00:00:00.000Z&toTime=2026-11-01T23:59:59.999Z",
       "thumb": null,
@@ -99314,7 +99398,7 @@
       "hazards": [
         {
           "label": "Slush",
-          "text": "40 cm of snow on ~52 cm ice: heavy enough to flood it, expect slush under the snow"
+          "text": "40 cm of snow on ~53 cm ice: heavy enough to flood it, expect slush under the snow"
         }
       ],
       "photo": null
@@ -102195,7 +102279,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w908090693-photo.png"
+      "photo": null
     },
     "r12329186": {
       "name": "Spruce Lake",
@@ -102289,7 +102373,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/r12329186-photo.png"
+      "photo": null
     },
     "w927508509": {
       "name": "Unnamed lake (18 ac)",
@@ -105214,7 +105298,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/r13816004-photo.png"
+      "photo": null
     },
     "w1032709615": {
       "name": "Lake Four",
@@ -105308,7 +105392,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w1032709615-photo.png"
+      "photo": null
     },
     "w1032709616": {
       "name": "Lake One",
@@ -105402,7 +105486,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w1032709616-photo.png"
+      "photo": null
     },
     "w1032709617": {
       "name": "Lake Five",
@@ -105491,7 +105575,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w1032709617-photo.png"
+      "photo": null
     },
     "w1032709618": {
       "name": "Lake Six",
@@ -105580,7 +105664,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w1032709618-photo.png"
+      "photo": null
     },
     "w1032709619": {
       "name": "Unnamed lake (10 ac)",
@@ -105664,7 +105748,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w1032709619-photo.png"
+      "photo": null
     },
     "w1034282075": {
       "name": "Unnamed lake (20 ac)",
@@ -106134,11 +106218,11 @@
     "w1044546132": {
       "name": "Unnamed lake (10 ac)",
       "label": "freezing",
-      "confidence": "medium",
-      "reason": "~3 cm est.; 0 cm snow since Nov 20; no clear image since freeze-up; measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
+      "confidence": "high",
+      "reason": "~3 cm est.; 0 cm snow since Nov 20; no clear image since Nov 22; measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
       "thickness_cm": 3,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.8269097&lng=-149.01902684299807&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.8269097&lng=-149.01902684299807&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/w1044546132.png",
       "pinned": false,
       "hidden": false,
@@ -106202,6 +106286,11 @@
       "featured_photo": null,
       "timeline": [
         {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Grey on image"
+        },
+        {
           "day": "2026-11-20",
           "kind": "reset",
           "text": "Froze up"
@@ -106223,16 +106312,16 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w1044546132-photo.png"
+      "photo": "thumbs/w1044546132-p2.png"
     },
     "w1044546135": {
       "name": "Unnamed lake (45 ac)",
       "label": "freezing",
       "confidence": "medium",
-      "reason": "~3 cm est.; 0 cm snow since Nov 20; no clear image since freeze-up; patchy on Nov 6 image: grey ice with black patches (open water or newer, thinner ice); measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
+      "reason": "~3 cm est.; 0 cm snow since Nov 20; no clear image since Nov 22; patchy on Nov 22 image: grey ice with black patches (open water or newer, thinner ice); measured 10 cm new snow at Grandview (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week",
       "thickness_cm": 3,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.807745249999996&lng=-149.01781382908314&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.807745249999996&lng=-149.01781382908314&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/w1044546135.png",
       "pinned": false,
       "hidden": false,
@@ -106296,6 +106385,11 @@
       "featured_photo": null,
       "timeline": [
         {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Grey on image"
+        },
+        {
           "day": "2026-11-20",
           "kind": "reset",
           "text": "Froze up"
@@ -106317,7 +106411,7 @@
           "text": "New ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": null
+      "photo": "thumbs/w1044546135-p2.png"
     },
     "w1044546138": {
       "name": "Unnamed lake (56 ac)",
@@ -107227,7 +107321,7 @@
           "text": "New ice (froze about Nov 21): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w1047462790-photo.png"
+      "photo": "thumbs/w1047462790-p2.png"
     },
     "w1047472144": {
       "name": "Unnamed lake (19 ac)",
@@ -107974,7 +108068,7 @@
           "text": "New ice (froze about Nov 21): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w1052509378-photo.png"
+      "photo": "thumbs/w1052509378-p2.png"
     },
     "w1055156527": {
       "name": "Unnamed lake (7 ac)",
@@ -108727,10 +108821,10 @@
       "name": "Upper Trail Lake",
       "label": "unknown",
       "confidence": "medium",
-      "reason": "2+ in of ice (est.); no snow since freeze-up on Nov 20; no clear image since freeze-up; patchy on Nov 7 image: grey ice with black patches (open water or newer, thinner ice); measured 8 cm new snow at Summit Creek (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week; big ice (5.3 mi): expect leads, open areas and thinly refrozen leads; want 5 cm more ice than on a small pond",
+      "reason": "2+ in of ice (est.); no snow since freeze-up on Nov 20; no clear image since Nov 22; patchy on Nov 22 image: grey ice with black patches (open water or newer, thinner ice); measured 8 cm new snow at Summit Creek (SNOTEL), Nov 19; new ice (froze about Nov 20): thin spots and skinned-over holes are common in the first week; big ice (5.3 mi): expect leads, open areas and thinly refrozen leads; want 5 cm more ice than on a small pond",
       "thickness_cm": 6,
-      "last_clear_day": null,
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.497486699999996&lng=-149.3662306827987&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.497486699999996&lng=-149.3662306827987&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": "thumbs/r1568486.png",
       "pinned": true,
       "hidden": false,
@@ -108794,6 +108888,11 @@
       "featured_photo": null,
       "timeline": [
         {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Grey on image"
+        },
+        {
           "day": "2026-11-20",
           "kind": "reset",
           "text": "Froze up"
@@ -108834,7 +108933,7 @@
           "text": "Big ice (5.3 mi): expect leads, open areas and thinly refrozen leads; want 5 cm more ice than on a small pond"
         }
       ],
-      "photo": null
+      "photo": "thumbs/r1568486-p2.png"
     },
     "w1092883898": {
       "name": "Unnamed lake (7 ac)",
@@ -108923,7 +109022,7 @@
           "text": "New ice (froze about Nov 21): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/w1092883898-photo.png"
+      "photo": "thumbs/w1092883898-p2.png"
     },
     "w1092883901": {
       "name": "Unnamed lake (16 ac)",
@@ -111628,7 +111727,7 @@
     "w1207078205": {
       "name": "Unnamed lake (47 ac)",
       "label": "snow_covered",
-      "confidence": "low",
+      "confidence": "medium",
       "reason": "2+ in of ice (est.); 23 cm snow since Nov 7; no clear image since freeze-up; measured 13 cm new snow at Elmendorf Field (SNOTEL), Nov 19; 23 cm of snow on ~17 cm ice: heavy enough to flood it, expect slush under the snow",
       "thickness_cm": 17,
       "last_clear_day": null,
@@ -111818,7 +111917,7 @@
       ],
       "patch_thumb": "thumbs/r16544404-patch.png",
       "patch_low_sun": false,
-      "photo": "thumbs/r16544404-photo.png"
+      "photo": "thumbs/r16544404-p2.png"
     },
     "r11121522": {
       "name": "Sheridan Lake",
@@ -114212,7 +114311,7 @@
           "text": "New ice (froze about Nov 21): thin spots and skinned-over holes are common in the first week"
         }
       ],
-      "photo": "thumbs/r18443166-photo.png"
+      "photo": "thumbs/r18443166-p2.png"
     },
     "r18468312": {
       "name": "McKinley Lake",
@@ -116163,7 +116262,7 @@
         }
       ],
       "hazards": [],
-      "photo": "thumbs/w1492362033-photo.png"
+      "photo": "thumbs/w1492362033-p2.png"
     },
     "w1512795719": {
       "name": "Unnamed lake (18 ac)",
@@ -116257,11 +116356,11 @@
     "r21378422": {
       "name": "Portage Lake",
       "label": "open_water",
-      "confidence": "medium",
-      "reason": "~0 cm est.; no snow recorded; dark on Oct 28 image: could be ice or open water",
+      "confidence": "high",
+      "reason": "~0 cm est.; no snow recorded; no clear image since Nov 22",
       "thickness_cm": 0,
-      "last_clear_day": "2026-10-28",
-      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.768875550000004&lng=-148.80608942125812&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-10-28T00:00:00.000Z&toTime=2026-10-28T23:59:59.999Z",
+      "last_clear_day": "2026-11-22",
+      "browser_url": "https://browser.dataspace.copernicus.eu/?zoom=14&lat=60.768875550000004&lng=-148.80608942125812&themeId=DEFAULT-THEME&datasetId=S2_L2A_CDAS&layerId=1_TRUE_COLOR&dateMode=SINGLE&fromTime=2026-11-22T00:00:00.000Z&toTime=2026-11-22T23:59:59.999Z",
       "thumb": null,
       "pinned": true,
       "hidden": false,
@@ -116324,6 +116423,11 @@
       "last_report": null,
       "featured_photo": null,
       "timeline": [
+        {
+          "day": "2026-11-22",
+          "kind": "image",
+          "text": "Grey on image"
+        },
         {
           "day": "2026-10-28",
           "kind": "image",
