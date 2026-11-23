@@ -107,14 +107,7 @@ function build() {
     const d = info(id);
     // A marker for every lake: polygons are invisible at region zoom, and
     // lakes without geometry are only reachable this way.
-    if (d && d.pinned) {
-      group.addLayer(L.marker([f.properties.lat, f.properties.lon], {
-        icon: L.divIcon({ className: "", html: '<div class="star">★</div>', iconSize: [24, 24], iconAnchor: [12, 12] }),
-        opacity: d.hidden ? 0.3 : 1, title: d.name,
-      }));
-    } else {
-      group.addLayer(L.circleMarker([f.properties.lat, f.properties.lon], { ...st, radius: 7 }));
-    }
+    group.addLayer(L.circleMarker([f.properties.lat, f.properties.lon], { ...st, radius: 7 }));
     group.eachLayer((l) => l.on("click", () => openLake(id, false)));
     layers.set(id, { group, feature: f });
   }
@@ -555,7 +548,7 @@ function setupSearch() {
       sw.style.background = st.fill;
       sw.style.borderColor = st.line;
       const li = el("li", { role: "option", id: "opt-" + i, "aria-selected": String(i === active) },
-        sw, el("span", { class: "nm", text: (d.pinned ? "★ " : "") + d.name }),
+        sw, el("span", { class: "nm", text: d.name }),
         el("span", { class: "sub", text: st.text }));
       li.addEventListener("mousedown", (e) => { e.preventDefault(); choose(h.id); });
       list.append(li);
@@ -609,9 +602,6 @@ function addKey() {
       box.append(row);
     }
     if (!VIEW_ONLY) {
-      const star = el("div", { class: "key-row" });
-      star.append(el("i", { class: "star", text: "★" }), el("span", { text: "Your saved lake" }));
-      box.append(star);
       const faded = el("div", { class: "key-row" });
       const fsw = el("i", { class: "sw" });
       fsw.style.cssText = "background:#3b82f6;border-color:#1d4ed8;opacity:.3";
@@ -678,7 +668,7 @@ function paintSave(id) {
   b.textContent = on ? "♥ Saved" : "♡ Save";
 }
 
-// ★ on the map and first place in Explore are this viewer's own saved lakes.
+// This viewer's own saved lakes come first in Explore (no stars anywhere).
 function markSaved() {
   for (const [id, d] of Object.entries(status.lakes)) d.pinned = !VIEW_ONLY && savedIds.has(id);
   if (map) build();

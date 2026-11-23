@@ -33,7 +33,7 @@ export function renderExplore(mount, opts) {
     feed.append(el("li", {}, el("button", { type: "button", class: "card", onclick: () => opts.openLake(d.id) },
       img,
       el("span", { class: "card-body" },
-        el("b", { class: "card-name", text: (d.pinned ? "★ " : "") + d.name }),
+        el("b", { class: "card-name", text: d.name }),
         el("span", { class: "badges" }, ...badges(d, props, ctx).map((b) => el("span", { class: "badge", text: b }))),
         el("span", { class: "evidence" + (ev.old ? " old" : ""), text: ev.text })))));
   }
