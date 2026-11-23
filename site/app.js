@@ -16,7 +16,7 @@ import { TURNSTILE_SITEKEY, WORKER_URL } from "./config.js";
 
 const STYLE = {
   open_water: { fill: "#3b82f6", line: "#1d4ed8", text: "Open water" },
-  freezing: { fill: "#14b8a6", line: "#0f766e", text: "Freezing" },
+  freezing: { fill: "#a78bfa", line: "#6d28d9", text: "Freezing" },  // violet: far from the ice-cyan of "Likely skateable"
   likely_black_ice: { fill: "#2fb3cf", line: "#facc15", text: "Likely skateable" },
   rough_ice: { fill: "#78716c", line: "#facc15", text: "Skateable, rough" },
   snow_covered: { fill: "#f8fafc", line: "#6b7280", text: "Snow covered" },
