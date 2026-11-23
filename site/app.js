@@ -18,7 +18,7 @@ const STYLE = {
   open_water: { fill: "#3b82f6", line: "#1d4ed8", text: "Open water" },
   freezing: { fill: "#a78bfa", line: "#6d28d9", text: "Freezing" },  // violet: far from the ice-cyan of "Likely skateable"
   likely_black_ice: { fill: "#2fb3cf", line: "#facc15", text: "Likely skateable" },
-  rough_ice: { fill: "#78716c", line: "#facc15", text: "Skateable, rough" },
+  rough_ice: { fill: "#e07a3f", line: "#facc15", text: "Skateable, rough" },  // burnt orange: apart from Unknown grey
   snow_covered: { fill: "#f8fafc", line: "#6b7280", text: "Snow covered" },
   unknown: { fill: "#9ca3af", line: "#6b7280", text: "Unknown" },
 };
