@@ -67,8 +67,10 @@ export async function postComment(env, request) {
 
 export async function lakeComments(env, lakeId) {
   const { results } = await env.DB.prepare(
-    `SELECT name, text, created_at FROM comments WHERE lake_id = ? AND status = 'published'
-     ORDER BY created_at DESC, rowid DESC LIMIT 50`,
+    `SELECT c.name, c.text, c.created_at, f.avatar_id AS avatar
+     FROM comments c LEFT JOIN friends f ON f.id = c.friend_id
+     WHERE c.lake_id = ? AND c.status = 'published'
+     ORDER BY c.created_at DESC, c.rowid DESC LIMIT 50`,
   ).bind(lakeId).all();
   return results;
 }

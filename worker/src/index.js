@@ -7,6 +7,8 @@ import { getLake } from "./lakes.js";
 import { getReview, postPref, reviewComment, reviewPhoto, reviewReport } from "./review.js";
 import { scheduled } from "./cron.js";
 import { deleteSaved, getSaved, getSkated, postSaved } from "./saved.js";
+import { deleteMe, deleteMyDevice, deleteReport, getAvatar, myDevices, myExport, myInvite, myReports,
+  postMyPhoto, putMe } from "./account.js";
 
 const ROUTES = [
   ["POST", /^\/api\/bootstrap$/, bootstrap],
@@ -28,6 +30,16 @@ const ROUTES = [
   ["POST", /^\/api\/saved$/, postSaved],
   ["DELETE", /^\/api\/saved\/([\w-]+)$/, deleteSaved],
   ["GET", /^\/api\/me\/skated$/, getSkated],
+  ["PUT", /^\/api\/me$/, putMe],
+  ["POST", /^\/api\/me\/photo$/, postMyPhoto],
+  ["GET", /^\/api\/avatars\/([\w-]+)$/, getAvatar],
+  ["GET", /^\/api\/me\/reports$/, myReports],
+  ["DELETE", /^\/api\/reports\/([\w-]+)$/, deleteReport],
+  ["GET", /^\/api\/me\/devices$/, myDevices],
+  ["DELETE", /^\/api\/me\/devices\/([\w-]+)$/, deleteMyDevice],
+  ["POST", /^\/api\/me\/invite$/, myInvite],
+  ["GET", /^\/api\/me\/export$/, myExport],
+  ["POST", /^\/api\/me\/delete$/, deleteMe],
 ];
 
 async function route(request, env, ctx) {

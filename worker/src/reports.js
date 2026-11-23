@@ -26,7 +26,7 @@ function bad(message) {
   throw new HttpError(400, message);
 }
 
-function decodePhoto(b64) {
+export function decodePhoto(b64) {
   if (typeof b64 !== "string" || !b64) bad("Photo must be a JPEG");
   // Size check before decoding: base64 is 4 chars per 3 bytes.
   if ((b64.length * 3) / 4 > MAX_PHOTO_BYTES + 3) throw new HttpError(413, "Photo too large");

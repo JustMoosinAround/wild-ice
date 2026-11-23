@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   GRADES, isGoodGrade, getDevice, setDevice, clearDevice, queueReport, queuedReports,
   flushReports, loadLake, postComment, redeemInvite, inviteCodeFromHash, inviteCodeFromText,
-  makeReport, checkDevice, clearLegacy, inviteDecision, getSaved, setSaved, getSkated,
+  makeReport, checkDevice, clearLegacy, inviteDecision, getSaved, setSaved, getSkated, account,
 } from "../../site/icelog.js";
 
 function memStore() {
@@ -302,4 +302,26 @@ test("offline, a member still sees the last saved list", async () => {
   await getSaved({ fetch: fakeFetch(() => [200, { lakes: ["w1"] }]), storage: s, base: BASE });
   const down = async () => { throw new TypeError("Failed to fetch"); };
   assert.deepEqual(await getSaved({ fetch: down, storage: s, base: BASE }), ["w1"]);
+});
+
+
+test("account calls send this phone's key; deleting the account or signing this phone out forgets the key", async () => {
+  const s = memStore();
+  setDevice(s, { key: "dev", name: "Pat", role: "friend" });
+  const f = fakeFetch(() => [200, { ok: true }]);
+  const opts = { fetch: f, storage: s, base: BASE };
+  await account.rename("Pat Q", opts);
+  assert.equal(f.calls[0].init.method, "PUT");
+  assert.deepEqual(f.calls[0].body, { name: "Pat Q" });
+  assert.equal(f.calls[0].init.headers.Authorization, "Bearer dev");
+  assert.equal(getDevice(s).name, "Pat Q");
+  await account.signOut({ id: "abc", current: false }, opts);
+  assert.equal(f.calls[1].url, `${BASE}/api/me/devices/abc`);
+  assert.ok(getDevice(s));
+  await account.signOut({ id: "def", current: true }, opts);
+  assert.equal(getDevice(s), null);
+  setDevice(s, { key: "dev", name: "Pat", role: "friend" });
+  assert.equal((await account.remove(opts)).ok, true);
+  assert.equal(f.calls.at(-1).url, `${BASE}/api/me/delete`);
+  assert.equal(getDevice(s), null);
 });

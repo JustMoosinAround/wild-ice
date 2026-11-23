@@ -33,7 +33,7 @@ export function preflight(request, env) {
   const headers = { "Access-Control-Max-Age": "86400" };
   if (request.headers.get("Origin") === env.SITE_ORIGIN) {
     headers["Access-Control-Allow-Origin"] = env.SITE_ORIGIN;
-    headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS";
+    headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
     headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type";
     headers.Vary = "Origin";
   }

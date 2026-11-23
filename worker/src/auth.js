@@ -1,5 +1,6 @@
 // Invites, device keys, roles and the service token. Only SHA-256 hashes are stored.
 import { HttpError, json, now, readJson } from "./http.js";
+import { phoneLabel } from "./account.js";
 
 export async function hash(text) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -28,10 +29,18 @@ async function sameSecret(given, expected) {
 export async function deviceFriend(env, request) {
   const key = bearer(request);
   if (!key) return null;
-  return await env.DB.prepare(
-    `SELECT f.id, f.name, f.role FROM devices d JOIN friends f ON f.id = d.friend_id
+  const keyHash = await hash(key);
+  const f = await env.DB.prepare(
+    `SELECT f.id, f.name, f.role, f.avatar_id FROM devices d JOIN friends f ON f.id = d.friend_id
      WHERE d.key_hash = ? AND f.revoked_at IS NULL`,
-  ).bind(await hash(key)).first();
+  ).bind(keyHash).first();
+  if (f) {
+    // "last used" for the account page's phone list, at most once an hour
+    const t = now();
+    await env.DB.prepare("UPDATE devices SET last_seen = ? WHERE key_hash = ? AND (last_seen IS NULL OR last_seen < ?)")
+      .bind(t, keyHash, new Date(Date.parse(t) - 3600e3).toISOString()).run();
+  }
+  return f;
 }
 
 export async function requireDevice(env, request) {
@@ -102,14 +111,14 @@ export async function redeem(env, request) {
   }
   const key = newToken();
   await env.DB.prepare(
-    "INSERT INTO devices (key_hash, friend_id, created_at) VALUES (?, ?, ?)",
-  ).bind(await hash(key), friendId, now()).run();
+    "INSERT INTO devices (key_hash, friend_id, created_at, label) VALUES (?, ?, ?, ?)",
+  ).bind(await hash(key), friendId, now(), phoneLabel(request.headers.get("User-Agent"))).run();
   return json({ device_key: key, name, role: inv.role });
 }
 
 export async function me(env, request) {
   const f = await requireDevice(env, request);
-  return json({ name: f.name, role: f.role });
+  return json({ name: f.name, role: f.role, avatar: f.avatar_id || null });
 }
 
 export async function invite(env, request) {

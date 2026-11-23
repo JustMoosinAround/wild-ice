@@ -13,7 +13,7 @@ body { display: flex; flex-direction: column; font: 16px/1.4 system-ui, sans-ser
 .toggle { font-size: 14px; display: flex; align-items: center; gap: 6px; min-height: 44px; }
 .toggle input { width: 20px; height: 20px; }
 #map { flex: 1; min-height: 0; }
-#msg { position: absolute; top: 90px; left: var(--gutter); right: var(--gutter); z-index: 1000; background: var(--bad-bg); color: var(--bad-fg); padding: 8px 12px; border-radius: 8px; font-size: 14px; }
+#msg { position: fixed; bottom: calc(76px + var(--sab)); top: auto; left: var(--gutter); right: var(--gutter); z-index: 1000; background: var(--bad-bg); color: var(--bad-fg); padding: 8px 12px; border-radius: 8px; font-size: 14px; }
 #panel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000; max-height: 70vh; overflow-y: auto; background: var(--bg);
   padding: 12px var(--gutter) calc(16px + env(safe-area-inset-bottom)); border-top-left-radius: 14px; border-top-right-radius: 14px; box-shadow: 0 -4px 16px rgba(0,0,0,.25); }
 #panel h2 { font-size: 20px; margin: 0 40px 4px 0; }
@@ -257,3 +257,20 @@ button.act.on { background: var(--teal); border-color: var(--ice); color: #fff; 
 a { color: var(--accent); }
 input, textarea, select { background: var(--surface2); color: var(--fg); border-color: var(--line2); }
 input::placeholder, textarea::placeholder { color: var(--muted); }
+
+/* account */
+.me-btn { position: absolute; top: calc(5px + var(--sat)); line-height: 0; right: var(--gutter); text-decoration: none; }
+#bar h1 { margin-right: 40px; }
+.acct-msg:empty { display: none; }
+.avatar { display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 50%; overflow: hidden;
+  background: var(--teal); color: #fff; font-weight: 600; vertical-align: middle; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+li.comment { display: flex; gap: 10px; align-items: flex-start; }
+.featured figcaption .avatar { margin-right: 4px; }
+.acct { margin: 14px 0; }
+.acct h3 { font-size: 15px; margin: 0 0 6px; }
+.acct-head { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+.acct-row { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); padding: 6px 0; }
+.acct-main { flex: 1; display: flex; flex-direction: column; text-align: left; background: none; border: 0; color: var(--fg); font: inherit; padding: 0; cursor: pointer; }
+button.act.danger { border-color: #e26b6b; color: #f3a9a9; background: transparent; }
+.acct input[type=text] { width: 100%; min-height: 44px; font-size: 16px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line2); }

@@ -118,7 +118,7 @@ export async function pendingCounts(env, olderThan = null) {
 
 export async function featuredPhotos(env, lakeId) {
   const { results } = await env.DB.prepare(
-    `SELECT p.public_id, f.name AS credit, p.created_at
+    `SELECT p.public_id, f.name AS credit, f.avatar_id AS avatar, p.created_at
      FROM photos p LEFT JOIN friends f ON f.id = p.friend_id
      WHERE p.lake_id = ? AND p.status = 'featured' ORDER BY p.created_at DESC LIMIT ?`,
   ).bind(lakeId, MAX_FEATURED).all();

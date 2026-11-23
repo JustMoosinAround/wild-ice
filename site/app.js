@@ -5,12 +5,13 @@ import { heroSection } from "./views/lake-page.js";
 import { GLOSSARY } from "./glossary.js";
 import { renderMine } from "./views/mine-view.js";
 import { renderUpload } from "./views/upload-view.js";
-import { badges } from "./explore.js";
+import { avatarEl, avatarUrl, renderAccount } from "./views/account-view.js";
+import { badges, shortDate } from "./explore.js";
 
 const SKATE_CM = 5; // config.yaml ice.skate_cm: past 2" the thickness doesn't matter
 import {
   GRADES, flushReports, getDevice, inviteCodeFromHash, loadLake, ownerCall, postComment, prepPhoto,
-  queueReport, queuedReports, redeemInvite, getSaved, setSaved, getSkated, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
+  queueReport, queuedReports, redeemInvite, getSaved, setSaved, getSkated, account, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
 } from "./icelog.js";
 import { TURNSTILE_SITEKEY, WORKER_URL } from "./config.js";
 
@@ -57,10 +58,14 @@ const layers = new Map(); // id -> {group, feature}
 
 function pending() { return queuedReports(store).length; }
 
+// A short note above the tab bar that goes away by itself (or when tapped).
+let msgTimer = null;
 function showMsg(text) {
   const m = $("msg");
   m.textContent = text;
   m.hidden = !text;
+  clearTimeout(msgTimer);
+  if (text) msgTimer = setTimeout(() => { m.hidden = true; }, 6000);
 }
 
 function el(tag, props = {}, ...kids) {
@@ -347,11 +352,13 @@ function iceLogSection(id) {
     for (const p of ph || []) {
       photos.append(el("figure", {},
         el("img", { src: `${WORKER_URL}/api/photos/${encodeURIComponent(p.public_id)}`, alt: "Photo of the lake", loading: "lazy" }),
-        el("figcaption", { text: (p.credit || "A skater") + ", " + shortDay(p.created_at.slice(0, 10)) })));
+        el("figcaption", {}, avatarEl(avatarUrl(WORKER_URL, p.avatar), p.credit || "A skater", 20),
+          document.createTextNode(" " + (p.credit || "A skater") + ", " + shortDay(p.created_at.slice(0, 10))))));
     }
     if (!comments.length) list.append(el("li", { class: "meta", text: "No comments yet." }));
     for (const c of comments) {
-      list.append(el("li", {}, el("b", { text: c.name }), el("span", { class: "meta", text: " · " + shortDay(c.created_at.slice(0, 10)) }), el("p", { text: c.text })));
+      list.append(el("li", { class: "comment" }, avatarEl(avatarUrl(WORKER_URL, c.avatar), c.name, 32),
+        el("div", {}, el("b", { text: c.name }), el("span", { class: "meta", text: " · " + shortDay(c.created_at.slice(0, 10)) }), el("p", { text: c.text }))));
     }
   });
   return box;
@@ -508,10 +515,13 @@ function setStatus(t) {
   if (s) s.textContent = t;
 }
 
+// Everyone sees when the data is old; only the owner is told a job failed.
 function showBanner() {
   const b = $("banner");
   if (status.stale_since) {
-    b.textContent = "Data from " + status.stale_since + " — the daily job failed.";
+    b.textContent = isOwner()
+      ? "Data from " + status.stale_since + " — the daily job failed."
+      : "Last updated " + shortDate(status.stale_since) + ".";
     b.hidden = false;
   } else {
     b.hidden = true;
@@ -626,6 +636,7 @@ function routeHash() {
   }
   if (location.hash === "#review") { showReview(); return; }
   if (location.hash === "#glossary") { showGlossary(); return; }
+  if (location.hash === "#account") { showAccount(); return; }
   if (location.hash === "#skateable") { showTab("explore"); return; }
   const t = location.hash.match(/^#tab=(\w+)$/);
   if (t) { closePanel(); showTab(t[1]); return; }
@@ -712,7 +723,7 @@ function renderTab() {
   } else if (tab === "upload") {
     renderUpload($("upload-view"), { joined: canLog(), features, storage: store,
       queue: (r) => { queueReport(store, r); sendQueue(); setTimeout(loadMine, 4000); },
-      onJoin: () => { showTab("explore"); showMsg("Open any lake and use \"Have an invite? Join Wild Ice\" at the bottom."); } });
+      onJoin: () => { location.hash = "#account"; } });
   }
 }
 
@@ -743,6 +754,33 @@ async function setPref(id, action) {
     build();
   }
   if (currentId === id) renderPanel(id, r && r.status === 200 ? "Saved: the map updates after the next daily run" : "Couldn't save, try again");
+}
+
+function showAccount() {
+  const page = openPage("Account", el("p", { class: "meta", text: "Loading…" }));
+  page.classList.add("page");
+  const body = el("div");
+  page.lastChild.replaceWith(body);
+  renderAccount(body, {
+    ICELOG, lakeName: (id) => info(id)?.name || id, joinSection: pasteInvite(),
+    openLake: (id) => openLake(id, true),
+    onChanged: () => paintMe(),
+    onSignedOut: () => { savedIds = new Set(); skated = null; markSaved(); paintMe(); closePanel(); showMsg("Signed out on this phone."); renderTab(); },
+  });
+}
+
+// The round picture at the top right: your photo or initial; opens the account page.
+async function paintMe() {
+  const btn = $("me-btn");
+  if (!btn) return;
+  const d = getDevice(store);
+  let avatar = null;
+  if (d && WORKER_URL) {
+    const r = await account.me(ICELOG).catch(() => null);
+    if (r && r.status === 200) avatar = r.data.avatar;
+  }
+  btn.replaceChildren(avatarEl(avatarUrl(WORKER_URL, avatar), d ? d.name : "", 28));
+  btn.setAttribute("aria-label", d ? `Account: ${d.name}` : "Account and invites");
 }
 
 function showGlossary() {
@@ -929,6 +967,7 @@ async function main() {
     return;
   }
   showBanner();
+  $("msg").addEventListener("click", () => { $("msg").hidden = true; });
   if (!VIEW_ONLY) overlayReported();
   build();
   setupSearch();
@@ -940,6 +979,11 @@ async function main() {
     });
     showTab(location.hash.startsWith("#lake=") ? "map" : "explore");
     loadMine();
+    if (WORKER_URL) {
+      const me = el("a", { id: "me-btn", href: "#account", class: "me-btn" });
+      $("bar").prepend(me);
+      paintMe();
+    }
   }
   routeHash();
 }

@@ -38,7 +38,7 @@ describe("invites and devices", () => {
     const fk = await friend(ok, "Pat");
     const me = await call("GET", "/api/me", { token: fk });
     expect(me.status).toBe(200);
-    expect(await me.json()).toEqual({ name: "Pat", role: "friend" });
+    expect(await me.json()).toEqual({ name: "Pat", role: "friend", avatar: null });
     const { results } = await env.DB.prepare("SELECT id FROM friends WHERE role = 'friend'").all();
     const rev = await call("POST", `/api/friends/${results[0].id}/revoke`, { token: ok });
     expect(rev.status).toBe(200);

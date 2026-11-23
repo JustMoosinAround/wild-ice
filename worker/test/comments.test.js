@@ -45,7 +45,7 @@ describe("comments", () => {
     const got = (await lake()).comments;
     expect(got).toHaveLength(1);
     expect(got[0]).toMatchObject({ name: "Pat", text: "Plowed lot on the east side" }); // their own name
-    expect(Object.keys(got[0]).sort()).toEqual(["created_at", "name", "text"]);
+    expect(Object.keys(got[0]).sort()).toEqual(["avatar", "created_at", "name", "text"]);
     expect(verifyCalls).toHaveLength(0);
   });
 

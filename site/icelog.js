@@ -309,3 +309,53 @@ export async function getSkated({ fetch, storage, base }) {
     return [];
   }
 }
+
+// --- Account page ---------------------------------------------------------------
+async function mine(path, opts, method = "GET", body) {
+  const device = getDevice(opts.storage);
+  if (!device) return { status: 401, data: {} };
+  try {
+    return await call(opts.base, path, { fetch: opts.fetch, method, body, token: device.key });
+  } catch {
+    return { status: 0, data: { error: "No connection, try again" } };
+  }
+}
+
+export const account = {
+  me: (opts) => mine("/api/me", opts),
+  async rename(name, opts) {
+    const r = await mine("/api/me", opts, "PUT", { name });
+    if (r.status === 200) setDevice(opts.storage, { ...getDevice(opts.storage), name: r.data.name || name });
+    return r;
+  },
+  photo: (jpegBase64, opts) => mine("/api/me/photo", opts, "POST", { photo: jpegBase64 }),
+  reports: (opts) => mine("/api/me/reports", opts),
+  deleteReport: (id, opts) => mine(`/api/reports/${encodeURIComponent(id)}`, opts, "DELETE"),
+  devices: (opts) => mine("/api/me/devices", opts),
+  async signOut(device, opts) {
+    const r = await mine(`/api/me/devices/${encodeURIComponent(device.id)}`, opts, "DELETE");
+    if (r.status === 200 && device.current) clearDevice(opts.storage);
+    return r;
+  },
+  newPhoneLink: (opts) => mine("/api/me/invite", opts, "POST", {}),
+  download: (opts) => mine("/api/me/export", opts),
+  async remove(opts) {
+    const r = await mine("/api/me/delete", opts, "POST", {});
+    if (r.status === 200) { clearDevice(opts.storage); write(opts.storage, QUEUE_KEY, []); }
+    return { ok: r.status === 200, error: r.data.error };
+  },
+};
+
+// Browser only: a square 400 px JPEG of the middle of the picture, no metadata.
+export async function prepAvatar(file) {
+  const bitmap = await createImageBitmap(file);
+  const side = Math.min(bitmap.width, bitmap.height);
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 400;
+  canvas.getContext("2d").drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, 400, 400);
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
