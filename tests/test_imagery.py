@@ -666,7 +666,7 @@ def test_lake_photo_is_sharp_sentinel2_even_for_a_landsat_day_and_a_tiny_lake(cl
     body = json.loads(responses.calls[1].request.body)
     w, s, e, n = body["input"]["bounds"]["bbox"]
     span_m = max((e - w) * 111320 * 0.4848, (n - s) * 110540)
-    assert span_m >= 4000  # never finer than ~5 m a pixel (Sentinel-2 is 10 m)
+    assert span_m >= 2499  # never finer than ~3 m a pixel (Sentinel-2 is 10 m)
     data = body["input"]["data"][0]
     assert data["type"] == "sentinel-2-l2a"  # Landsat (30 m) looks blocky
     assert data["processing"]["upsampling"] == "BICUBIC"

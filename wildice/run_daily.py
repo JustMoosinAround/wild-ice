@@ -29,6 +29,7 @@ from wildice.prefs import load_prefs
 from wildice.cracks import check_cracks
 from wildice.explore import came_in, hazards, timeline
 from wildice.numbering import apply_numbers
+from wildice.photo import outline_photo
 from wildice.hazards import (big_ice_note, lead_note, new_ice_note, ridge_note, slush_note,
                              thaw_note)
 from wildice.icelog import fetch_export, merge_reports, reports_from_export
@@ -386,7 +387,7 @@ def _photos(client, lakes: dict[str, Lake], scores: dict[str, Score], prev_lakes
         lake = lakes[lake_id]
         if sc.label not in THUMB_LABELS or sc.last_clear_day is None or lake.interior is None:
             continue
-        path = thumbs_dir / f"{lake_id}-p2.png"  # p2: sharper photos (the -photo ones were soft)
+        path = thumbs_dir / f"{lake_id}-p3.png"  # p3: framed closer, with the shoreline drawn
         prev_day = (prev_lakes.get(lake_id) or {}).get("last_clear_day")
         if path.exists() and prev_day == sc.last_clear_day.isoformat():
             continue
@@ -401,6 +402,10 @@ def _photos(client, lakes: dict[str, Lake], scores: dict[str, Score], prev_lakes
         except SourceUnavailable as exc:  # cosmetic: keep the run going
             log.warning("photo for %s failed: %s", lake_id, exc)
             return
+        try:
+            png = outline_photo(png, lake.interior)
+        except (OSError, ValueError) as exc:  # not an image: keep it as it came
+            log.warning("outline for %s failed: %s", lake_id, exc)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(png)
 

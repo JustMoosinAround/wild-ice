@@ -133,3 +133,14 @@ def test_small_lake_kept_only_when_close_to_road(cfg):
     # same lake far from any road is dropped
     small_far = _square(22, -148.80, 0.0018)
     assert build_catalog([small_far], roads, [], c) == []
+
+
+def test_unnamed_copy_of_a_named_lake_is_dropped():
+    from wildice.catalog import drop_duplicates
+    from wildice.models import Lake
+    sq = {"type": "Polygon", "coordinates": [[[-150, 61], [-149.99, 61], [-149.99, 61.01], [-150, 61.01], [-150, 61]]]}
+    near = {"type": "Polygon", "coordinates": [[[-149.98, 61], [-149.97, 61], [-149.97, 61.01], [-149.98, 61.01], [-149.98, 61]]]}
+    named = Lake("w1", "Cheney Lake", 25, 0.1, None, 61, -150, sq, None)
+    copy = Lake("r9", None, 25, 0.1, None, 61, -150, sq, None)
+    other = Lake("w2", None, 25, 0.1, None, 61, -149.97, near, None)
+    assert [l.id for l in drop_duplicates([copy, named, other])] == ["w1", "w2"]

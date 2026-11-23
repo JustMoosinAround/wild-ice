@@ -957,8 +957,8 @@ def test_lake_photo_saved_with_the_thumbnail_and_published(tmp_repo, mocked):
     assert run(RUN, tmp_repo, ENV, session(), first) == 0
     assert [c for c in first.calls if c[0] == "photo"] == [("photo", RUN - timedelta(days=1),
                                                             RUN - timedelta(days=1))]
-    assert (tmp_repo / "site/data/thumbs/w1-p2.png").exists()
-    assert status_of(tmp_repo)["lakes"]["w1"]["photo"] == "thumbs/w1-p2.png"
+    assert (tmp_repo / "site/data/thumbs/w1-p3.png").exists()
+    assert status_of(tmp_repo)["lakes"]["w1"]["photo"] == "thumbs/w1-p3.png"
     second = FakeClient()
     assert run(RUN, tmp_repo, ENV, session(), second) == 0
     assert [c for c in second.calls if c[0] == "photo"] == []

@@ -83,7 +83,28 @@ def build_catalog(water: list[dict], roads: list[dict], trails: list[dict],
             interior=_plain(inner) if inner is not None else None,
             warning=NARROW_WARNING if inner is None else None,
         ))
-    return lakes
+    return drop_duplicates(lakes)
+
+
+def drop_duplicates(lakes: list[Lake]) -> list[Lake]:
+    """OpenStreetMap sometimes maps a lake twice (a named way and an unnamed relation):
+    drop an unnamed lake that mostly overlaps a named one."""
+    from shapely import STRtree
+    named = [(l, shape(l.interior)) for l in lakes if l.name and l.interior]
+    if not named:
+        return lakes
+    tree = STRtree([g for _, g in named])
+    drop = set()
+    for lake in lakes:
+        if lake.name or not lake.interior:
+            continue
+        g = shape(lake.interior)
+        for j in tree.query(g):
+            h = named[j][1]
+            if g.intersection(h).area > 0.5 * min(g.area, h.area):
+                drop.add(lake.id)
+                break
+    return [l for l in lakes if l.id not in drop]
 
 
 def write_catalog(lakes: list[Lake], path: Path) -> None:

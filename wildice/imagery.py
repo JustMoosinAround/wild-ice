@@ -466,7 +466,7 @@ class CopernicusClient:
 PHOTO_PX = 800      # long side of the people-facing lake photo
 PHOTO_PAD = 0.35    # padding around the lake, as a share of its size on each side
 PHOTO_MIN_M = 500   # ...but at least this much, so small ponds show their surroundings
-PHOTO_MIN_SPAN_M = 4000  # whole photo at least this wide: ~5 m a pixel, Sentinel-2 is 10 m
+PHOTO_MIN_SPAN_M = 2500  # whole photo at least this wide: ~3 m a pixel (bicubic from 10 m), lake still easy to see
 PHOTO_WINDOW_DAYS = 10   # clearest Sentinel-2 look in the days up to the clear day
 
 
