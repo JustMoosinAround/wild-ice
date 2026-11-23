@@ -485,6 +485,35 @@ function iceLogSection(id) {
   return box;
 }
 
+// --- anonymous usage counts (owner sees them on Review) ---
+function platformName() {
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return "ios";
+  if (/Android/.test(ua)) return "android";
+  if (/Windows|Macintosh|Linux|CrOS/.test(ua)) return "desktop";
+  return "other";
+}
+
+function countUse(path, body) {
+  if (!WORKER_URL) return;
+  fetch(WORKER_URL + path, { method: "POST", keepalive: true, headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body) }).catch(() => { /* counts are best-effort */ });
+}
+
+// An installed copy (opened from the home screen) says hello once a day with a random id.
+function pingInstall() {
+  const installed = window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
+  if (!installed) return;
+  try {
+    let id = store.getItem("wildice.installId");
+    if (!id) { id = crypto.randomUUID(); store.setItem("wildice.installId", id); }
+    const today = new Date().toISOString().slice(0, 10);
+    if (store.getItem("wildice.pingDay") === today) return;
+    store.setItem("wildice.pingDay", today);
+    countUse("/api/ping", { id, platform: platformName() });
+  } catch { /* storage blocked: don't count */ }
+}
+
 // A button that opens the sign-up page.
 function joinPrompt(text) {
   return el("div", { class: "join-prompt" }, el("p", { class: "meta", text }),
@@ -998,6 +1027,21 @@ async function showReview() {
   const r = await ownerCall("/api/review", ICELOG).catch(() => null);
   if (!r || r.status !== 200) { body.append(el("p", { class: "status", text: "Couldn't load the review list." })); return; }
   const { comments, photos, friends } = r.data;
+  const stats = el("section", { class: "stats" });
+  body.append(stats);
+  ownerCall("/api/stats", ICELOG).then((sr) => {
+    if (!sr || sr.status !== 200) return;
+    const d = sr.data;
+    const plat = Object.entries(d.installs.by_platform).map(([k, v]) => `${v} ${({ ios: "iPhone", android: "Android", desktop: "computer", other: "other" })[k] || k}`).join(" · ");
+    const tile = (n, t) => el("div", { class: "stat" }, el("b", { text: String(n) }), el("span", { text: t }));
+    stats.append(el("h3", { text: "Numbers" }),
+      el("div", { class: "stat-row" },
+        tile(d.installs.total, "installed"), tile(d.installs.active_7d, "opened this week"),
+        tile(d.members.total, "members"), tile(d.get_app_clicks.d30, "Get the app taps, 30 days")),
+      el("p", { class: "meta", text: [plat, `${d.installs.new_7d} new installs and ${d.members.new_7d} new members this week`,
+        `${d.reports_30d} reports in 30 days`].filter(Boolean).join(" · ") }),
+      el("p", { class: "meta", text: "Installs are counted when the app is opened from a home screen (from now on), anonymously." }));
+  }).catch(() => {});
   const decide = (path, action, row) => async () => {
     row.querySelectorAll("button").forEach((b) => { b.disabled = true; });
     const res = await ownerCall(path, { ...ICELOG, method: "POST", body: { action } }).catch(() => null);
@@ -1113,9 +1157,11 @@ async function main() {
         el("img", { src: "icons/icon-192.png", alt: "", width: "44", height: "44" }),
         el("span", { class: "promo-text" }, el("b", { text: "Wild Ice" }),
           el("span", { text: "Join the community. Add observations and trip reports." }))),
-      el("a", { class: "promo-btn", href: app + "#join", target: "_blank", rel: "noopener", text: "Get the app" })));
+      el("a", { class: "promo-btn", href: app + "#join", target: "_blank", rel: "noopener", text: "Get the app",
+        onclick: () => countUse("/api/tally", { name: "get_app_click" }) })));
   } else {
     window.addEventListener("pagehide", commitReport); // don't lose a report in its undo window
+    pingInstall();
   if (isOwner()) {
     $("bar").append(el("a", { class: "review-link", href: "#review", text: "Review" }));
   }

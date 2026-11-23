@@ -314,3 +314,8 @@ a.promo-btn:hover { filter: brightness(1.1); }
 .join-prompt { margin: 16px 0; }
 a.join-btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 10px; text-decoration: none;
   background: var(--teal); color: var(--fg); font-weight: 600; }
+
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.stat { background: var(--surface2); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.stat b { font-size: 24px; }
+.stat span { color: var(--muted); font-size: 13px; }
