@@ -153,6 +153,12 @@ body:not(.embed):not([data-tab="map"]) .toggle { display: none; }
 #panel { bottom: calc(var(--tabs-h) + var(--sab)); max-height: calc(100% - var(--tabs-h) - var(--sab) - var(--sat) - 80px); }
 body.embed #tabs { display: none; }
 body.embed #panel { bottom: 0; }
+/* Embedded on another site: that page already has a header, so ours is one slim row. */
+body.embed #bar h1 { display: none; }
+body.embed #bar { padding: 6px var(--gutter); flex-wrap: nowrap; }
+body.embed .search { flex: 1 1 auto; }
+body.embed .search input { padding-top: 6px; padding-bottom: 6px; }
+body.embed .toggle { white-space: nowrap; font-size: 14px; }
 
 /* explore feed */
 .feed-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
