@@ -7,6 +7,7 @@ import { renderMine } from "./views/mine-view.js";
 import { renderUpload } from "./views/upload-view.js";
 import { avatarEl, avatarUrl, renderAccount } from "./views/account-view.js";
 import { badges, shortDate } from "./explore.js";
+import { ACCESS, DISTANCES, LABELS, SIZES, SKATE, activeCount, clean, defaults, passes } from "./mapfilter.js";
 
 const SKATE_CM = 5; // config.yaml ice.skate_cm: past 2" the thickness doesn't matter
 import {
@@ -32,7 +33,6 @@ const KEY = [
   ["snow_covered", "Snow on the ice"],
   ["open_water", "No ice yet"],
 ];
-const SKATE_LABELS = new Set(["likely_black_ice", "rough_ice", "freezing"]);
 // "How was it?" choices: map color they set right away (rough keeps the current one).
 const REPORT = {
   skated: { text: "Skateable", label: "likely_black_ice" },
@@ -95,8 +95,8 @@ function lakeStyle(id) {
 function visible(id) {
   const d = info(id);
   if (VIEW_ONLY && d && d.hidden) return false;
-  if (!$("only-skate").checked) return true;
-  return !!d && SKATE_LABELS.has(d.label);
+  const p = layers.get(id)?.feature.properties;
+  return passes(mapFilter, p, d, { runDate: status.run_date, here });
 }
 
 function build() {
@@ -117,6 +117,127 @@ function build() {
     layers.set(id, { group, feature: f });
   }
   applyFilter();
+}
+
+// --- map tools: search (embedded map) and filter buttons under the zoom ---
+const FILTER_KEY = "wildice.mapFilter";
+let mapFilter = (() => { try { return clean(JSON.parse(localStorage.getItem(FILTER_KEY))); } catch { return defaults(); } })();
+let here = null; // {lat, lon} once the viewer shares their location for "distance from me"
+let hereNote = "";
+
+function setFilter(f) {
+  mapFilter = clean(f);
+  try { localStorage.setItem(FILTER_KEY, JSON.stringify(mapFilter)); } catch { /* storage blocked */ }
+  if (mapFilter.maxMiles && !here) locate();
+  applyFilter();
+  paintFilterButton();
+  if (!$("filter-sheet").hidden) drawFilterSheet();
+}
+
+function locate() {
+  if (!navigator.geolocation) { hereNote = "This browser can't share a location, so distance isn't applied."; return; }
+  hereNote = "Finding you…";
+  navigator.geolocation.getCurrentPosition(
+    (pos) => { here = { lat: pos.coords.latitude, lon: pos.coords.longitude }; hereNote = ""; setFilter(mapFilter); },
+    () => { hereNote = "Location is off, so distance isn't applied."; if (!$("filter-sheet").hidden) drawFilterSheet(); },
+    { maximumAge: 600000, timeout: 15000 });
+}
+
+const ICON = {
+  search: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>',
+  filter: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M3 5h18l-7 8.5V20l-4-2v-4.5z"/></svg>',
+};
+
+function closeTool() {
+  for (const id of ["filter-sheet", "search-sheet"]) { const n = $(id); if (n) n.hidden = true; }
+  for (const b of document.querySelectorAll(".map-tools button")) b.setAttribute("aria-expanded", "false");
+}
+
+function toggleTool(id, btn) {
+  const open = $(id).hidden;
+  closeTool();
+  if (!open) return;
+  $(id).hidden = false;
+  btn.setAttribute("aria-expanded", "true");
+  if (id === "filter-sheet") drawFilterSheet(); else $("q").focus();
+}
+
+function paintFilterButton() {
+  const n = activeCount(mapFilter);
+  const b = $("filter-btn");
+  if (!b) return;
+  b.classList.toggle("on", n > 0);
+  b.querySelector(".badge-n")?.remove();
+  if (n) b.append(el("span", { class: "badge-n", text: String(n) }));
+}
+
+function drawFilterSheet() {
+  const f = mapFilter;
+  const sheet = $("filter-sheet");
+  const choice = (name, opts, value, set) => el("div", { class: "fchips", role: "radiogroup", "aria-label": name },
+    ...opts.map(([v, t]) => el("button", { type: "button", class: "fchip" + (v === value ? " on" : ""), role: "radio",
+      "aria-checked": String(v === value), text: t, onclick: () => setFilter(set(v)) })));
+  const shown = mapFilter.labels;
+  const conds = el("div", { class: "fchips" }, ...LABELS.map((l) => {
+    const st = STYLE[l];
+    const sw = el("i", { class: "sw" }); sw.style.background = st.fill; sw.style.borderColor = st.line;
+    return el("button", { type: "button", class: "fchip" + (shown.includes(l) ? " on" : ""), "aria-pressed": String(shown.includes(l)),
+      onclick: () => setFilter({ ...f, labels: shown.includes(l) ? shown.filter((x) => x !== l) : [...shown, l] }) }, sw, st.text);
+  }));
+  const count = [...layers.keys()].filter(visible).length;
+  const justIn = el("input", { type: "checkbox", onchange: (e) => setFilter({ ...f, justIn: e.target.checked }) });
+  justIn.checked = f.justIn;
+  sheet.replaceChildren(...[
+    el("div", { class: "fhead" }, el("b", { text: `Filter · ${count} lakes` }),
+      el("button", { type: "button", class: "fclose", "aria-label": "Close", text: "✕", onclick: closeTool })),
+    el("h4", { text: "Conditions" }),
+    el("div", { class: "fquick" },
+      el("button", { type: "button", class: "linkish", text: "Skateable or freezing", onclick: () => setFilter({ ...f, labels: [...SKATE] }) }),
+      el("button", { type: "button", class: "linkish", text: "All", onclick: () => setFilter({ ...f, labels: [...LABELS] }) })),
+    conds,
+    el("h4", { text: "Lake size" }), choice("Lake size", SIZES, f.minAcres, (v) => ({ ...f, minAcres: v })),
+    el("h4", { text: "Access" }), choice("Access", ACCESS, f.access, (v) => ({ ...f, access: v })),
+    el("h4", { text: "Distance from me (straight line)" }), choice("Distance from me", DISTANCES, f.maxMiles, (v) => ({ ...f, maxMiles: v })),
+    hereNote ? el("p", { class: "meta", text: hereNote }) : null,
+    el("label", { class: "fcheck" }, justIn, " Just in (came in the last 3 days)"),
+    activeCount(f) ? el("button", { type: "button", class: "act small", text: "Clear filters", onclick: () => setFilter(defaults()) }) : null,
+  ].filter(Boolean));
+}
+
+function addMapTools() {
+  const ctl = L.control({ position: "topleft" });
+  ctl.onAdd = () => {
+    const box = el("div", { class: "leaflet-bar map-tools" });
+    if (VIEW_ONLY) {
+      const sb = el("button", { type: "button", title: "Find a lake", "aria-label": "Find a lake", "aria-expanded": "false" });
+      sb.innerHTML = ICON.search;
+      sb.addEventListener("click", () => toggleTool("search-sheet", sb));
+      box.append(sb);
+    }
+    const fb = el("button", { type: "button", id: "filter-btn", title: "Filter lakes", "aria-label": "Filter lakes", "aria-expanded": "false" });
+    fb.innerHTML = ICON.filter;
+    fb.addEventListener("click", () => toggleTool("filter-sheet", fb));
+    box.append(fb);
+    L.DomEvent.disableClickPropagation(box);
+    return box;
+  };
+  ctl.addTo(map);
+  const holder = map.getContainer();
+  const sheet = el("div", { id: "filter-sheet", class: "map-sheet", hidden: true });
+  holder.append(sheet);
+  if (VIEW_ONLY) {
+    const ss = el("div", { id: "search-sheet", class: "map-sheet search-sheet", hidden: true });
+    ss.append(document.querySelector(".search")); // the embedded map's search lives under the button
+    holder.append(ss);
+  }
+  for (const n of holder.querySelectorAll(".map-sheet")) {
+    L.DomEvent.disableClickPropagation(n);
+    L.DomEvent.disableScrollPropagation(n);
+  }
+  // A tap on a chip redraws the sheet, detaching the chip; Leaflet then sees a map click. Ignore those.
+  map.on("click", (e) => { if (e.originalEvent?.target?.isConnected !== false) closeTool(); });
+  paintFilterButton();
+  if (mapFilter.maxMiles) locate();
 }
 
 function applyFilter() {
@@ -543,7 +664,8 @@ function setupSearch() {
     input.value = "";
     close();
     input.blur();
-    if (!visible(id)) { $("only-skate").checked = false; applyFilter(); }
+    if (!visible(id)) setFilter(defaults());
+    closeTool();
     openLake(id, true);
   };
   const draw = () => {
@@ -714,7 +836,7 @@ function renderTab() {
     renderExplore($("explore-view"), {
       status, props: propsById(), ctx: { runDate: status.run_date, skated }, chip: readChip(),
       onChip: (c) => { try { store.setItem(CHIP_KEY, c); } catch { /* ignore */ } renderTab(); },
-      onMap: () => { $("only-skate").checked = true; applyFilter(); showTab("map"); },
+      onMap: () => { setFilter({ ...mapFilter, labels: [...SKATE] }); showTab("map"); },
       openLake: (id) => openLake(id, true), photoUrl,
     });
   } else if (tab === "mine") {
@@ -936,7 +1058,7 @@ async function main() {
     maxZoom: 19, attribution: "&copy; OpenStreetMap contributors · lake depths: <a href=\"https://www.hydrosheds.org/products/hydrolakes\">HydroLAKES</a> (CC BY 4.0)",
   }).addTo(map);
   addKey();
-  $("only-skate").addEventListener("change", applyFilter);
+  addMapTools();
   window.addEventListener("hashchange", routeHash);
   if (VIEW_ONLY) {
     document.body.classList.add("embed");

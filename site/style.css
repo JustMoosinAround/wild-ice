@@ -10,8 +10,6 @@ body { display: flex; flex-direction: column; font: 16px/1.4 system-ui, sans-ser
 #bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; padding: calc(8px + env(safe-area-inset-top)) calc(var(--gutter) + env(safe-area-inset-right)) 8px calc(var(--gutter) + env(safe-area-inset-left)); border-bottom: 1px solid var(--line); position: relative; z-index: 1100; }
 #banner:not([hidden]) + #bar { padding-top: 8px; }
 #bar h1 { font-size: 18px; margin: 0; }
-.toggle { font-size: 14px; display: flex; align-items: center; gap: 6px; min-height: 44px; }
-.toggle input { width: 20px; height: 20px; }
 #map { flex: 1; min-height: 0; }
 #msg { position: fixed; bottom: calc(76px + var(--sab)); top: auto; left: var(--gutter); right: var(--gutter); z-index: 1000; background: var(--bad-bg); color: var(--bad-fg); padding: 8px 12px; border-radius: 8px; font-size: 14px; }
 #panel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000; max-height: 70vh; overflow-y: auto; background: var(--bg);
@@ -44,7 +42,7 @@ button.act.sel { outline: 3px solid var(--accent); }
 
 /* search */
 .search { position: relative; flex: 1 1 100%; }
-@media (min-width: 700px) { .search { flex: 0 1 320px; order: 1; } #bar h1 { order: 0; } .toggle { order: 2; } }
+@media (min-width: 700px) { .search { flex: 0 1 320px; order: 1; } #bar h1 { order: 0; } }
 #q { width: 100%; min-height: 40px; font-size: 16px; padding: 6px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--bg); color: var(--fg); }
 #results { position: absolute; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px 0; list-style: none; background: var(--bg);
   border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,.18); max-height: 60vh; overflow-y: auto; }
@@ -149,16 +147,33 @@ button.act.rep { display: flex; align-items: center; justify-content: center; ga
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; }
 #tabs button span { font-size: 20px; line-height: 1; }
 #tabs button[aria-current="page"] { color: var(--accent); font-weight: 600; }
-body:not(.embed):not([data-tab="map"]) .toggle { display: none; }
 #panel { bottom: calc(var(--tabs-h) + var(--sab)); max-height: calc(100% - var(--tabs-h) - var(--sab) - var(--sat) - 80px); }
 body.embed #tabs { display: none; }
 body.embed #panel { bottom: 0; }
-/* Embedded on another site: that page already has a header, so ours is one slim row. */
-body.embed #bar h1 { display: none; }
-body.embed #bar { padding: 6px var(--gutter); flex-wrap: nowrap; }
-body.embed .search { flex: 1 1 auto; }
-body.embed .search input { padding-top: 6px; padding-bottom: 6px; }
-body.embed .toggle { white-space: nowrap; font-size: 14px; }
+/* Embedded on another site: that page has the header; search and filter sit under the zoom. */
+body.embed #bar { display: none; }
+.map-tools button { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; border: 0;
+  background: var(--surface); color: var(--fg); cursor: pointer; position: relative; }
+.map-tools button + button { border-top: 1px solid var(--line); }
+.map-tools button[aria-expanded="true"], .map-tools button.on { color: var(--accent); }
+.map-tools .badge-n { position: absolute; top: -6px; right: -8px; min-width: 16px; height: 16px; border-radius: 8px; padding: 0 4px;
+  background: var(--accent); color: var(--bg); font-size: 11px; font-weight: 700; line-height: 16px; text-align: center; }
+.map-sheet { position: absolute; z-index: 1000; top: 10px; left: 56px; width: min(320px, calc(100% - 68px)); max-height: calc(100% - 20px);
+  overflow: auto; background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4); padding: 10px 12px; font-size: 14px; }
+.map-sheet h4 { margin: 12px 0 6px; font-size: 13px; color: var(--muted); font-weight: 600; }
+.search-sheet { overflow: visible; padding: 6px; }
+.search-sheet .search { flex: none; }
+.fhead { display: flex; align-items: center; justify-content: space-between; }
+.fclose { background: none; border: 0; color: var(--muted); font-size: 16px; min-width: 36px; min-height: 36px; cursor: pointer; }
+.fchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.fchip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 10px; border-radius: 16px;
+  border: 1px solid var(--line2); background: none; color: var(--fg); font: inherit; font-size: 13px; cursor: pointer; }
+.fchip.on { background: var(--teal); border-color: var(--teal); }
+.fchip .sw { width: 14px; height: 10px; border: 1.5px solid; border-radius: 2px; }
+.fquick { display: flex; gap: 12px; margin-bottom: 6px; }
+.linkish { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; }
+.fcheck { display: flex; align-items: center; gap: 6px; margin: 12px 0 8px; min-height: 32px; }
 
 /* explore feed */
 .feed-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
