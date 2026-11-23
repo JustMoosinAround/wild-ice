@@ -672,3 +672,19 @@ def test_lake_photo_is_sharp_sentinel2_even_for_a_landsat_day_and_a_tiny_lake(cl
     assert data["processing"]["upsampling"] == "BICUBIC"
     tr = data["dataFilter"]["timeRange"]
     assert tr["from"] < "2025-11-03" and data["dataFilter"]["mosaickingOrder"] == "leastCC"
+
+
+@responses.activate
+def test_summer_water_mask_covers_the_photo_box_in_july_and_august(client):
+    from wildice.imagery import photo_bbox
+    add_token()
+    responses.add(responses.POST, PROCESS_URL, body=b"\x89PNG-mask", content_type="image/png")
+    assert client.summer_water_png(GEOM, 2025) == b"\x89PNG-mask"
+    body = json.loads(responses.calls[1].request.body)
+    box, w, h = photo_bbox(GEOM)
+    assert body["input"]["bounds"]["bbox"] == box
+    assert (body["output"]["width"], body["output"]["height"]) == (w, h)
+    data = body["input"]["data"][0]
+    assert data["type"] == "sentinel-2-l2a" and data["dataFilter"]["mosaickingOrder"] == "leastCC"
+    assert data["dataFilter"]["timeRange"] == {"from": "2025-07-01T00:00:00Z", "to": "2025-09-01T00:00:00Z"}
+    assert "B08" in body["evalscript"] and "B03" in body["evalscript"]

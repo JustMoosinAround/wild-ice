@@ -106,7 +106,7 @@ def write_outputs(status: dict, site_data: Path, run_date: date) -> None:
         entry["thumb"] = (f"thumbs/{lake_id}.png"
                           if (site_data / "thumbs" / f"{lake_id}.png").exists() else None)
         # newest photo version first (p3: closer, outlined), p2 until it's refetched
-        entry["photo"] = next((f"thumbs/{lake_id}-{v}.png" for v in ("p4", "p3", "p2")
+        entry["photo"] = next((f"thumbs/{lake_id}-{v}.png" for v in ("p5", "p4", "p3", "p2")
                                if (site_data / "thumbs" / f"{lake_id}-{v}.png").exists()), None)
     _write_json(site_data / "status.json", out)
     _write_json(site_data / "history" / f"{run_date.isoformat()}.json",

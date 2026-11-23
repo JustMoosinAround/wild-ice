@@ -438,6 +438,24 @@ class CopernicusClient:
         }
         return self._post(PROCESS_URL, body).content
 
+    def summer_water_png(self, geometry: dict, year: int) -> bytes:
+        """Open water over the lake photo's box, from the clearest July-August look: the
+        shoreline doesn't move, and in summer water and land are easy to tell apart."""
+        box, w, h = photo_bbox(geometry)
+        body = {
+            "input": {
+                "bounds": {"bbox": box, "properties": {"crs": CRS_4326}},
+                "data": [{"type": TRUECOLOR["s2"][0],
+                          "dataFilter": {"timeRange": {"from": f"{year}-07-01T00:00:00Z",
+                                                       "to": f"{year}-09-01T00:00:00Z"},
+                                         "mosaickingOrder": "leastCC"}}],
+            },
+            "output": {"width": w, "height": h,
+                       "responses": [{"identifier": "default", "format": {"type": "image/png"}}]},
+            "evalscript": _script("water_mask.js"),
+        }
+        return self._post(PROCESS_URL, body).content
+
     def truecolor_png(self, geometry: dict, day: date, sensor: str = "s2",
                       width: int = THUMB_PX, height: int = THUMB_PX,
                       bounds: dict | None = None) -> bytes:

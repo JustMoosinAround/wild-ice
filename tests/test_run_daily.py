@@ -144,6 +144,10 @@ class FakeClient:
         self.calls.append(("photo", day, day))
         return b"\x89PNG photo"
 
+    def summer_water_png(self, geometry, year):
+        self.calls.append(("summer", year, year))
+        return b"\x89PNG mask"
+
     def truecolor_png(self, geometry, day, sensor="s2", width=256, height=256, bounds=None):
         # crack checks ask for a bigger image than the 256 px thumbnail; by default the
         # lake shows a crack network, so a dark look is confirmed ice
@@ -957,8 +961,8 @@ def test_lake_photo_saved_with_the_thumbnail_and_published(tmp_repo, mocked):
     assert run(RUN, tmp_repo, ENV, session(), first) == 0
     assert [c for c in first.calls if c[0] == "photo"] == [("photo", RUN - timedelta(days=1),
                                                             RUN - timedelta(days=1))]
-    assert (tmp_repo / "site/data/thumbs/w1-p4.png").exists()
-    assert status_of(tmp_repo)["lakes"]["w1"]["photo"] == "thumbs/w1-p4.png"
+    assert (tmp_repo / "site/data/thumbs/w1-p5.png").exists()
+    assert status_of(tmp_repo)["lakes"]["w1"]["photo"] == "thumbs/w1-p5.png"
     second = FakeClient()
     assert run(RUN, tmp_repo, ENV, session(), second) == 0
     assert [c for c in second.calls if c[0] == "photo"] == []
@@ -974,3 +978,16 @@ def test_unnamed_lake_gets_a_place_number_that_sticks(tmp_repo, mocked):
     assert name.rsplit(" ", 1)[1] == "1" and "ac" not in name
     saved = json.loads((tmp_repo / "state/lake_numbers.json").read_text(encoding="utf-8"))
     assert saved == {"w1": name}
+
+
+def test_summer_shoreline_fetched_once_and_kept(tmp_repo, mocked):
+    cold_weather(mocked)
+    first = FakeClient()
+    assert run(RUN, tmp_repo, ENV, session(), first) == 0
+    assert [c for c in first.calls if c[0] == "summer"] == [("summer", RUN.year - 1, RUN.year - 1)] \
+        or [c for c in first.calls if c[0] == "summer"] == [("summer", RUN.year, RUN.year)]
+    assert (tmp_repo / "state/shore/w1.png").exists()
+    (tmp_repo / "site/data/thumbs/w1-p5.png").unlink()  # photo again, shoreline not again
+    second = FakeClient()
+    assert run(RUN, tmp_repo, ENV, session(), second) == 0
+    assert [c for c in second.calls if c[0] == "summer"] == []
