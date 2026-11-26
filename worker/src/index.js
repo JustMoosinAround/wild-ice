@@ -8,6 +8,7 @@ import { getReview, postPref, reviewComment, reviewPhoto, reviewReport } from ".
 import { scheduled } from "./cron.js";
 import { getStats, ping, tally } from "./stats.js";
 import { getFeed, postKudos } from "./feed.js";
+import { getSpots, hideSpot, postSpot } from "./spots.js";
 import { deleteSaved, getSaved, getSkated, postSaved } from "./saved.js";
 import { deleteMe, deleteMyDevice, deleteReport, getAvatar, myDevices, myExport, myInvite, myReports,
   postMyPhoto, putMe } from "./account.js";
@@ -20,6 +21,9 @@ const ROUTES = [
   ["POST", /^\/api\/tally$/, tally],
   ["GET", /^\/api\/stats$/, getStats],
   ["GET", /^\/api\/feed$/, getFeed],
+  ["GET", /^\/api\/spots$/, getSpots],
+  ["POST", /^\/api\/spots$/, postSpot],
+  ["POST", /^\/api\/spots\/(s[0-9a-f]{12})\/hide$/, hideSpot],
   ["POST", /^\/api\/reports\/([\w-]+)\/kudos$/, postKudos],
   ["GET", /^\/api\/me$/, me],
   ["POST", /^\/api\/invites$/, invite],

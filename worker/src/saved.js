@@ -1,8 +1,8 @@
 // Saved lakes ("My lakes") and the lakes this friend has skated.
 import { requireDevice } from "./auth.js";
-import { HttpError, json, now, readJson } from "./http.js";
+import { HttpError, json, now, readJson, PLACE_ID } from "./http.js";
 
-const LAKE_ID = /^[wr]\d{1,12}$/;
+const LAKE_ID = PLACE_ID;
 
 function lakeId(id) {
   if (typeof id !== "string" || !LAKE_ID.test(id)) throw new HttpError(400, "Unknown lake");

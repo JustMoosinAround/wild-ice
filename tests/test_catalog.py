@@ -144,3 +144,39 @@ def test_unnamed_copy_of_a_named_lake_is_dropped():
     copy = Lake("r9", None, 25, 0.1, None, 61, -150, sq, None)
     other = Lake("w2", None, 25, 0.1, None, 61, -149.97, near, None)
     assert [l.id for l in drop_duplicates([copy, named, other])] == ["w1", "w2"]
+
+
+def _sq(osm_id, lon0, lat0, d, tags, skate=False):
+    ring = [[lon0, lat0], [lon0 + d, lat0], [lon0 + d, lat0 + d], [lon0, lat0 + d], [lon0, lat0]]
+    props = {"type": "way", "id": osm_id, "tags": tags}
+    if skate:
+        props["skate_area"] = True
+    return {"type": "Feature", "properties": props, "geometry": {"type": "Polygon", "coordinates": [ring]}}
+
+
+def test_skate_area_is_one_lake_and_swallows_its_ponds(cfg):
+    """Potter Marsh: mapped as wetland pieces with ponds inside; it becomes one area."""
+    cfg = replace(cfg, skate_areas=("Potter Marsh",))
+    marsh = [_sq(1, -149.81, 61.050, 0.01, {"natural": "wetland", "name": "Potter Marsh"}, skate=True),
+             _sq(2, -149.80, 61.050, 0.01, {"natural": "wetland", "name": "Potter Marsh"}, skate=True)]
+    pond = _sq(3, -149.805, 61.054, 0.002, {"natural": "water"})
+    road = {"type": "Feature", "properties": {"type": "way", "id": 9, "tags": {"highway": "primary"}},
+            "geometry": {"type": "LineString", "coordinates": [[-149.79, 61.05], [-149.79, 61.06]]}}
+    lakes = build_catalog(marsh + [pond], [road], [], cfg)
+    assert [l.name for l in lakes] == ["Potter Marsh"]
+    m = lakes[0]
+    assert m.kind == "marsh" and m.area_acres > 100 and m.road_mi is not None
+
+
+def test_marsh_label_comes_from_reports_only():
+    from datetime import date, timedelta
+    from wildice.models import Confidence, Label, Score
+    from wildice.reports import Report
+    from wildice.run_daily import marsh_score
+    run = date(2026, 11, 26)
+    sc = Score(lake_id="w1", label=Label.SNOW_COVERED, confidence=Confidence.MEDIUM, reason="model", thickness_cm=20,
+               last_clear_day=None)
+    assert marsh_score(sc, None, run).label == Label.UNKNOWN
+    assert marsh_score(sc, Report(run - timedelta(days=1), "skated", "", grade="B"), run).label == Label.LIKELY_BLACK_ICE
+    assert marsh_score(sc, Report(run - timedelta(days=1), "skated", "", grade="D"), run).label == Label.ROUGH_ICE
+    assert marsh_score(sc, Report(run - timedelta(days=20), "skated", ""), run).label == Label.UNKNOWN

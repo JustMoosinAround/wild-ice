@@ -69,8 +69,10 @@ def _feature(kind: str, osm_id: int, tags, geom) -> dict:
             "geometry": json.loads(json.dumps(geom.__geo_interface__))}
 
 
-def read_layers(pbf_path: Path, bbox: Bbox) -> tuple[list[dict], list[dict], list[dict]]:
-    """(water, roads, trails) features that touch bbox, read from an OSM file."""
+def read_layers(pbf_path: Path, bbox: Bbox, area_names: tuple[str, ...] = ()) -> tuple[list[dict], list[dict], list[dict]]:
+    """(water, roads, trails) features that touch bbox, read from an OSM file. Named
+    wetlands in `area_names` (marshes people skate) come with the water, marked skate_area."""
+    wanted = set(area_names)
     south, west, north, east = bbox
     region = prep(box(west, south, east, north))
     factory = osmium.geom.WKBFactory()
@@ -79,10 +81,11 @@ def read_layers(pbf_path: Path, bbox: Bbox) -> tuple[list[dict], list[dict], lis
     trails: list[dict] = []
     processor = (osmium.FileProcessor(str(pbf_path))
                  .with_locations()
-                 .with_areas(osmium.filter.TagFilter(("natural", "water"))))
+                 .with_areas(osmium.filter.TagFilter(("natural", "water"), ("natural", "wetland"))))
     for obj in processor:
         if obj.is_area():
-            if not _is_lake(obj.tags):
+            area = obj.tags.get("natural") == "wetland" and obj.tags.get("name") in wanted
+            if not (_is_lake(obj.tags) or area):
                 continue
             try:
                 geom = wkb.loads(factory.create_multipolygon(obj), hex=True)
@@ -90,7 +93,10 @@ def read_layers(pbf_path: Path, bbox: Bbox) -> tuple[list[dict], list[dict], lis
                 continue  # broken multipolygon in the source data
             if region.intersects(geom):
                 kind = "way" if obj.from_way() else "relation"
-                water.append(_feature(kind, obj.orig_id(), obj.tags, geom))
+                feat = _feature(kind, obj.orig_id(), obj.tags, geom)
+                if area:
+                    feat["properties"]["skate_area"] = True
+                water.append(feat)
         elif obj.is_way():
             tags = obj.tags
             road, trail = _is_road(tags), _is_trail(tags)

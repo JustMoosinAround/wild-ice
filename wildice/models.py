@@ -50,6 +50,7 @@ class Lake:
     warning: str | None
     depth_m: float | None = None  # mean depth (HydroLAKES estimate), when matched
     elev_m: float | None = None   # surface elevation (HydroLAKES), when matched
+    kind: str | None = None       # "marsh" for a named wetland skated as one area (config skate_areas)
 
 
 @dataclass(frozen=True)

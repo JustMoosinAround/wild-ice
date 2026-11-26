@@ -404,6 +404,24 @@ def _outlined(client, lake: Lake, png: bytes, shore_dir: Path, day: date, budget
 PHOTO_BACKFILL = 150  # lakes without a photo yet that get one per run (the p2 switch refetches all)
 
 
+MARSH_REPORT_DAYS = 14
+_MARSH_LABEL = {"skated": Label.LIKELY_BLACK_ICE, "rough": Label.ROUGH_ICE,
+                "snow": Label.SNOW_COVERED, "water": Label.OPEN_WATER}
+
+
+def marsh_score(sc: Score, rep, run_date: date) -> Score:
+    """A marsh (skate area): the lake ice model and satellite don't fit a marsh, so its
+    label is the newest skater report of the last two weeks, or unknown."""
+    if rep is not None and (run_date - rep.day).days <= MARSH_REPORT_DAYS and rep.rating in _MARSH_LABEL:
+        label = _MARSH_LABEL[rep.rating]
+        if rep.rating == "skated" and rep.grade and rep.grade[0] in "DF":
+            label = Label.ROUGH_ICE
+        why = f"marsh: skater report {rep.day:%b} {rep.day.day}"
+    else:
+        label, why = Label.UNKNOWN, "marsh: no skater report in the last two weeks (no ice model for marshes)"
+    return replace(sc, label=label, reason=why)
+
+
 RECENT_PHOTO_DAYS = 30  # lakes with no clear day since freeze-up: clearest look in the last month
 RECENT_PHOTO_REFRESH_DAYS = 28  # ...refetched every 4 weeks, to spare the request budget
 
@@ -642,6 +660,8 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
                                if notes else sc)
             snow_ev = (hit[0], hit[1], st.name) if hit else None
             explore_in[lake.id] = (rep, hist, snow_ev, ice.last_reset, hazards(kinds))
+            if lake.kind == "marsh":
+                scores[lake.id] = marsh_score(scores[lake.id], rep, run_date)
         _save_texture_history(texture_path, texture_history)
 
         if client is not None:

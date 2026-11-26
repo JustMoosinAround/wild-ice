@@ -93,3 +93,16 @@ test("a very long track over a big lake is quick and doesn't overflow", () => {
   assert.equal(m[0].lakeId, "w9");
   assert.ok(ms < 1500, `took ${ms} ms`);
 });
+
+test("a track off the catalog lakes becomes a spot summary", async () => {
+  const { trackSummary, spotFeature, matchLakes } = await import("../../site/track.js");
+  const t0 = Date.parse("2026-11-25T22:25:00Z");
+  const pts = Array.from({ length: 60 }, (_, i) => ({ lat: 61.0555 + i * 0.0001, lon: -149.8067 + (i % 10) * 0.0008, t: t0 + i * 50_000 }));
+  const s = trackSummary(pts);
+  assert.equal(s.minutes, 49);
+  assert.equal(s.day, "2026-11-25");
+  assert.deepEqual(s.bbox, [-149.8067, 61.0555, -149.7995, 61.0614]);
+  assert.equal(trackSummary(pts.slice(0, 5)), null); // too short
+  const m = matchLakes(pts, [spotFeature({ id: "s0123456789ab", name: "Potter Marsh", bbox: s.bbox })]);
+  assert.equal(m[0].lakeId, "s0123456789ab");
+});

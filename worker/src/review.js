@@ -1,6 +1,6 @@
 // The owner's review queue: waiting comments and photos, friends, and pin/hide prefs.
 import { requireOwner } from "./auth.js";
-import { HttpError, json, now, readJson } from "./http.js";
+import { HttpError, json, now, readJson, PLACE_ID } from "./http.js";
 
 const MAX_FEATURED = 6;
 const PREF_ACTIONS = ["pin", "unpin", "hide", "unhide"];
@@ -94,7 +94,7 @@ export async function reviewReport(env, request, id) {
 export async function postPref(env, request) {
   await requireOwner(env, request);
   const body = await readJson(request);
-  if (typeof body.lake_id !== "string" || !/^[wr]\d{1,12}$/.test(body.lake_id)) throw new HttpError(400, "Unknown lake");
+  if (typeof body.lake_id !== "string" || !PLACE_ID.test(body.lake_id)) throw new HttpError(400, "Unknown lake");
   if (!PREF_ACTIONS.includes(body.action)) throw new HttpError(400, "Unknown action");
   await env.DB.prepare("INSERT INTO prefs (lake_id, action, created_at) VALUES (?, ?, ?)")
     .bind(body.lake_id, body.action, now()).run();

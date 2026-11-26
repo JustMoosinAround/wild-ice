@@ -1,6 +1,6 @@
 // On-the-ice reports (with an optional, already resized and metadata-free photo).
 import { deviceFriend, newToken, requireDevice, requireService } from "./auth.js";
-import { HttpError, json, now, readJson } from "./http.js";
+import { HttpError, json, now, readJson, PLACE_ID } from "./http.js";
 import { exportPrefs, pendingCounts } from "./review.js";
 
 export const RATINGS = ["skated", "snow", "water", "rough"];
@@ -44,7 +44,7 @@ export function decodePhoto(b64) {
 export function validateReport(body, today = alaskaDay()) {
   const idem = body.idem_key;
   if (typeof idem !== "string" || idem.length < 8 || idem.length > 64) bad("Missing idem_key");
-  if (typeof body.lake_id !== "string" || !/^[wr]\d{1,12}$/.test(body.lake_id)) bad("Unknown lake");
+  if (typeof body.lake_id !== "string" || !PLACE_ID.test(body.lake_id)) bad("Unknown lake");
   if (!RATINGS.includes(body.rating)) bad("Pick a condition");
   let grade = body.grade ?? null;
   if (grade !== null) {

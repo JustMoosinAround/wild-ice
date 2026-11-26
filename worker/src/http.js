@@ -41,3 +41,6 @@ export function preflight(request, env) {
 }
 
 export const now = () => new Date().toISOString();
+
+// A catalog lake (OSM way/relation) or a member-added spot.
+export const PLACE_ID = /^([wr]\d{1,12}|s[0-9a-f]{12})$/;

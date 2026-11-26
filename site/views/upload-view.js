@@ -2,7 +2,7 @@
 // phone, matched to catalog lakes, and sent as lake + day + minutes + one point.
 import { shortDate } from "../explore.js";
 import { GRADES, makeReport } from "../icelog.js";
-import { TrackError, matchLakes, readTrackFile } from "../track.js";
+import { TrackError, matchLakes, readTrackFile, trackSummary } from "../track.js";
 
 function el(tag, props = {}, ...kids) {
   const n = document.createElement(tag);
@@ -35,21 +35,54 @@ export function renderUpload(mount, opts) {
     el("label", { class: "act file-label", for: "track-file", text: "Choose track files" }), input, list);
 }
 
+const KINDS = [["marsh", "Marsh"], ["river", "River"], ["slough", "Slough"], ["pond", "Pond"], ["other", "Other"]];
+
+// A track off the catalog lakes: name the place and say what it is; resolves to a match.
+function newSpotForm(card, file, sum, opts, resolve) {
+  let kind = "marsh";
+  const name = el("input", { type: "text", maxlength: "60", placeholder: "Name, e.g. Potter Marsh", "aria-label": "Spot name" });
+  const msg = el("p", { class: "status" });
+  const kinds = el("div", { class: "fchips" }, ...KINDS.map(([k, t]) => el("button", { type: "button",
+    class: "fchip" + (k === kind ? " on" : ""), text: t, onclick: (e) => {
+      kind = k; [...kinds.children].forEach((b) => b.classList.toggle("on", b === e.currentTarget)); } })));
+  const add = el("button", { type: "button", class: "act on", text: "Add this spot", onclick: async () => {
+    if (!name.value.trim()) { msg.textContent = "Give it a name"; name.focus(); return; }
+    add.disabled = true; msg.textContent = "Adding…";
+    const r = await opts.addSpot({ name: name.value.trim(), kind, lat: sum.point.lat, lon: sum.point.lon, bbox: sum.bbox });
+    if (!r.ok) { msg.textContent = r.error; add.disabled = false; return; }
+    resolve({ lakeId: r.id, name: r.name, minutes: sum.minutes, day: sum.day, point: sum.point, existing: r.existing });
+  } });
+  card.replaceChildren(el("b", { text: file.name }),
+    el("p", { class: "meta", text: `${shortDate(sum.day)} ${sum.day.slice(0, 4)} · ${sum.minutes} min · not on a lake we track` }),
+    el("p", { text: "Skated a marsh, river or slough? Add it as a spot. There's no satellite or ice model for these, so other skaters will rely on reports like yours." }),
+    name, kinds, add, msg,
+    el("button", { type: "button", class: "linkish", text: "Not ice skating? Skip this track", onclick: () => {
+      card.replaceChildren(el("b", { text: file.name }), el("p", { class: "meta", text: "Skipped." })); resolve(null); } }));
+}
+
 function fileCard(file, opts) {
   const card = el("section", { class: "upload-card" }, el("b", { text: file.name }), el("p", { class: "meta", text: "Reading…" }));
   (async () => {
-    let matches;
+    let matches, points;
     try {
-      matches = matchLakes(await readTrackFile(file), opts.features);
+      points = await readTrackFile(file);
+      matches = matchLakes(points, opts.features);
     } catch (e) {
       card.replaceChildren(el("b", { text: file.name }),
         el("p", { class: "warn", text: e instanceof TrackError ? e.message : "Couldn't read this file" }));
       return;
     }
     if (!matches.length) {
-      card.replaceChildren(el("b", { text: file.name }),
-        el("p", { class: "warn", text: "No catalog lake on this track (at least 10 minutes on one lake)." }));
-      return;
+      const sum = trackSummary(points);
+      if (!sum || !opts.addSpot) {
+        card.replaceChildren(el("b", { text: file.name }),
+          el("p", { class: "warn", text: "This track is under 10 minutes, so there's nothing to log." }));
+        return;
+      }
+      // Not on a catalog lake: a marsh, river or slough. Add it as a new spot.
+      const m = await new Promise((resolve) => newSpotForm(card, file, sum, opts, resolve));
+      if (!m) return;
+      matches = [m];
     }
     let pick = matches[0], rating = "skated", grade = null;
     const posted = [];

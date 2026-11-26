@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import requests
-from shapely.geometry import mapping, shape
+from shapely.geometry import Point, mapping, shape
 
 from wildice.depths import attach_depths, load_points
 from wildice.config import Config, load_config
@@ -50,7 +51,11 @@ def build_catalog(water: list[dict], roads: list[dict], trails: list[dict],
     f = cfg.filters
     pinned = set(cfg.pinned)
     lakes: list[Lake] = []
+    areas = [replace(a, road_mi=road_idx.nearest_miles(shape(a.interior)),
+                     trail_mi=trail_idx.nearest_miles(shape(a.interior))) for a in skate_areas(water, cfg)]
     for feat in water:
+        if feat["properties"].get("skate_area"):
+            continue
         geom = shape(feat["geometry"])
         if geom.geom_type not in ("Polygon", "MultiPolygon") or geom.is_empty:
             continue
@@ -83,7 +88,33 @@ def build_catalog(water: list[dict], roads: list[dict], trails: list[dict],
             interior=_plain(inner) if inner is not None else None,
             warning=NARROW_WARNING if inner is None else None,
         ))
-    return drop_duplicates(lakes)
+    # Ponds inside a skate area are part of it.
+    shapes = [shape(a.interior) for a in areas]
+    lakes = [l for l in lakes if not any(s.contains(Point(l.lon, l.lat)) for s in shapes)]
+    return drop_duplicates(lakes) + areas
+
+
+def skate_areas(water: list[dict], cfg: Config) -> list[Lake]:
+    """Named wetlands people skate as one big area (config skate_areas, e.g. Potter
+    Marsh): every mapped piece with that name joined into one, kept whatever its size
+    or road distance. No ice model for them: their state comes from skaters' reports."""
+    from shapely.ops import unary_union
+    pieces: dict[str, list] = {}
+    for feat in water:
+        if feat["properties"].get("skate_area"):
+            name = (feat["properties"].get("tags") or {}).get("name")
+            pieces.setdefault(name, []).append(feat)
+    out = []
+    for name, feats in pieces.items():
+        geom = unary_union([shape(f["geometry"]) for f in feats])
+        if geom.is_empty:
+            continue
+        biggest = max(feats, key=lambda f: shape(f["geometry"]).area)
+        pt = geom.representative_point()
+        out.append(Lake(id=_lake_id(biggest), name=name, area_acres=area_acres(geom), road_mi=None,
+                        trail_mi=None, lat=pt.y, lon=pt.x, interior=_plain(geom.simplify(0.0001)),
+                        warning=None, kind="marsh"))
+    return out
 
 
 def drop_duplicates(lakes: list[Lake]) -> list[Lake]:
@@ -126,7 +157,7 @@ def load_catalog(path: Path) -> list[Lake]:
 def main() -> None:
     cfg = load_config(Path("config.yaml"))
     pbf = download_extract(EXTRACT_PATH, requests.Session())
-    water, roads, trails = read_layers(pbf, cfg.region.bbox)
+    water, roads, trails = read_layers(pbf, cfg.region.bbox, cfg.skate_areas)
     lakes = attach_depths(build_catalog(water, roads, trails, cfg), load_points())
     write_catalog(lakes, Path("site/data/lakes.geojson"))
     print(f"wrote {len(lakes)} lakes")

@@ -120,4 +120,8 @@ season_start: "10-01"
 # Pins are retired: the 14 pinned lakes became the owner's saved lakes (My lakes, Nov 2026),
 # which the daily run checks every day. Lakes listed here are also checked daily.
 pinned: []
+# Named wetlands skated as one big area (OpenStreetMap natural=wetland, by name). Their
+# colour comes only from skaters' reports: the lake ice model doesn't fit a marsh.
+skate_areas:
+  - Potter Marsh
 hidden: []

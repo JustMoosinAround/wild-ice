@@ -146,6 +146,7 @@ class Config:
     season_start: str
     pinned: tuple[str, ...]
     hidden: tuple[str, ...]
+    skate_areas: tuple[str, ...] = ()
 
 
 def _get(d: dict, key: str, path: str = ""):
@@ -221,5 +222,6 @@ def load_config(path: Path) -> Config:
         site=_section(raw, "site", SiteCfg, dict(base_url=str)),
         season_start=str(_get(raw, "season_start")),
         pinned=tuple(str(x) for x in (_get(raw, "pinned") or [])),
+        skate_areas=tuple(str(x) for x in (raw.get("skate_areas") or [])),
         hidden=tuple(str(x) for x in (_get(raw, "hidden") or [])),
     )

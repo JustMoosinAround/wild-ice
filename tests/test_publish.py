@@ -20,7 +20,7 @@ def test_status_schema(tmp_path):
     assert s["disclaimer"] == "Rough estimate only — check ice yourself."
     e = s["lakes"]["w123"]
     assert set(e) == {"name", "label", "confidence", "reason", "thickness_cm", "last_clear_day",
-                      "browser_url", "thumb", "pinned", "hidden", "warning", "history",
+                      "browser_url", "thumb", "pinned", "hidden", "warning", "kind", "history",
                       "came_in", "last_report", "featured_photo", "timeline", "hazards"}
     assert (e["name"], e["label"], e["confidence"], e["reason"]) == ("Foo", "likely_black_ice", "high", "why")
     assert e["thickness_cm"] == 12.0 and e["last_clear_day"] == "2025-11-11"

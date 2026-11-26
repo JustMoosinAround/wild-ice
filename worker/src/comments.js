@@ -1,7 +1,7 @@
 // Public comments on a lake. Strangers pass Turnstile, a rate limit, and wait for the
 // owner's approval; invited friends publish straight away. Comments never feed the model.
 import { deviceFriend, hash } from "./auth.js";
-import { HttpError, json, now, readJson } from "./http.js";
+import { HttpError, json, now, readJson, PLACE_ID } from "./http.js";
 
 const MAX_TEXT = 500;
 const MAX_NAME = 40;
@@ -33,7 +33,7 @@ export async function verifyTurnstile(env, token, ip) {
 
 export async function postComment(env, request) {
   const body = await readJson(request);
-  if (typeof body.lake_id !== "string" || !/^[wr]\d{1,12}$/.test(body.lake_id)) {
+  if (typeof body.lake_id !== "string" || !PLACE_ID.test(body.lake_id)) {
     throw new HttpError(400, "Unknown lake");
   }
   const who = await deviceFriend(env, request);

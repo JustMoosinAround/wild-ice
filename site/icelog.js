@@ -220,6 +220,23 @@ export async function giveKudos(reportId, { fetch, storage, base }) {
   }
 }
 
+// Member-added spots (marshes, rivers, sloughs, ponds) with their newest recent report.
+export async function loadSpots({ fetch, base }) {
+  const res = await call(base, "/api/spots", { fetch });
+  if (res.status !== 200) throw new Error("spots");
+  return res.data.spots;
+}
+
+// Add a spot from a track: {name, kind, lat, lon, bbox}. Returns {ok, id, name, existing} or {ok:false, error}.
+export async function addSpot(spot, { fetch, storage, base }) {
+  try {
+    const res = await call(base, "/api/spots", { fetch, method: "POST", body: spot, token: getDevice(storage)?.key });
+    return res.status === 200 ? { ok: true, ...res.data } : { ok: false, error: res.data.error || "Couldn't add the spot, try again" };
+  } catch {
+    return { ok: false, error: "No connection, try again" };
+  }
+}
+
 // Recent public trip reports (all lakes).
 export async function loadFeed({ fetch, storage, base }) {
   const res = await call(base, "/api/feed", { fetch, token: getDevice(storage)?.key });

@@ -208,3 +208,30 @@ export function matchLakes(points, features) {
   }
   return out.sort((a, b) => b.minutes - a.minutes);
 }
+
+// A track that isn't on any catalog lake: its moving time, day, middle point and box,
+// so it can become a new spot (marsh, river, slough). Null under 10 minutes.
+export function trackSummary(points) {
+  if (points.length < 2) return null;
+  let secs = 0;
+  const box = [Infinity, Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    if (p.lon < box[0]) box[0] = p.lon; if (p.lat < box[1]) box[1] = p.lat;
+    if (p.lon > box[2]) box[2] = p.lon; if (p.lat > box[3]) box[3] = p.lat;
+    if (i) { const s = (p.t - points[i - 1].t) / 1000; if (s > 0 && s <= MAX_GAP_S) secs += s; }
+  }
+  if (secs / 60 < MIN_MINUTES) return null;
+  const mid = points[Math.floor(points.length / 2)];
+  const r = (x) => Math.round(x * 1e5) / 1e5;
+  return { minutes: Math.round(secs / 60), day: alaskaDay(mid.t), point: { lat: r(mid.lat), lon: r(mid.lon) },
+    bbox: box.map(r) };
+}
+
+// A spot's box as a polygon (padded a little), so matchLakes finds tracks on known spots.
+export function spotFeature(sp) {
+  const [w, s, e, n] = sp.bbox;
+  const px = 0.003, py = 0.0015;
+  return { type: "Feature", properties: { id: sp.id, name: sp.name },
+    geometry: { type: "Polygon", coordinates: [[[w - px, s - py], [e + px, s - py], [e + px, n + py], [w - px, n + py], [w - px, s - py]]] } };
+}

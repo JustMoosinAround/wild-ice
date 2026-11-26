@@ -7,13 +7,14 @@ import { renderMine } from "./views/mine-view.js";
 import { renderUpload } from "./views/upload-view.js";
 import { avatarEl, avatarUrl, renderAccount } from "./views/account-view.js";
 import { renderTrips, tripCard } from "./views/trips-view.js";
+import { spotFeature } from "./track.js";
 import { badges, shortDate } from "./explore.js";
 import { ACCESS, DISTANCES, LABELS, SIZES, SKATE, activeCount, clean, defaults, passes } from "./mapfilter.js";
 
 const SKATE_CM = 5; // config.yaml ice.skate_cm: past 2" the thickness doesn't matter
 import {
   GRADES, flushReports, getDevice, inviteCodeFromHash, loadLake, ownerCall, postComment, prepPhoto,
-  queueReport, queuedReports, redeemInvite, joinOpen, giveKudos, loadFeed, getSaved, setSaved, getSkated, account, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
+  queueReport, queuedReports, redeemInvite, joinOpen, giveKudos, loadFeed, loadSpots, addSpot, getSaved, setSaved, getSkated, account, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
 } from "./icelog.js";
 import { TURNSTILE_SITEKEY, WORKER_URL } from "./config.js";
 
@@ -83,6 +84,23 @@ function el(tag, props = {}, ...kids) {
 
 function info(id) { return status.lakes[id]; }
 
+// --- member-added spots: marshes, rivers, sloughs, ponds (reports only, no satellite) ---
+const SPOT_KIND = { marsh: "Marsh", river: "River", slough: "Slough", pond: "Pond", other: "Spot" };
+const SPOT_LABEL = { skated: "likely_black_ice", rough: "rough_ice", snow: "snow_covered", water: "open_water" };
+let spotFeatures = []; // spot boxes as polygons, for matching uploaded tracks
+
+function addSpots(list) {
+  for (const sp of list) {
+    if (status.lakes[sp.id]) continue;
+    const r = sp.last_report;
+    status.lakes[sp.id] = { name: sp.name, label: (r && SPOT_LABEL[r.rating]) || "unknown", spot: true, kind: sp.kind,
+      added_by: sp.added_by, hidden: false, history: [], hazards: [],
+      last_report: r ? { day: r.day, rating: r.rating, grade: r.grade } : null };
+    features.push({ type: "Feature", properties: { id: sp.id, name: sp.name, lat: sp.lat, lon: sp.lon, spot: true, kind: sp.kind }, geometry: null });
+    spotFeatures.push(spotFeature(sp));
+  }
+}
+
 function lakeStyle(id) {
   const d = info(id);
   const s = STYLE[d ? d.label : "unknown"] || STYLE.unknown;
@@ -113,7 +131,14 @@ function build() {
     const d = info(id);
     // A marker for every lake: polygons are invisible at region zoom, and
     // lakes without geometry are only reachable this way.
-    group.addLayer(L.circleMarker([f.properties.lat, f.properties.lon], { ...st, radius: 7 }));
+    if (f.properties.spot) {
+      // Member-added spots (no outline): a diamond, so they read apart from lakes.
+      const icon = L.divIcon({ className: "spot-pin", iconSize: [18, 18],
+        html: `<span style="background:${st.fillColor};border-color:${st.color}"></span>` });
+      group.addLayer(L.marker([f.properties.lat, f.properties.lon], { icon, title: f.properties.name }));
+    } else {
+      group.addLayer(L.circleMarker([f.properties.lat, f.properties.lon], { ...st, radius: 7 }));
+    }
     group.eachLayer((l) => l.on("click", () => openLake(id, false)));
     layers.set(id, { group, feature: f });
   }
@@ -493,6 +518,26 @@ function iceLogSection(id) {
   return box;
 }
 
+// A member-added spot: no satellite or model, just what members report.
+function renderSpot(id, d) {
+  const panel = $("panel");
+  const s = d.last_report ? (STYLE[d.label] || STYLE.unknown) : { ...STYLE.unknown, text: "No recent reports" };
+  const chip = el("span", { class: "chip", text: s.text });
+  chip.style.background = s.fill;
+  chip.style.borderColor = s.line;
+  chip.style.color = ["snow_covered", "unknown", "likely_black_ice"].includes(d.label) ? "#04090c" : "#fff";
+  const last = d.last_report ? `Last report ${shortDay(d.last_report.day)}: ${REPORT[d.last_report.rating]?.text || d.last_report.rating}${d.last_report.grade ? " " + d.last_report.grade : ""}.` : "No reports in the last 2 weeks.";
+  panel.replaceChildren(
+    el("button", { class: "close", "aria-label": "Close", text: "×", onclick: closePanel }),
+    heroSection({ d, photo: null, chip, badges: [SPOT_KIND[d.kind] || "Spot"], saved: savedIds.has(id),
+      onSave: VIEW_ONLY ? null : () => toggleSave(id) }),
+    el("p", { class: "meta", text: `${last} Added by ${d.added_by || "a skater"}. No satellite or ice model here: marshes, rivers and sloughs freeze their own way, so this spot's colour comes only from skaters' reports. Check the ice yourself.` }));
+  panel.classList.add("page");
+  if (canLog()) panel.append(reportSection(id));
+  if (WORKER_URL) panel.append(iceLogSection(id));
+  panel.hidden = false;
+}
+
 // Shared options for trip report cards (feed and lake pages).
 function tripOpts(withLake) {
   return {
@@ -649,6 +694,7 @@ function commentForm(id, list) {
 function renderPanel(id, statusText) {
   currentId = id;
   const d = info(id);
+  if (d.spot) { renderSpot(id, d); return; }
   const s = STYLE[d.label] || STYLE.unknown;
   const panel = $("panel");
   panel.replaceChildren();
@@ -673,13 +719,18 @@ function renderPanel(id, statusText) {
       el("details", { class: "hazard" }, el("summary", { text: "⚠ " + h.label }), el("p", { text: h.text })))));
   }
   // The graph tells the story: weather, water, ice, snow, and the clear images and reports.
-  const chart = el("div", { class: "wx-mount" });
-  panel.append(chart);
-  loadChart(id, chart);
+  if (d.kind === "marsh") {
+    // A marsh: no lake ice model or satellite reading; its colour is skaters' reports.
+    panel.append(el("p", { class: "meta", text: "Marsh: skated as one big area. Marshes freeze their own way (shallow water, channels, springs), so there's no ice model here: the colour comes only from skaters' reports in the last 2 weeks. Check the ice yourself." }));
+  } else {
+    const chart = el("div", { class: "wx-mount" });
+    panel.append(chart);
+    loadChart(id, chart);
+  }
   if (d.warning) panel.append(el("p", { class: "warn", text: d.warning }));
   if (canLog()) panel.append(reportSection(id));
   if (WORKER_URL) panel.append(iceLogSection(id));
-  if (d.thickness_cm != null) {
+  if (d.thickness_cm != null && d.kind !== "marsh") {
     panel.append(el("p", { class: "est", text: d.thickness_cm >= SKATE_CM ? "est. 2+ in of ice" : "est. " + d.thickness_cm + " cm" }));
   }
   // Daily color history, oldest first. Published history stops at yesterday, so add today.
@@ -954,7 +1005,15 @@ function renderTab() {
     renderMine($("mine-view"), { glossaryHref: "#glossary", status, saved: [...savedIds], skated: skatedRows, joined: !!getDevice(store),
       labelText: (l) => (STYLE[l] || STYLE.unknown).text, openLake: (id) => openLake(id, true) });
   } else if (tab === "upload") {
-    renderUpload($("upload-view"), { joined: canLog(), features, storage: store,
+    renderUpload($("upload-view"), { joined: canLog(), features: [...features, ...spotFeatures], storage: store,
+      addSpot: async (sp) => {
+        const r = await addSpot(sp, ICELOG);
+        if (r.ok && !status.lakes[r.id]) {
+          addSpots([{ id: r.id, name: r.name, kind: r.kind, lat: sp.lat, lon: sp.lon, bbox: sp.bbox, added_by: getDevice(store)?.name, last_report: null }]);
+          build();
+        }
+        return r;
+      },
       queue: (r) => { queueReport(store, r); sendQueue(); setTimeout(loadMine, 4000); },
       onJoin: () => { location.hash = "#join"; } });
   }
@@ -1096,6 +1155,18 @@ async function showReview() {
         el("button", { class: "act", text: "Reject", onclick: decide(`/api/review/comments/${c.id}`, "reject", row) })));
     body.append(row);
   }
+  const spots = Object.entries(status.lakes).filter(([, d]) => d.spot);
+  if (spots.length) {
+    body.append(el("h3", { text: `Spots added by skaters (${spots.length})` }));
+    for (const [sid, d] of spots) {
+      const row = el("div", { class: "review-row" });
+      row.append(el("p", {}, el("b", { text: d.name }), el("span", { class: "meta", text: ` · ${SPOT_KIND[d.kind] || "Spot"} · added by ${d.added_by || "?"}` })),
+        el("div", { class: "row" },
+          el("button", { class: "act", text: "Open", onclick: () => openLake(sid, true) }),
+          el("button", { class: "act", text: "Hide (spam or duplicate)", onclick: decide(`/api/spots/${sid}/hide`, "hide", row) })));
+      body.append(row);
+    }
+  }
   body.append(el("h3", { text: `New photos (${photos.length})` }),
     el("p", { class: "meta", text: "Already showing in trip reports. Feature one to put it at the top of its lake page, or remove it." }));
   for (const p of photos) {
@@ -1223,6 +1294,7 @@ async function main() {
     showMsg("Could not load lake data.");
     return;
   }
+  if (WORKER_URL) await loadSpots(ICELOG).then(addSpots).catch(() => { /* spots are extra */ });
   showBanner();
   $("msg").addEventListener("click", () => { $("msg").hidden = true; });
   if (!VIEW_ONLY) overlayReported();

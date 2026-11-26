@@ -53,6 +53,7 @@ def build_status(lakes: list[Lake], scores: dict[str, Score], pinned: frozenset[
             "pinned": lake.id in pinned,
             "hidden": lake.id in hidden,
             "warning": lake.warning,
+            "kind": lake.kind,
             "history": list(history.get(lake.id, [])),
             "came_in": explore.get(lake.id, {}).get("came_in"),
             "last_report": explore.get(lake.id, {}).get("last_report"),
