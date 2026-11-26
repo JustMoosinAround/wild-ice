@@ -12,12 +12,13 @@ function el(tag, props = {}, ...kids) {
   return n;
 }
 
-// opts: {status, props, ctx: {runDate, skated: Set|null}, chip, onChip(id), onMap(), openLake(id), photoUrl(d)}
+// opts: {status, props, ctx: {runDate, skated: Set|null}, chip, onChip(id), onMap(), openLake(id), photoUrl(d),
+//        renderTrips(mount)}
 export function renderExplore(mount, opts) {
   const { status, props, ctx } = opts;
   const chips = CHIPS.filter((c) => c.id !== "new_to_you" || ctx.skated);
   const chip = chips.some((c) => c.id === opts.chip) ? opts.chip : "just_in";
-  const list = sortLakes(inLakes(status.lakes), chip, props, ctx);
+  const list = chip === "trip_reports" ? [] : sortLakes(inLakes(status.lakes), chip, props, ctx);
   const bar = el("div", { class: "chips", role: "tablist", "aria-label": "Sort lakes" },
     ...chips.map((c) => el("button", { type: "button", class: "chip-btn" + (c.id === chip ? " on" : ""),
       role: "tab", "aria-selected": String(c.id === chip), text: c.label, onclick: () => opts.onChip(c.id) })));
@@ -38,7 +39,16 @@ export function renderExplore(mount, opts) {
         el("span", { class: "evidence" + (ev.old ? " old" : ""), text: ev.text })))));
   }
   const kids = [head];
-  if (list.length) kids.push(bar, feed);
+  if (chip === "trip_reports") {
+    head.firstChild.textContent = "Trip reports";
+    const box = el("div", { class: "trips-box" });
+    kids.push(bar, box);
+    mount.replaceChildren(...kids);
+    opts.renderTrips(box);
+    return;
+  }
+  kids.push(bar);
+  if (list.length) kids.push(feed);
   else {
     const soon = Object.entries(status.lakes).filter(([, d]) => d.label === "freezing" && !d.hidden)
       .map(([id, d]) => ({ id, ...d })).sort((a, b) => (b.thickness_cm || 0) - (a.thickness_cm || 0)).slice(0, 5);

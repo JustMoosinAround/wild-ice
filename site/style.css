@@ -337,3 +337,21 @@ a.join-btn { display: inline-flex; align-items: center; min-height: 44px; paddin
 }
 
 @media (min-width: 700px) { .me-btn { top: 50%; transform: translateY(-50%); } }
+
+/* trip reports */
+.trips { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 12px; }
+@media (min-width: 700px) { .trips-box .trips { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); align-items: start; } }
+.trip { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+.icelog .trip { background: var(--surface2); }
+.trip-head { display: flex; align-items: center; gap: 10px; }
+.trip-who { display: flex; flex-direction: column; }
+.trip-who .linkish { font-size: 14px; }
+.trip-facts { margin: 0; font-weight: 600; font-size: 14px; }
+.trip-story { margin: 0; white-space: pre-wrap; }
+.trip-photo { width: 100%; border-radius: 8px; max-height: 360px; object-fit: cover; }
+button.kudos { align-self: flex-start; min-height: 36px; padding: 0 12px; border-radius: 18px; border: 1px solid var(--line2);
+  background: none; color: var(--fg); font: inherit; font-size: 14px; cursor: pointer; }
+button.kudos.on { background: var(--teal); border-color: var(--teal); }
+.icelog h4 { margin: 14px 0 6px; font-size: 14px; color: var(--muted); }
+.details textarea { width: 100%; font: inherit; font-size: 16px; padding: 8px 10px; border: 1px solid var(--line2); border-radius: 8px; background: var(--bg); color: var(--fg); }
+.story-in { width: 100%; font: inherit; font-size: 16px; padding: 8px 10px; border: 1px solid var(--line2); border-radius: 8px; background: var(--bg); color: var(--fg); }

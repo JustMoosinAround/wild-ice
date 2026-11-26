@@ -5,7 +5,7 @@ import { CHIPS, badges, evidenceLine, inLakes, isJustIn, shortDate, skateMeta, s
 const RUN = "2026-11-22";
 
 test("chips in order", () => {
-  assert.deepEqual(CHIPS.map((c) => c.id), ["just_in", "best_ice", "biggest", "new_to_you", "adventures"]);
+  assert.deepEqual(CHIPS.map((c) => c.id), ["just_in", "best_ice", "biggest", "new_to_you", "trip_reports"]);
 });
 
 test("inLakes keeps likely black ice and rough ice that aren't hidden", () => {
@@ -61,7 +61,6 @@ test("sorts: pinned first, lakes with no evidence last", () => {
   assert.deepEqual(ids("best_ice"), ["e", "b", "c", "a", "d"]);
   assert.deepEqual(ids("biggest"), ["e", "c", "a", "b", "d"]);
   assert.deepEqual(ids("new_to_you", new Set(["b"])), ["e", "a", "c", "b", "d"]);
-  assert.deepEqual(ids("adventures"), ["e", "a", "c", "b", "d"]);
 });
 
 test("row text and dates", () => {

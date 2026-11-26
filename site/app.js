@@ -6,13 +6,14 @@ import { GLOSSARY } from "./glossary.js";
 import { renderMine } from "./views/mine-view.js";
 import { renderUpload } from "./views/upload-view.js";
 import { avatarEl, avatarUrl, renderAccount } from "./views/account-view.js";
+import { renderTrips, tripCard } from "./views/trips-view.js";
 import { badges, shortDate } from "./explore.js";
 import { ACCESS, DISTANCES, LABELS, SIZES, SKATE, activeCount, clean, defaults, passes } from "./mapfilter.js";
 
 const SKATE_CM = 5; // config.yaml ice.skate_cm: past 2" the thickness doesn't matter
 import {
   GRADES, flushReports, getDevice, inviteCodeFromHash, loadLake, ownerCall, postComment, prepPhoto,
-  queueReport, queuedReports, redeemInvite, joinOpen, getSaved, setSaved, getSkated, account, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
+  queueReport, queuedReports, redeemInvite, joinOpen, giveKudos, loadFeed, getSaved, setSaved, getSkated, account, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
 } from "./icelog.js";
 import { TURNSTILE_SITEKEY, WORKER_URL } from "./config.js";
 
@@ -315,11 +316,11 @@ function reportSection(id) {
       box.append(el("p", { class: "report-msg", text: "Logging " + what + " for today" }),
         el("div", { class: "row" },
           el("button", { class: "act", text: "Undo", onclick: undoReport }),
-          el("button", { class: "act", text: "Add details", onclick: () => {
+          el("button", { class: "act", text: "Add trip report & photo", onclick: () => {
             clearTimeout(p.timer); p.timer = null; p.noting = true; renderPanel(id);
           } })));
     } else if (p.noting) {
-      box.append(el("p", { class: "report-msg", text: what + ": add details" }), detailsForm(id, p));
+      box.append(el("p", { class: "report-msg", text: what + ": add a trip report" }), detailsForm(id, p));
     }
     return box;
   }
@@ -338,7 +339,9 @@ function reportSection(id) {
       onclick: () => startReport(id, r),
     }, sw, c.text));
   }
-  box.append(grid);
+  box.append(grid,
+    el("p", { class: "meta", text: "Pick one, then add a trip report and a photo." }),
+    el("button", { type: "button", class: "act small", text: "⇪ Upload a GPX or FIT track", onclick: () => { closePanel(); showTab("upload"); } }));
   return box;
 }
 
@@ -356,10 +359,11 @@ function detailsForm(id, p) {
     }
     form.append(el("p", { class: "meta", text: "Ice quality (optional): A+ best … F- skateable but awful" }), chips);
   }
-  const note = el("input", { type: "text", placeholder: "What did you see? (only you see notes)", "aria-label": "Note", maxlength: "300" });
-  note.value = p.note || "";
-  note.addEventListener("input", () => { p.note = note.value; });
-  const photo = el("input", { type: "file", accept: "image/jpeg,image/*", "aria-label": "Photo" });
+  const note = el("textarea", { placeholder: "How was it? Where did you get on, how was the ice, anything to watch for…",
+    "aria-label": "Trip report", maxlength: "1000", rows: "4" });
+  note.value = p.story || "";
+  note.addEventListener("input", () => { p.story = note.value; });
+  const photo = el("input", { type: "file", accept: "image/jpeg,image/*", "aria-label": "Photo", class: "file-in", id: "rep-photo" });
   const photoMsg = el("p", { class: "meta", text: p.photo ? "Photo ready" + (p.photo.gps ? " (with its location)" : "") : "" });
   photo.addEventListener("change", async () => {
     const file = photo.files && photo.files[0];
@@ -373,7 +377,8 @@ function detailsForm(id, p) {
       photoMsg.textContent = "Couldn't read that photo";
     }
   });
-  form.append(note, el("label", { class: "meta", text: "Photo (optional)" }), photo, photoMsg);
+  form.append(el("label", { class: "meta", text: "Trip report (everyone sees this)" }), note,
+    el("label", { class: "act file-label", for: "rep-photo", text: p.photo ? "📷 Change photo" : "📷 Add a photo (everyone sees it)" }), photo, photoMsg);
   if (!(p.photo && p.photo.gps)) {
     const where = el("button", { type: "button", class: "act", text: p.gps ? "Location added ✓" : "Use my location" });
     where.addEventListener("click", () => {
@@ -386,8 +391,8 @@ function detailsForm(id, p) {
     });
     form.append(el("p", { class: "meta", text: "At the lake? Adding your location confirms which lake." }), where);
   }
-  form.append(el("button", { class: "act", type: "submit", text: "Log the ice" }));
-  form.addEventListener("submit", (e) => { e.preventDefault(); p.note = note.value.trim(); commitReport(); });
+  form.append(el("button", { class: "act", type: "submit", text: "Post trip report" }));
+  form.addEventListener("submit", (e) => { e.preventDefault(); p.story = note.value.trim(); commitReport(); });
   return form;
 }
 
@@ -440,7 +445,7 @@ function commitReport() {
   all[p.id] = rep;
   try { store.setItem(REPORTED_KEY, JSON.stringify(all)); } catch { /* storage blocked */ }
   applyReported(p.id, rep);
-  queueReport(store, makeReport({ lakeId: p.id, rating: p.rating, grade: p.grade, note: p.note,
+  queueReport(store, makeReport({ lakeId: p.id, rating: p.rating, grade: p.grade, note: p.note, story: p.story,
     photo: p.photo, gps: p.gps, day: rep.day }));
   if (currentId === p.id && !$("panel").hidden) renderPanel(p.id, "Logging…");
   sendQueue();
@@ -465,11 +470,14 @@ function iceLogSection(id) {
   const box = el("section", { class: "icelog", "aria-label": "Field Notes" });
   box.append(el("h3", { text: "Field Notes" }));
   const photos = el("div", { class: "featured" });
+  const trips = el("ol", { class: "trips" });
   const list = el("ol", { class: "comments" });
-  box.append(photos, list, commentForm(id, list));
+  box.append(photos, el("h4", { text: "Trip reports" }), trips, el("h4", { text: "Comments" }), list, commentForm(id, list));
   if (!VIEW_ONLY && WORKER_URL && !getDevice(store)) box.append(joinPrompt("Join Wild Ice to post ice reports and photos"));
-  loadLake(id, ICELOG).then(({ comments, photos: ph }) => {
+  loadLake(id, ICELOG).then(({ comments, photos: ph, reports = [] }) => {
     if (!box.isConnected) return;
+    if (!reports.length) trips.append(el("li", { class: "meta", text: "No trip reports in the last 60 days." }));
+    for (const r of reports) trips.append(tripCard(r, tripOpts(false)));
     for (const p of ph || []) {
       photos.append(el("figure", {},
         el("img", { src: `${WORKER_URL}/api/photos/${encodeURIComponent(p.public_id)}`, alt: "Photo of the lake", loading: "lazy" }),
@@ -483,6 +491,18 @@ function iceLogSection(id) {
     }
   });
   return box;
+}
+
+// Shared options for trip report cards (feed and lake pages).
+function tripOpts(withLake) {
+  return {
+    lakeName: (id) => info(id)?.name || "A lake",
+    openLake: withLake ? (id) => openLake(id, true) : null,
+    photoUrl: (pid) => `${WORKER_URL}/api/photos/${encodeURIComponent(pid)}`,
+    avatar: (r) => avatarEl(avatarUrl(WORKER_URL, r.avatar), r.name, 36),
+    canKudos: !!getDevice(store),
+    onKudos: (r) => giveKudos(r.id, ICELOG),
+  };
 }
 
 // Embedded on a phone: one finger scrolls the host page, two fingers move and zoom the map.
@@ -928,6 +948,7 @@ function renderTab() {
       onChip: (c) => { try { store.setItem(CHIP_KEY, c); } catch { /* ignore */ } renderTab(); },
       onMap: () => { setFilter({ ...mapFilter, labels: [...SKATE] }); showTab("map"); },
       openLake: (id) => openLake(id, true), photoUrl,
+      renderTrips: (mount) => renderTrips(mount, { ...tripOpts(true), load: () => loadFeed(ICELOG) }),
     });
   } else if (tab === "mine") {
     renderMine($("mine-view"), { glossaryHref: "#glossary", status, saved: [...savedIds], skated: skatedRows, joined: !!getDevice(store),
@@ -1075,7 +1096,8 @@ async function showReview() {
         el("button", { class: "act", text: "Reject", onclick: decide(`/api/review/comments/${c.id}`, "reject", row) })));
     body.append(row);
   }
-  body.append(el("h3", { text: `Waiting photos (${photos.length})` }));
+  body.append(el("h3", { text: `New photos (${photos.length})` }),
+    el("p", { class: "meta", text: "Already showing in trip reports. Feature one to put it at the top of its lake page, or remove it." }));
   for (const p of photos) {
     const row = el("div", { class: "review-row" });
     const img = el("img", { class: "thumb", alt: "Photo from " + (p.credit || "a friend") });
@@ -1085,7 +1107,7 @@ async function showReview() {
     row.append(img, el("p", { class: "meta", text: `${p.credit || "A friend"} · ${lakeName(p.lake_id)} · ${shortDay(p.created_at.slice(0, 10))}` }),
       el("div", { class: "row" },
         el("button", { class: "act", text: "Feature", onclick: decide(`/api/review/photos/${p.id}`, "feature", row) }),
-        el("button", { class: "act", text: "Reject", onclick: decide(`/api/review/photos/${p.id}`, "reject", row) })));
+        el("button", { class: "act", text: "Remove", onclick: decide(`/api/review/photos/${p.id}`, "reject", row) })));
     body.append(row);
   }
   const out = el("div", {});

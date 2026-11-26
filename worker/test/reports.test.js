@@ -78,19 +78,19 @@ describe("reports", () => {
     expect((await exported())[0].role).toBe("owner");
   });
 
-  it("photo stored pending, not public", async () => {
+  it("photo shows at once (awaiting the owner's look), and not once removed", async () => {
     const ok = await owner();
     const fk = await friend(ok);
     expect((await call("POST", "/api/reports", { body: report({ photo: JPEG }), token: fk })).status).toBe(200);
     const p = await env.DB.prepare("SELECT * FROM photos").first();
     expect(p).toMatchObject({ lake_id: "w123", status: "pending" });
     expect(p.public_id).not.toBe(p.id);
+    const pub = await call("GET", `/api/photos/${p.public_id}`);
+    expect(pub.status).toBe(200);
+    expect(pub.headers.get("Content-Type")).toBe("image/jpeg");
+    expect(new Uint8Array(await pub.arrayBuffer())[0]).toBe(0xff);
+    await env.DB.prepare("UPDATE photos SET status = 'rejected'").run();
     expect((await call("GET", `/api/photos/${p.public_id}`)).status).toBe(404);
-    expect((await call("GET", `/api/photos/${p.public_id}`, { token: fk })).status).toBe(404);
-    const mine = await call("GET", `/api/photos/${p.public_id}`, { token: ok });
-    expect(mine.status).toBe(200);
-    expect(mine.headers.get("Content-Type")).toBe("image/jpeg");
-    expect(new Uint8Array(await mine.arrayBuffer())[0]).toBe(0xff);
   });
 
   it("non-JPEG or oversize photo rejected", async () => {

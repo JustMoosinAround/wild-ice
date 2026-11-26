@@ -6,7 +6,7 @@ export const CHIPS = [
   { id: "best_ice", label: "Best ice" },
   { id: "biggest", label: "Biggest" },
   { id: "new_to_you", label: "New to you" },
-  { id: "adventures", label: "Adventures" },
+  { id: "trip_reports", label: "Trip reports" }, // a feed of what people skated, not a sort
 ];
 export const JUST_IN_DAYS = 3;
 const IN = new Set(["likely_black_ice", "rough_ice"]);
@@ -95,11 +95,6 @@ export function sortLakes(list, chip, props, ctx) {
     best_ice: (a, b) => grade(a) - grade(b) || fresh(b).localeCompare(fresh(a)),
     biggest: (a, b) => area(b) - area(a),
     new_to_you: (a, b) => (ctx.skated ? Number(ctx.skated.has(a.id)) - Number(ctx.skated.has(b.id)) : 0) || byJustIn(a, b),
-    adventures: (a, b) => {
-      const ha = isHikeIn(props[a.id]), hb = isHikeIn(props[b.id]);
-      return Number(hb) - Number(ha) || (ha && hb ? props[b.id].road_mi - props[a.id].road_mi : 0)
-        || fresh(b).localeCompare(fresh(a));
-    },
   }[chip] || byJustIn;
   return [...list].sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned))
     || Number(!evidence(a)) - Number(!evidence(b))

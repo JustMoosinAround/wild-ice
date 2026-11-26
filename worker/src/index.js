@@ -7,6 +7,7 @@ import { getLake } from "./lakes.js";
 import { getReview, postPref, reviewComment, reviewPhoto, reviewReport } from "./review.js";
 import { scheduled } from "./cron.js";
 import { getStats, ping, tally } from "./stats.js";
+import { getFeed, postKudos } from "./feed.js";
 import { deleteSaved, getSaved, getSkated, postSaved } from "./saved.js";
 import { deleteMe, deleteMyDevice, deleteReport, getAvatar, myDevices, myExport, myInvite, myReports,
   postMyPhoto, putMe } from "./account.js";
@@ -18,6 +19,8 @@ const ROUTES = [
   ["POST", /^\/api\/ping$/, ping],
   ["POST", /^\/api\/tally$/, tally],
   ["GET", /^\/api\/stats$/, getStats],
+  ["GET", /^\/api\/feed$/, getFeed],
+  ["POST", /^\/api\/reports\/([\w-]+)\/kudos$/, postKudos],
   ["GET", /^\/api\/me$/, me],
   ["POST", /^\/api\/invites$/, invite],
   ["POST", /^\/api\/friends\/([\w-]+)\/revoke$/, revoke],

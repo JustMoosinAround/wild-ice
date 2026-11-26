@@ -63,13 +63,14 @@ function fileCard(file, opts) {
     const gradeSel = el("select", { "aria-label": "Ice grade", class: "grade-sel" },
       el("option", { value: "", text: "Grade (optional)" }), ...GRADES.map((g) => el("option", { value: g, text: g })));
     gradeSel.addEventListener("change", () => { grade = gradeSel.value || null; });
-    const note = el("input", { type: "text", maxlength: "300", placeholder: "Note (only the owner sees it)" });
+    const note = el("textarea", { maxlength: "1000", rows: "3", class: "story-in",
+      placeholder: "Trip report (optional, everyone sees it): how was the ice, where did you get on…" });
     const msg = el("p", { class: "status" });
     const ratings = el("div", { class: "row" },
       ...[["skated", "Skateable"], ["rough", "Rough ice"]].map(([r, t]) => el("button", { type: "button",
         class: "act" + (r === rating ? " sel" : ""), text: t, onclick: () => { rating = r; redraw(); } })));
-    const send = el("button", { type: "button", class: "act on", text: "Post report", onclick: () => {
-      opts.queue(makeReport({ lakeId: pick.lakeId, rating, grade, note: note.value, day: pick.day,
+    const send = el("button", { type: "button", class: "act on", text: "Post trip report", onclick: () => {
+      opts.queue(makeReport({ lakeId: pick.lakeId, rating, grade, story: note.value, day: pick.day,
         trackMinutes: pick.minutes, point: pick.point, storage: opts.storage }));
       posted.push(`${pick.name || pick.lakeId}, ${shortDate(pick.day)}, ${pick.minutes} min`);
       // A track over several lakes: offer the others next.

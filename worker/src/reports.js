@@ -9,6 +9,8 @@ export const GRADES = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-",
 const GRADED = new Set(["skated", "rough"]);
 const MAX_PHOTO_BYTES = 1.5 * 1024 * 1024;
 const MAX_NOTE = 300;
+const MAX_STORY = 1000;
+const LINK = /https?:\/\/|www\.|\.[a-z]{2,}\//i;
 const MAX_AGE_DAYS = 14;
 const MAX_TRACK_AGE_DAYS = 3653; // ~10 years of history from a Strava export
 
@@ -50,6 +52,9 @@ export function validateReport(body, today = alaskaDay()) {
     if (!GRADES.includes(grade)) bad("Unknown grade");
   }
   const note = body.note == null ? "" : String(body.note).trim();
+  const story = body.story == null ? "" : String(body.story).trim();
+  if (story.length > MAX_STORY) bad(`Trip report is over ${MAX_STORY} characters`);
+  if (LINK.test(story)) bad("Links aren't allowed in trip reports");
   if (note.length > MAX_NOTE) bad(`Note is over ${MAX_NOTE} characters`);
   const day = body.day == null ? today : body.day;
   if (typeof day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(Date.parse(day))) bad("Bad day");
@@ -73,7 +78,7 @@ export function validateReport(body, today = alaskaDay()) {
     gps = { lat, lon, source };
   }
   const photo = body.photo == null ? null : decodePhoto(body.photo);
-  return { idem, lake_id: body.lake_id, rating: body.rating, grade, note, day, gps, photo, trackMinutes };
+  return { idem, lake_id: body.lake_id, rating: body.rating, grade, note, story: story || null, day, gps, photo, trackMinutes };
 }
 
 export async function postReport(env, request) {
@@ -99,10 +104,10 @@ export async function postReport(env, request) {
   try {
     await env.DB.prepare(
       `INSERT INTO reports (id, idem_key, friend_id, lake_id, day, created_at, rating, grade, note,
-                            lat, lon, gps_source, photo_id, track_minutes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                            lat, lon, gps_source, photo_id, track_minutes, story)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(id, r.idem, who.id, r.lake_id, r.day, now(), r.rating, r.grade, r.note,
-      r.gps?.lat ?? null, r.gps?.lon ?? null, r.gps?.source ?? null, photoId, r.trackMinutes).run();
+      r.gps?.lat ?? null, r.gps?.lon ?? null, r.gps?.source ?? null, photoId, r.trackMinutes, r.story).run();
   } catch (err) {
     // A simultaneous resend won the UNIQUE(idem_key) race: answer with its id.
     const row = await env.DB.prepare("SELECT id FROM reports WHERE idem_key = ?").bind(r.idem).first();
@@ -114,15 +119,12 @@ export async function postReport(env, request) {
 
 export async function getPhoto(env, request, publicId) {
   const p = await env.DB.prepare("SELECT status FROM photos WHERE public_id = ?").bind(publicId).first();
-  let allowed = p && p.status === "featured";
-  if (p && !allowed && p.status === "pending") {
-    const who = await deviceFriend(env, request);
-    allowed = who?.role === "owner";
-  }
+  // Members' photos show at once (the owner can remove them in Review); removed ones don't.
+  const allowed = p && p.status !== "rejected";
   const bytes = allowed ? await env.PHOTOS.get(`photo:${publicId}`, "arrayBuffer") : null;
   if (!bytes) throw new HttpError(404, "No such photo");
   return new Response(bytes, {
-    headers: { "Content-Type": "image/jpeg", "Cache-Control": p.status === "featured" ? "public, max-age=86400" : "private, no-store" },
+    headers: { "Content-Type": "image/jpeg", "Cache-Control": "public, max-age=3600" },
   });
 }
 

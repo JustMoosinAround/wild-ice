@@ -2,8 +2,10 @@
 import { lakeComments } from "./comments.js";
 import { HttpError, json } from "./http.js";
 import { featuredPhotos } from "./review.js";
+import { tripReports } from "./feed.js";
 
 export async function getLake(env, request, lakeId) {
   if (!/^[wr]\d{1,12}$/.test(lakeId)) throw new HttpError(404, "Unknown lake");
-  return json({ comments: await lakeComments(env, lakeId), photos: await featuredPhotos(env, lakeId) });
+  return json({ comments: await lakeComments(env, lakeId), photos: await featuredPhotos(env, lakeId),
+    reports: await tripReports(env, request, lakeId) });
 }

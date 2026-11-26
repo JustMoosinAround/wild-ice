@@ -126,11 +126,13 @@ function phoneSalt(storage) {
   return salt;
 }
 
-export function makeReport({ lakeId, rating, grade, note, photo, gps, day, trackMinutes, point, storage }) {
+export function makeReport({ lakeId, rating, grade, note, story, photo, gps, day, trackMinutes, point, storage }) {
   const r = { lake_id: lakeId, rating };
   if (grade && (rating === "skated" || rating === "rough")) r.grade = grade;
   const n = (note || "").trim().slice(0, 300);
   if (n) r.note = n;
+  const st = (story || "").trim().slice(0, 1000);
+  if (st) r.story = st; // public trip report
   if (photo) r.photo = photo.jpegBase64;
   // A track's point on the lake beats a photo's GPS; both beat the phone's location.
   const where = point ? { lat: point.lat, lon: point.lon, source: "device" }
@@ -179,9 +181,9 @@ export function inviteDecision(device) {
   return device.role === "owner" ? "refuse" : "confirm";
 }
 
-export async function loadLake(lakeId, { fetch, base }) {
-  const res = await call(base, `/api/lakes/${encodeURIComponent(lakeId)}`, { fetch });
-  return res.status === 200 ? res.data : { comments: [], photos: [] };
+export async function loadLake(lakeId, { fetch, base, storage }) {
+  const res = await call(base, `/api/lakes/${encodeURIComponent(lakeId)}`, { fetch, token: storage ? getDevice(storage)?.key : undefined });
+  return res.status === 200 ? res.data : { comments: [], photos: [], reports: [] };
 }
 
 export async function postComment(comment, { fetch, storage, base }) {
@@ -204,6 +206,25 @@ export async function redeemInvite(code, name, { fetch, storage, base }) {
   } catch {
     return { ok: false, error: "No connection, try again" };
   }
+}
+
+// Kudos on a trip report (members only): toggles; returns {kudos, gave_kudos} or null.
+export async function giveKudos(reportId, { fetch, storage, base }) {
+  const device = getDevice(storage);
+  if (!device) return null;
+  try {
+    const res = await call(base, `/api/reports/${encodeURIComponent(reportId)}/kudos`, { fetch, method: "POST", body: {}, token: device.key });
+    return res.status === 200 ? res.data : null;
+  } catch {
+    return null;
+  }
+}
+
+// Recent public trip reports (all lakes).
+export async function loadFeed({ fetch, storage, base }) {
+  const res = await call(base, "/api/feed", { fetch, token: getDevice(storage)?.key });
+  if (res.status !== 200) throw new Error("feed");
+  return res.data.reports;
 }
 
 // Open sign-up: a name and a Turnstile token, no invite needed.
