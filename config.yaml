@@ -44,6 +44,11 @@ imagery:  # placeholders, tuned by backtest
   # can sit in a clear hole, and winter snow is often counted as cloud. Lower it once the
   # daily logs show how many skipped scenes would have been clear over lakes.
   max_scene_cloud_pct: 95
+  # Then, per lake: a new Sentinel-2 / Landsat pass is only analysed if the weather
+  # model's cloud cover over the lake, at the hour of the pass, was under this. Free to
+  # check, and most passes are cloudy: the monthly request allowance went on them.
+  # Radar (Sentinel-1) sees through cloud and isn't filtered.
+  max_pass_cloud_pct: 70
   # Patchy lake: grey (older, dusted) ice next to black patches that may be open water
   # or newer, thinner ice (lakeice.org: ice edges, polynyas). Measured as p95 - p75
   # green reflectance. On 344 thumbnails: evenly black lakes 0.003 (90% under 0.010),

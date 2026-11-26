@@ -8,7 +8,7 @@ numbers only for lakes under a scene newer than the one they last got.
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable
+from collections.abc import Mapping, Iterable
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
@@ -103,3 +103,25 @@ def save_seen(path: Path, seen: Seen) -> None:
     with open(path, "w", encoding="utf-8", newline="\n") as fh:
         json.dump(data, fh, indent=2)
         fh.write("\n")
+
+
+def drop_cloudy_passes(wanted: Seen, cell_of_lake: Mapping[str, tuple], clouds: Mapping[tuple, Mapping[str, float]],
+                       max_pct: float) -> tuple[Seen, int]:
+    """Drop photo sensors (Sentinel-2, Landsat) whose new pass over a lake came while the
+    weather model had the sky over it at or above `max_pct` cloud. Radar sees through
+    cloud and stays. With no cloud figure for that hour the pass is kept (benefit of the
+    doubt). A dropped pass isn't marked seen, so a later clear one is still new."""
+    out: Seen = {}
+    dropped = 0
+    for lake_id, sensors in wanted.items():
+        hours = clouds.get(cell_of_lake.get(lake_id), {})
+        keep = {}
+        for sensor, t in sensors.items():
+            pct = hours.get(t.strftime("%Y-%m-%dT%H")) if sensor in PHOTO_SENSORS else None
+            if pct is not None and pct >= max_pct:
+                dropped += 1
+                continue
+            keep[sensor] = t
+        if keep:
+            out[lake_id] = keep
+    return out, dropped

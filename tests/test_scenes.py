@@ -71,3 +71,17 @@ def test_lake_under_only_overcast_scene_is_not_new_and_waits_for_a_clear_one():
     later = datetime(2025, 11, 14, 21, 5, tzinfo=UTC)
     kept, _ = drop_cloudy([Scene("s2", later, S2_FOOT, 30.0)], 95.0)
     assert new_sensors([A], kept, {"wA": {"s2": T1}}) == {"wA": {"s2": later}}
+
+
+def test_cloudy_passes_dropped_radar_kept():
+    """A new Sentinel-2 pass at an hour the weather model had 90% cloud over the lake
+    isn't worth a request; radar sees through it; unknown hours get the benefit of the doubt."""
+    from datetime import datetime, timezone
+    from wildice.scenes import drop_cloudy_passes
+    t = datetime(2026, 11, 25, 21, 40, tzinfo=timezone.utc)
+    wanted = {"cloudy": {"s2": t, "s1": t}, "clear": {"s2": t}, "nodata": {"ls": t}}
+    cells = {"cloudy": (61.1, -149.9), "clear": (61.5, -149.5), "nodata": (62.0, -150.0)}
+    clouds = {(61.1, -149.9): {"2026-11-25T21": 90.0}, (61.5, -149.5): {"2026-11-25T21": 20.0}}
+    out, dropped = drop_cloudy_passes(wanted, cells, clouds, 70)
+    assert out == {"cloudy": {"s1": t}, "clear": {"s2": t}, "nodata": {"ls": t}}
+    assert dropped == 1

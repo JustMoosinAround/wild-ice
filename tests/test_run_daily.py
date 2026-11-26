@@ -425,7 +425,7 @@ def test_weather_fetched_at_largest_lake_in_cell(tmp_repo, mocked):
     assert run(RUN, tmp_repo, ENV, session(), FakeClient()) == 0
     wx_calls = [c for c in mocked.calls
                 if c.request.url.startswith((ARCHIVE_URL, FORECAST_URL))]
-    assert len(wx_calls) == 2
+    assert len(wx_calls) == 3  # archive + forecast, then cloud at the new passes' hours
     for c in wx_calls:
         q = parse_qs(urlparse(c.request.url).query)
         assert (q["latitude"], q["longitude"]) == (["60.98"], ["-149.47"])

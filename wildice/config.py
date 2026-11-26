@@ -62,6 +62,7 @@ class ImageryCfg:
     max_lakes_per_day: int
     max_minutes_per_run: float
     max_scene_cloud_pct: float  # skip photo scenes this cloudy (whole-scene figure)
+    max_pass_cloud_pct: float  # ...and passes the weather model had this cloudy over the lake
     patchy_texture: float  # S2Obs.texture at or above this: grey ice with black patches
     patch_days: int        # how long a patch seen on a clear image is remembered
     crack_min_frac: float    # share of the lake in thin white lines that means bare ice
@@ -203,7 +204,7 @@ def load_config(path: Path) -> Config:
             min_valid_fraction=float, fresh_days=int, shore_buffer_m=float,
             snow_ndsi=float, snow_brightness=float, dark_brightness=float,
             s1_frozen_delta_db=float, lookback_days=int, monthly_request_budget=int,
-            max_lakes_per_day=int, max_minutes_per_run=float, max_scene_cloud_pct=float, patchy_texture=float, patch_days=int,
+            max_lakes_per_day=int, max_minutes_per_run=float, max_scene_cloud_pct=float, max_pass_cloud_pct=float, patchy_texture=float, patch_days=int,
             crack_min_frac=float, crack_res_m=float, crack_max_px=int, crack_checks_per_run=int,
             low_sun_start=_mmdd, low_sun_end=_mmdd,
             ls_snow_brightness=float, ls_dark_brightness=float, ls_open_water_c=float, ls_ice_c=float)),

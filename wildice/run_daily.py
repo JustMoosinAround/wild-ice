@@ -36,11 +36,11 @@ from wildice.icelog import fetch_export, merge_reports, reports_from_export
 from wildice.snowobs import apply_measured, fetch_observations, latest_measured, match_station
 from wildice.patches import apply_patches, texture_by_day
 from wildice.reports import apply_report, ice_with_report, load_reports
-from wildice.scenes import Seen, drop_cloudy, load_seen, new_sensors, save_seen
+from wildice.scenes import Seen, drop_cloudy, drop_cloudy_passes, load_seen, new_sensors, save_seen
 from wildice.score import optical_classes, score_lake, valid_ls_classes, valid_s2_classes
 from wildice.shortlist import shortlist
 from wildice.weather import (
-    cell_of, cell_points, make_session, season_start, update_cache, wet_snow,
+    cell_of, cell_points, fetch_pass_clouds, make_session, season_start, update_cache, wet_snow,
 )
 
 log = logging.getLogger(__name__)
@@ -228,7 +228,8 @@ def _make_client(env: Mapping[str, str], session: requests.Session,
 
 
 def _new_scenes(client, lake_list: list[Lake], seen: Seen, run_date: date, cfg: Config,
-                env: Mapping[str, str], ntfy: requests.Session) -> Seen:
+                env: Mapping[str, str], ntfy: requests.Session,
+                session: requests.Session | None = None) -> Seen:
     """Lakes under a scene newer than their last request; {} if the catalog is down."""
     start = run_date - timedelta(days=cfg.imagery.lookback_days)
     try:
@@ -244,6 +245,22 @@ def _new_scenes(client, lake_list: list[Lake], seen: Seen, run_date: date, cfg: 
     log.info("scene catalog: %d scenes kept, %d photo scenes skipped as %.0f%%+ cloud, "
              "%d lakes with something new", len(scenes), cloudy,
              cfg.imagery.max_scene_cloud_pct, len(wanted))
+    if session is not None and wanted:
+        # Was the sky over each lake clear when the new pass came? (weather model, free)
+        by_id = {l.id: l for l in lake_list}
+        lakes_wanted = [by_id[i] for i in wanted if i in by_id]
+        try:
+            clouds = fetch_pass_clouds(sorted({cell_of(l.lat, l.lon) for l in lakes_wanted}),
+                                       cell_points(lakes_wanted), session)
+        except SourceUnavailable as exc:
+            log.warning("pass cloud check failed (%s); taking every new pass today", exc)
+            return wanted
+        before = len(wanted)
+        wanted, dropped = drop_cloudy_passes(wanted, {l.id: cell_of(l.lat, l.lon) for l in lakes_wanted},
+                                             clouds, cfg.imagery.max_pass_cloud_pct)
+        log.info("pass clouds: %d photo passes skipped as %.0f%%+ cloud over the lake; "
+                 "%d of %d lakes still have something new", dropped, cfg.imagery.max_pass_cloud_pct,
+                 len(wanted), before)
     return wanted
 
 
@@ -587,7 +604,7 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
                             hidden=hidden, last_checked=last_checked)
                   if client is not None and allowance > 0 else [])
         # no lake worth a request today: don't spend one on the catalog either
-        wanted = (_new_scenes(client, lake_list, seen, run_date, cfg, env, ntfy)
+        wanted = (_new_scenes(client, lake_list, seen, run_date, cfg, env, ntfy, session)
                   if ranked else {})
         ids = _pick(ranked, wanted, allowance)
         imagery = _imagery(client, lakes, ids, ice0, run_date, cfg, budget, baselines,

@@ -239,3 +239,28 @@ def wet_snow(days: Sequence[DayWeather], max_c: float, cm_per_mm: float) -> list
             d = replace(d, snowfall_cm=round(d.snowfall_cm + d.rain_mm * cm_per_mm, 2), rain_mm=0.0)
         out.append(d)
     return out
+
+
+CLOUD_DAYS_BACK = 3  # new scenes are this recent (older ones were already seen)
+
+
+def fetch_pass_clouds(cells: Sequence[Cell], points: Mapping[Cell, Point], session: requests.Session,
+                      sleep: Sleep | None = None) -> dict[Cell, dict[str, float]]:
+    """Hourly total cloud cover (%) per cell for the last few days, keyed by UTC hour
+    ("2026-11-25T21"), from the weather model. Free: tells which new satellite passes
+    were likely clear before a Copernicus request is spent on them."""
+    sleep = sleep or time.sleep
+    cells = list(cells)
+    out: dict[Cell, dict[str, float]] = {}
+    for i in range(0, len(cells), BATCH):
+        batch = cells[i:i + BATCH]
+        pts = [points.get(c, c) for c in batch]
+        params = {"latitude": ",".join(str(p[0]) for p in pts), "longitude": ",".join(str(p[1]) for p in pts),
+                  "hourly": "cloud_cover", "timezone": "GMT", "past_days": CLOUD_DAYS_BACK, "forecast_days": 1}
+        locations = _get(session, FORECAST_URL, params, sleep)
+        if len(locations) != len(batch):
+            raise SourceUnavailable(SOURCE, f"expected {len(batch)} locations, got {len(locations)}")
+        for cell, loc in zip(batch, locations):
+            h = loc.get("hourly") or {}
+            out[cell] = {t[:13]: v for t, v in zip(h.get("time", []), h.get("cloud_cover", [])) if v is not None}
+    return out
