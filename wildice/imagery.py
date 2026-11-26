@@ -412,7 +412,8 @@ class CopernicusClient:
             raise SourceUnavailable(SOURCE, f"unexpected Landsat response: {exc}") from exc
         return out
 
-    def lake_photo_png(self, geometry: dict, day: date, sensor: str = "s2") -> bytes:
+    def lake_photo_png(self, geometry: dict, day: date, sensor: str = "s2",
+                       window_days: int | None = None) -> bytes:
         """True color of the lake and its surroundings, not cut to the lake: for people."""
         # Always Sentinel-2 (10 m; Landsat's 30 m looks blocky up close): the clearest
         # look in the days up to `day`, smoothly upsampled.
@@ -425,7 +426,7 @@ class CopernicusClient:
                     "type": collection,
                     "dataFilter": {
                         "timeRange": {
-                            "from": f"{(day - timedelta(days=PHOTO_WINDOW_DAYS)).isoformat()}T00:00:00Z",
+                            "from": f"{(day - timedelta(days=window_days or PHOTO_WINDOW_DAYS)).isoformat()}T00:00:00Z",
                             "to": f"{(day + timedelta(days=1)).isoformat()}T00:00:00Z"},
                         "mosaickingOrder": "leastCC",
                     },

@@ -140,7 +140,7 @@ class FakeClient:
             raise self.fail
         return list(self.ls)
 
-    def lake_photo_png(self, geometry, day, sensor="s2"):
+    def lake_photo_png(self, geometry, day, sensor="s2", window_days=None):
         self.calls.append(("photo", day, day))
         return b"\x89PNG photo"
 
@@ -962,8 +962,8 @@ def test_lake_photo_saved_with_the_thumbnail_and_published(tmp_repo, mocked):
     assert run(RUN, tmp_repo, ENV, session(), first) == 0
     assert [c for c in first.calls if c[0] == "photo"] == [("photo", RUN - timedelta(days=1),
                                                             RUN - timedelta(days=1))]
-    assert (tmp_repo / "site/data/thumbs/w1-p5.png").exists()
-    assert status_of(tmp_repo)["lakes"]["w1"]["photo"] == "thumbs/w1-p5.png"
+    assert (tmp_repo / "site/data/thumbs/w1-p6.png").exists()
+    assert status_of(tmp_repo)["lakes"]["w1"]["photo"] == "thumbs/w1-p6.png"
     second = FakeClient()
     assert run(RUN, tmp_repo, ENV, session(), second) == 0
     assert [c for c in second.calls if c[0] == "photo"] == []
@@ -988,7 +988,22 @@ def test_summer_shoreline_fetched_once_and_kept(tmp_repo, mocked):
     assert [c for c in first.calls if c[0] == "summer"] == [("summer", RUN.year - 1, RUN.year - 1)] \
         or [c for c in first.calls if c[0] == "summer"] == [("summer", RUN.year, RUN.year)]
     assert (tmp_repo / "state/shore/w1.png").exists()
-    (tmp_repo / "site/data/thumbs/w1-p5.png").unlink()  # photo again, shoreline not again
+    (tmp_repo / "site/data/thumbs/w1-p6.png").unlink()  # photo again, shoreline not again
     second = FakeClient()
     assert run(RUN, tmp_repo, ENV, session(), second) == 0
     assert [c for c in second.calls if c[0] == "summer"] == []
+
+
+def test_every_lake_gets_a_photo_even_without_a_clear_day():
+    """Snow-covered lakes and lakes with no clear look since freeze-up still get a photo:
+    the clearest look of the past month, refreshed every 4 weeks."""
+    from dataclasses import replace
+    from wildice import run_daily as rd
+    from wildice.models import Confidence, Label, Score
+    sc = Score(lake_id="w1", label=Label.SNOW_COVERED, confidence=Confidence.MEDIUM, reason="", thickness_cm=10,
+               last_clear_day=None)
+    key, day, window = rd._photo_key(sc, RUN)
+    assert key.startswith("recent-") and day == RUN and window == rd.RECENT_PHOTO_DAYS
+    assert rd._photo_key(sc, RUN + timedelta(days=28))[0] != key
+    clear = replace(sc, last_clear_day=RUN - timedelta(days=2))
+    assert rd._photo_key(clear, RUN)[0] == (RUN - timedelta(days=2)).isoformat()

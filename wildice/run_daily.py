@@ -21,7 +21,7 @@ from wildice import alert, publish, thumbpatch
 from wildice.catalog import load_catalog
 from wildice.config import Config, load_config
 from wildice.icemodel import in_low_sun, run_ice_model
-from wildice.imagery import Budget, CopernicusClient, fetch_imagery, s1_baseline
+from wildice.imagery import PHOTO_WINDOW_DAYS, Budget, CopernicusClient, fetch_imagery, s1_baseline
 from wildice.models import (
     ImageryStats, Label, Lake, S1Obs, Score, SourceUnavailable, SurfaceClass,
 )
@@ -29,7 +29,7 @@ from wildice.prefs import load_prefs
 from wildice.cracks import check_cracks
 from wildice.explore import came_in, hazards, timeline
 from wildice.numbering import apply_numbers
-from wildice.photo import lake_pixel, outline_from_mask, outline_photo
+from wildice.photo import lake_area_px, lake_pixel, outline_from_mask, outline_photo
 from wildice.hazards import (big_ice_note, lead_note, new_ice_note, ridge_note, slush_note,
                              thaw_note)
 from wildice.icelog import fetch_export, merge_reports, reports_from_export
@@ -349,7 +349,7 @@ def _note_patch(lake_id: str, day: date, png: bytes, thumbs_dir: Path,
 
 
 def _thumbnails(client, lakes: dict[str, Lake], scores: dict[str, Score], prev: dict | None,
-                thumbs_dir: Path, budget: Budget, patches: dict) -> None:
+                thumbs_dir: Path, budget: Budget, patches: dict, run_date: date | None = None) -> None:
     prev_lakes = prev.get("lakes", {}) if isinstance(prev, dict) else {}
     for lake_id, sc in scores.items():
         lake = lakes[lake_id]
@@ -372,7 +372,7 @@ def _thumbnails(client, lakes: dict[str, Lake], scores: dict[str, Score], prev: 
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(png)
         _note_patch(lake_id, sc.last_clear_day, png, thumbs_dir, patches)
-    _photos(client, lakes, scores, prev_lakes, thumbs_dir, budget)
+    _photos(client, lakes, scores, prev_lakes, thumbs_dir, budget, run_date)
 
 
 def _outlined(client, lake: Lake, png: bytes, shore_dir: Path, day: date, budget: Budget) -> bytes:
@@ -391,7 +391,8 @@ def _outlined(client, lake: Lake, png: bytes, shore_dir: Path, day: date, budget
             from PIL import Image
             import io as _io
             w, h = Image.open(_io.BytesIO(png)).size
-            out = outline_from_mask(png, mask_path.read_bytes(), lake_pixel(lake.interior, w, h))
+            out = outline_from_mask(png, mask_path.read_bytes(), lake_pixel(lake.interior, w, h),
+                                    lake_area_px(lake.interior, w, h))
             if out is not None:
                 return out
         return outline_photo(png, lake.interior)
@@ -403,34 +404,63 @@ def _outlined(client, lake: Lake, png: bytes, shore_dir: Path, day: date, budget
 PHOTO_BACKFILL = 150  # lakes without a photo yet that get one per run (the p2 switch refetches all)
 
 
+RECENT_PHOTO_DAYS = 30  # lakes with no clear day since freeze-up: clearest look in the last month
+RECENT_PHOTO_REFRESH_DAYS = 28  # ...refetched every 4 weeks, to spare the request budget
+
+
+def _photo_key(sc: Score, run_date: date | None) -> tuple[str, date, int] | None:
+    """(what the photo shows, day, window): the lake's clear day, or, without one, the
+    clearest look of the past month, refreshed every 4 weeks."""
+    if sc.last_clear_day is not None:
+        return sc.last_clear_day.isoformat(), sc.last_clear_day, PHOTO_WINDOW_DAYS
+    if run_date is None:
+        return None
+    period = run_date.toordinal() // RECENT_PHOTO_REFRESH_DAYS  # same key for 4 weeks
+    return f"recent-{period}", run_date, RECENT_PHOTO_DAYS
+
+
 def _photos(client, lakes: dict[str, Lake], scores: dict[str, Score], prev_lakes: dict,
-            thumbs_dir: Path, budget: Budget) -> None:
-    """The uncut photo of each thumbnailed lake (what people see on cards and lake
-    pages): fetched with a new clear day, or once for lakes that don't have one yet."""
+            thumbs_dir: Path, budget: Budget, run_date: date | None = None) -> None:
+    """The uncut photo of every lake (what people see on cards and lake pages): fetched
+    when its clear day changes, every 4 weeks for lakes without one; not for open water."""
+    keys_path = thumbs_dir.parent.parent.parent / "state" / "photo_keys.json"
+    try:
+        keys = json.loads(keys_path.read_text(encoding="utf-8"))
+        keys = keys if isinstance(keys, dict) else {}
+    except (OSError, ValueError):
+        keys = {}
     backfill = 0
-    for lake_id, sc in scores.items():
-        lake = lakes[lake_id]
-        if sc.label not in THUMB_LABELS or sc.last_clear_day is None or lake.interior is None:
-            continue
-        path = thumbs_dir / f"{lake_id}-p5.png"  # p5: shoreline traced from summer water
-        prev_day = (prev_lakes.get(lake_id) or {}).get("last_clear_day")
-        if path.exists() and prev_day == sc.last_clear_day.isoformat():
-            continue
-        if not path.exists():
-            backfill += 1
-            if backfill > PHOTO_BACKFILL:
+    try:
+        for lake_id, sc in scores.items():
+            lake = lakes[lake_id]
+            pk = _photo_key(sc, run_date)
+            # open water needs no photo (and is most lakes before freeze-up: budget)
+            if lake.interior is None or pk is None or sc.label == Label.OPEN_WATER:
                 continue
-        if budget.remaining() < 1:
-            return
-        try:
-            png = client.lake_photo_png(lake.interior, sc.last_clear_day, sc.last_clear_sensor)
-        except SourceUnavailable as exc:  # cosmetic: keep the run going
-            log.warning("photo for %s failed: %s", lake_id, exc)
-            return
-        png = _outlined(client, lake, png, thumbs_dir.parent.parent.parent / "state" / "shore",
-                        sc.last_clear_day, budget)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(png)
+            key, day, window = pk
+            path = thumbs_dir / f"{lake_id}-p6.png"  # p6: summer shoreline, checked against the mapped size
+            prev_day = (prev_lakes.get(lake_id) or {}).get("last_clear_day")
+            if path.exists() and (keys.get(lake_id) == key or (lake_id not in keys and prev_day == key)):
+                keys[lake_id] = key
+                continue
+            if not path.exists():
+                backfill += 1
+                if backfill > PHOTO_BACKFILL:
+                    continue
+            if budget.remaining() < 1:
+                return
+            try:
+                png = client.lake_photo_png(lake.interior, day, sc.last_clear_sensor, window_days=window)
+            except SourceUnavailable as exc:  # cosmetic: keep the run going
+                log.warning("photo for %s failed: %s", lake_id, exc)
+                return
+            png = _outlined(client, lake, png, keys_path.parent / "shore", day, budget)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(png)
+            keys[lake_id] = key
+    finally:
+        keys_path.parent.mkdir(parents=True, exist_ok=True)
+        keys_path.write_text(json.dumps(keys, indent=0, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def _explore(scores: dict[str, Score], explore_in: dict[str, tuple], history: dict,
@@ -616,7 +646,7 @@ def _run(run_date: date, root: Path, env: Mapping[str, str], session: requests.S
 
         if client is not None:
             _thumbnails(client, lakes, scores, prev_status, site_data / "thumbs", budget,
-                        patches)
+                        patches, run_date)
         _write_json(patches_path, patches)
     except SourceUnavailable as exc:
         # The detail names the source and the error (status, URL, OAuth reason); it never

@@ -53,7 +53,8 @@ def lake_pixel(geometry: dict, width: int, height: int) -> tuple[int, int]:
             round((box[3] - pt.y) / (box[3] - box[1]) * (height - 1)))
 
 
-def outline_from_mask(png: bytes, mask_png: bytes, seed: tuple[int, int]) -> bytes | None:
+def outline_from_mask(png: bytes, mask_png: bytes, seed: tuple[int, int],
+                      expected_px: float | None = None) -> bytes | None:
     """Draw the shoreline of the summer water body under `seed` (open water in July or
     August, so it's right even when the lake and the land are snowed over).
     None if there's no water at or right next to the seed."""
@@ -78,6 +79,12 @@ def outline_from_mask(png: bytes, mask_png: bytes, seed: tuple[int, int]) -> byt
         return None
     ImageDraw.floodfill(water, start, 128)  # our lake only: neighbours stay 255
     lake = water.point(lambda v: 255 if v == 128 else 0)
+    # A trace far smaller (a puddle by the seed) or far bigger (a river it joins) than the
+    # mapped lake isn't the lake: let the caller fall back to the catalog outline.
+    if expected_px:
+        got = int((np.asarray(lake) > 0).sum())
+        if got < 0.35 * expected_px or got > 4 * expected_px:
+            return None
     edge = Image.fromarray(
         ((np.asarray(lake) > 0) & ~(np.asarray(lake.filter(ImageFilter.MinFilter(3))) > 0)).astype("uint8") * 255)
     width = max(3, round(im.width / 160)) | 1
@@ -88,3 +95,11 @@ def outline_from_mask(png: bytes, mask_png: bytes, seed: tuple[int, int]) -> byt
     buf = io.BytesIO()
     im.save(buf, format="PNG")
     return buf.getvalue()
+
+
+def lake_area_px(geometry: dict, width: int, height: int) -> float:
+    """The mapped lake's area in photo pixels (its outline grown back to the shore)."""
+    box, _, _ = photo_bbox(geometry)
+    lat = (box[1] + box[3]) / 2
+    grown = shape(geometry).buffer(SHORE_M / (111_320 * math.cos(math.radians(lat))), join_style=2)
+    return grown.area * (width / (box[2] - box[0])) * (height / (box[3] - box[1]))

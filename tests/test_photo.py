@@ -64,3 +64,17 @@ def test_lake_point_in_photo_pixels():
     box, w, h = photo_bbox(LAKE)
     x, y = lake_pixel(LAKE, w, h)
     assert abs(x - w / 2) < w * 0.15 and abs(y - h / 2) < h * 0.15
+
+
+def test_summer_trace_far_smaller_than_the_lake_falls_back():
+    """Cheney Lake: the summer mask had only a puddle under the centre. A trace far off
+    the mapped size isn't used (the caller draws the catalog outline instead)."""
+    import io
+    from PIL import Image, ImageDraw
+    from wildice.photo import outline_from_mask
+    img = Image.new("RGB", (200, 200), (90, 90, 90)); b = io.BytesIO(); img.save(b, "PNG")
+    mask = Image.new("L", (200, 200), 0)
+    ImageDraw.Draw(mask).rectangle((98, 98, 102, 102), fill=255)  # 25 px puddle
+    m = io.BytesIO(); mask.save(m, "PNG")
+    assert outline_from_mask(b.getvalue(), m.getvalue(), (100, 100), expected_px=4000) is None
+    assert outline_from_mask(b.getvalue(), m.getvalue(), (100, 100), expected_px=30) is not None
