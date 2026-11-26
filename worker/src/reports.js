@@ -78,7 +78,9 @@ export function validateReport(body, today = alaskaDay()) {
     gps = { lat, lon, source };
   }
   const photo = body.photo == null ? null : decodePhoto(body.photo);
-  return { idem, lake_id: body.lake_id, rating: body.rating, grade, note, story: story || null, day, gps, photo, trackMinutes };
+  const via = body.via == null ? null : body.via;
+  if (via !== null && via !== "strava") bad("Unknown source");
+  return { idem, lake_id: body.lake_id, rating: body.rating, grade, note, story: story || null, day, gps, photo, trackMinutes, via };
 }
 
 export async function postReport(env, request) {
@@ -104,10 +106,10 @@ export async function postReport(env, request) {
   try {
     await env.DB.prepare(
       `INSERT INTO reports (id, idem_key, friend_id, lake_id, day, created_at, rating, grade, note,
-                            lat, lon, gps_source, photo_id, track_minutes, story)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                            lat, lon, gps_source, photo_id, track_minutes, story, via)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(id, r.idem, who.id, r.lake_id, r.day, now(), r.rating, r.grade, r.note,
-      r.gps?.lat ?? null, r.gps?.lon ?? null, r.gps?.source ?? null, photoId, r.trackMinutes, r.story).run();
+      r.gps?.lat ?? null, r.gps?.lon ?? null, r.gps?.source ?? null, photoId, r.trackMinutes, r.story, r.via).run();
   } catch (err) {
     // A simultaneous resend won the UNIQUE(idem_key) race: answer with its id.
     const row = await env.DB.prepare("SELECT id FROM reports WHERE idem_key = ?").bind(r.idem).first();

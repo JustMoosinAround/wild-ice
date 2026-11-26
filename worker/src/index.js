@@ -10,6 +10,7 @@ import { getStats, ping, tally } from "./stats.js";
 import { getFeed, postKudos } from "./feed.js";
 import { getSpots, hideSpot, postSpot } from "./spots.js";
 import { resolveLink } from "./links.js";
+import { stravaActivities, stravaConnect, stravaDisconnect, stravaPoints, stravaStatus } from "./strava.js";
 import { deleteSaved, getSaved, getSkated, postSaved } from "./saved.js";
 import { deleteMe, deleteMyDevice, deleteReport, getAvatar, myDevices, myExport, myInvite, myReports,
   postMyPhoto, putMe } from "./account.js";
@@ -24,6 +25,11 @@ const ROUTES = [
   ["GET", /^\/api\/feed$/, getFeed],
   ["GET", /^\/api\/spots$/, getSpots],
   ["GET", /^\/api\/resolve-link$/, resolveLink],
+  ["GET", /^\/api\/strava$/, stravaStatus],
+  ["POST", /^\/api\/strava\/connect$/, stravaConnect],
+  ["DELETE", /^\/api\/strava$/, stravaDisconnect],
+  ["GET", /^\/api\/strava\/activities$/, stravaActivities],
+  ["GET", /^\/api\/strava\/activities\/(\d{1,20})\/points$/, stravaPoints],
   ["POST", /^\/api\/spots$/, postSpot],
   ["POST", /^\/api\/spots\/(s[0-9a-f]{12})\/hide$/, hideSpot],
   ["POST", /^\/api\/reports\/([\w-]+)\/kudos$/, postKudos],

@@ -8,6 +8,7 @@ compatibility_date = "2026-11-01"
 [vars]
 SITE_ORIGIN = "https://justmoosinaround.github.io"     # who may call the API (CORS)
 SITE_URL = "https://justmoosinaround.github.io/wild-ice" # where invite links point
+STRAVA_CLIENT_ID = ""  # Connect Strava: the app's Client ID (public); the secret is a Cloudflare secret
 
 [[d1_databases]]
 binding = "DB"

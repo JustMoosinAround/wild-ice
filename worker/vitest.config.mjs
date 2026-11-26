@@ -12,6 +12,8 @@ export default defineConfig(async () => {
           BOOTSTRAP_TOKEN: "test-bootstrap",
           SERVICE_TOKEN: "test-service",
           TURNSTILE_SECRET: "test-turnstile",
+          STRAVA_CLIENT_ID: "123",
+          STRAVA_CLIENT_SECRET: "test-strava",
           NTFY_TOPIC: "test-topic",
         },
       },

@@ -360,3 +360,4 @@ button.kudos.on { background: var(--teal); border-color: var(--teal); }
 /* member-added spots: a diamond pin */
 .spot-pin span { display: block; width: 14px; height: 14px; margin: 2px; transform: rotate(45deg); border: 2px solid; border-radius: 2px;
   box-shadow: 0 0 0 1.5px rgba(4, 9, 12, .8); }
+button.strava-btn { background: #fc4c02; border-color: #fc4c02; color: #fff; font-weight: 600; }

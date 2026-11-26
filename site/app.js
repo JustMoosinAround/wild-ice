@@ -15,9 +15,9 @@ import { ACCESS, DISTANCES, LABELS, SIZES, SKATE, activeCount, clean, defaults, 
 const SKATE_CM = 5; // config.yaml ice.skate_cm: past 2" the thickness doesn't matter
 import {
   GRADES, flushReports, getDevice, inviteCodeFromHash, loadLake, ownerCall, postComment, prepPhoto,
-  queueReport, queuedReports, redeemInvite, joinOpen, giveKudos, loadFeed, loadSpots, addSpot, getSaved, setSaved, getSkated, account, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
+  queueReport, queuedReports, redeemInvite, joinOpen, giveKudos, loadFeed, loadSpots, addSpot, strava, getSaved, setSaved, getSkated, account, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
 } from "./icelog.js";
-import { TURNSTILE_SITEKEY, WORKER_URL } from "./config.js";
+import { STRAVA_CLIENT_ID, TURNSTILE_SITEKEY, WORKER_URL } from "./config.js";
 
 const STYLE = {
   open_water: { fill: "#3b82f6", line: "#1d4ed8", text: "Open water" },
@@ -539,6 +539,30 @@ function renderSpot(id, d) {
   panel.hidden = false;
 }
 
+// Connect Strava: off to Strava's consent page (its app on phones), back here with ?code.
+function stravaAuthorize() {
+  const state = crypto.randomUUID();
+  try { sessionStorage.setItem("wildice.stravaState", state); } catch { /* fine */ }
+  const back = location.origin + location.pathname;
+  const mobile = /Android|iPhone|iPad/.test(navigator.userAgent);
+  location.href = `https://www.strava.com/oauth/${mobile ? "mobile/" : ""}authorize?client_id=${encodeURIComponent(STRAVA_CLIENT_ID)}`
+    + `&redirect_uri=${encodeURIComponent(back)}&response_type=code&approval_prompt=auto&scope=activity:read_all&state=${state}`;
+}
+
+// Back from Strava: finish connecting, then show the Upload tab.
+async function stravaReturn() {
+  const q = new URLSearchParams(location.search);
+  if (!q.has("code") || !q.has("scope") || !STRAVA_CLIENT_ID) return false;
+  history.replaceState(null, "", location.pathname + "#tab=upload");
+  let want = null;
+  try { want = sessionStorage.getItem("wildice.stravaState"); } catch { /* fine */ }
+  if (want && q.get("state") !== want) { showMsg("Strava sign-in didn't match, try Connect again."); return true; }
+  if (!getDevice(store)) { showMsg("Join Wild Ice first, then connect Strava."); return true; }
+  const r = await strava.connect(q.get("code"), q.get("scope"), ICELOG).catch(() => null);
+  showMsg(r && r.status === 200 ? "Strava connected" : (r && r.data.error) || "Couldn't connect Strava, try again");
+  return true;
+}
+
 // "Share -> Wild Ice" on Android (manifest share_target) opens the app with the link in
 // the address: hand it to the Upload tab once, then tidy the address.
 let sharedLink = sharedText(location.search) || null;
@@ -1013,6 +1037,11 @@ function renderTab() {
   } else if (tab === "upload") {
     renderUpload($("upload-view"), { joined: canLog(), features: [...features, ...spotFeatures], storage: store,
       sharedLink: takeShared(),
+      strava: STRAVA_CLIENT_ID ? {
+        status: () => strava.status(ICELOG), activities: () => strava.activities(ICELOG),
+        points: (id) => strava.points(id, ICELOG), disconnect: () => strava.disconnect(ICELOG),
+        authorize: stravaAuthorize,
+      } : null,
       resolveLink: async (url) => {
         const r = await fetch(`${WORKER_URL}/api/resolve-link?url=${encodeURIComponent(url)}`);
         return r.ok ? (await r.json()).url : null;
@@ -1319,7 +1348,8 @@ async function main() {
       showTab(b.dataset.tab);
     });
     if (sharedLink) history.replaceState(null, "", location.pathname + "#tab=upload");
-    showTab(sharedLink ? "upload" : location.hash.startsWith("#lake=") ? "map" : "explore");
+    const fromStrava = await stravaReturn();
+    showTab(sharedLink || fromStrava ? "upload" : location.hash.startsWith("#lake=") ? "map" : "explore");
     loadMine();
     if (WORKER_URL) {
       const me = el("a", { id: "me-btn", href: "#account", class: "me-btn" });

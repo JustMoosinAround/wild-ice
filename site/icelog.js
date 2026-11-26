@@ -126,8 +126,9 @@ function phoneSalt(storage) {
   return salt;
 }
 
-export function makeReport({ lakeId, rating, grade, note, story, photo, gps, day, trackMinutes, point, storage }) {
+export function makeReport({ lakeId, rating, grade, note, story, photo, gps, day, trackMinutes, point, storage, via }) {
   const r = { lake_id: lakeId, rating };
+  if (via) r.via = via; // "strava": its track details are never shown to others
   if (grade && (rating === "skated" || rating === "rough")) r.grade = grade;
   const n = (note || "").trim().slice(0, 300);
   if (n) r.note = n;
@@ -236,6 +237,15 @@ export async function addSpot(spot, { fetch, storage, base }) {
     return { ok: false, error: "No connection, try again" };
   }
 }
+
+// Signed-in calls for Connect Strava. Each returns {status, data}.
+export const strava = {
+  status: (o) => call(o.base, "/api/strava", { fetch: o.fetch, token: getDevice(o.storage)?.key }),
+  connect: (code, scope, o) => call(o.base, "/api/strava/connect", { fetch: o.fetch, method: "POST", body: { code, scope }, token: getDevice(o.storage)?.key }),
+  activities: (o) => call(o.base, "/api/strava/activities", { fetch: o.fetch, token: getDevice(o.storage)?.key }),
+  points: (id, o) => call(o.base, `/api/strava/activities/${encodeURIComponent(id)}/points`, { fetch: o.fetch, token: getDevice(o.storage)?.key }),
+  disconnect: (o) => call(o.base, "/api/strava", { fetch: o.fetch, method: "DELETE", token: getDevice(o.storage)?.key }),
+};
 
 // Recent public trip reports (all lakes).
 export async function loadFeed({ fetch, storage, base }) {

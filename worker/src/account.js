@@ -114,6 +114,7 @@ export async function deleteMe(env, request) {
     env.DB.prepare("UPDATE comments SET name = ? WHERE friend_id = ?").bind(FORMER, who.id),
     env.DB.prepare("DELETE FROM devices WHERE friend_id = ?").bind(who.id),
     env.DB.prepare("DELETE FROM saved WHERE friend_id = ?").bind(who.id),
+    env.DB.prepare("DELETE FROM strava WHERE friend_id = ?").bind(who.id),
     env.DB.prepare("DELETE FROM invites WHERE friend_id = ? AND used_at IS NULL").bind(who.id),
   ]);
   return json({ ok: true });

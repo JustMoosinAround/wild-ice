@@ -46,7 +46,47 @@ function linkBox(opts) {
     el("div", { class: "report-note" }, input, el("button", { type: "button", class: "act small", text: "Get the GPX", onclick: go })), out);
 }
 
-// opts: {joined: bool, features, queue(report) -> void, onJoin(), resolveLink(url), sharedLink?, stravaBox?}
+// Connect Strava: pick a recent activity, no file. Its minutes and track are shown only to you.
+function stravaBox(opts, list) {
+  const box = el("section", { class: "upload-card" }, el("b", { text: "Strava" }), el("p", { class: "meta", text: "Checking…" }));
+  const S = opts.strava;
+  (async () => {
+    const st = await S.status().catch(() => null);
+    if (!st || st.status !== 200 || !st.data.available) { box.remove(); return; }
+    if (!st.data.connected) {
+      box.replaceChildren(el("b", { text: "Strava" }),
+        el("p", { class: "meta", text: "Connect once, then pick a recent skate: no file to download. Your track and minutes stay private; only what you write in the trip report is shown to others." }),
+        el("button", { type: "button", class: "act strava-btn", text: "Connect with Strava", onclick: S.authorize }));
+      return;
+    }
+    const acts = el("ol", { class: "skate-list" });
+    box.replaceChildren(el("b", { text: `Strava${st.data.athlete ? " · " + st.data.athlete : ""}` }),
+      el("p", { class: "meta", text: "Your recent activities with GPS (skates first). Tap one to log it." }), acts,
+      el("button", { type: "button", class: "linkish", text: "Disconnect Strava", onclick: async () => {
+        if (!confirm("Disconnect Strava from Wild Ice?")) return;
+        await S.disconnect(); box.replaceChildren(el("b", { text: "Strava" }), el("p", { class: "meta", text: "Disconnected." }));
+      } }));
+    const r = await S.activities().catch(() => null);
+    if (!r || r.status !== 200) { acts.replaceWith(el("p", { class: "warn", text: (r && r.data.error) || "Couldn't reach Strava, try again" })); return; }
+    if (!r.data.activities.length) { acts.replaceWith(el("p", { class: "meta", text: "No activities with GPS in the last 60 days." })); return; }
+    for (const a of r.data.activities.slice(0, 12)) {
+      const li = el("li", { class: "acct-row" }, el("button", { type: "button", class: "acct-main", onclick: () => {
+        list.prepend(trackCard({ name: a.name }, async () => {
+          const p = await S.points(a.id);
+          if (p.status !== 200) throw Object.assign(new Error("strava"), { userMessage: p.data.error || "Couldn't get this activity from Strava" });
+          return p.data.points;
+        }, opts, "strava"));
+        list.scrollIntoView({ behavior: "smooth" });
+      } }, el("b", { text: a.name }),
+        el("span", { class: "meta", text: `${shortDate(a.start.slice(0, 10))} · ${a.type === "IceSkate" ? "Ice skate" : a.type} · ${a.minutes} min` })));
+      acts.append(li);
+    }
+  })();
+  return box;
+}
+
+// opts: {joined: bool, features, queue(report) -> void, onJoin(), resolveLink(url), sharedLink?,
+//        strava?: {status(), activities(), points(id), disconnect(), authorize()}}
 export function renderUpload(mount, opts) {
   if (!opts.joined) {
     mount.replaceChildren(el("h2", { text: "Upload a track" }),
@@ -63,7 +103,7 @@ export function renderUpload(mount, opts) {
   });
   mount.replaceChildren(el("h2", { text: "Upload a track" }),
     linkBox(opts),
-    opts.stravaBox || null,
+    opts.strava ? stravaBox(opts, list) : null,
     el("h3", { text: "Or pick a file" }),
     el("p", { class: "meta", text: "GPX, FIT or .fit.gz from your watch or an export. The track stays on your phone: only the lake, day, minutes on the ice and one point are sent." }),
     el("label", { class: "act file-label", for: "track-file", text: "Choose track files" }), input, list);
@@ -95,15 +135,21 @@ function newSpotForm(card, file, sum, opts, resolve) {
 }
 
 function fileCard(file, opts) {
+  return trackCard({ name: file.name }, () => readTrackFile(file), opts, null);
+}
+
+// One track (a file, or a Strava activity): find the lake(s) it's on, or offer a new spot,
+// then post the trip report. getPoints() -> [{lat, lon, t}]; via: null or "strava".
+function trackCard(file, getPoints, opts, via) {
   const card = el("section", { class: "upload-card" }, el("b", { text: file.name }), el("p", { class: "meta", text: "Reading…" }));
   (async () => {
     let matches, points;
     try {
-      points = await readTrackFile(file);
+      points = await getPoints();
       matches = matchLakes(points, opts.features);
     } catch (e) {
       card.replaceChildren(el("b", { text: file.name }),
-        el("p", { class: "warn", text: e instanceof TrackError ? e.message : "Couldn't read this file" }));
+        el("p", { class: "warn", text: e instanceof TrackError ? e.message : e && e.userMessage ? e.userMessage : "Couldn't read this track" }));
       return;
     }
     if (!matches.length) {
@@ -138,7 +184,7 @@ function fileCard(file, opts) {
         class: "act" + (r === rating ? " sel" : ""), text: t, onclick: () => { rating = r; redraw(); } })));
     const send = el("button", { type: "button", class: "act on", text: "Post trip report", onclick: () => {
       opts.queue(makeReport({ lakeId: pick.lakeId, rating, grade, story: note.value, day: pick.day,
-        trackMinutes: pick.minutes, point: pick.point, storage: opts.storage }));
+        trackMinutes: pick.minutes, point: pick.point, storage: opts.storage, via }));
       posted.push(`${pick.name || pick.lakeId}, ${shortDate(pick.day)}, ${pick.minutes} min`);
       // A track over several lakes: offer the others next.
       matches = matches.filter((m) => m !== pick);

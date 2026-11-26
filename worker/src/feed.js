@@ -10,7 +10,9 @@ export async function tripReports(env, request, lakeId = null) {
   const who = await deviceFriend(env, request).catch(() => null);
   const since = new Date(Date.now() - FEED_DAYS * 86400_000).toISOString().slice(0, 10);
   const { results } = await env.DB.prepare(
-    `SELECT r.id, r.lake_id, r.day, r.rating, r.grade, r.story, r.track_minutes, r.created_at,
+    `SELECT r.id, r.lake_id, r.day, r.rating, r.grade, r.story, r.created_at,
+            -- Strava's terms: a member's Strava data is shown only to that member
+            CASE WHEN r.via = 'strava' AND r.friend_id != ? THEN NULL ELSE r.track_minutes END AS track_minutes,
             f.name, f.avatar_id AS avatar,
             CASE WHEN p.status IS NOT NULL AND p.status != 'rejected' THEN p.public_id END AS photo,
             (SELECT COUNT(*) FROM kudos k WHERE k.report_id = r.id) AS kudos,
@@ -19,7 +21,7 @@ export async function tripReports(env, request, lakeId = null) {
      LEFT JOIN photos p ON p.id = r.photo_id
      WHERE r.day >= ? AND f.revoked_at IS NULL AND (? IS NULL OR r.lake_id = ?)
      ORDER BY r.day DESC, r.created_at DESC LIMIT ?`,
-  ).bind(who?.id ?? "", since, lakeId, lakeId, FEED_MAX).all();
+  ).bind(who?.id ?? "", who?.id ?? "", since, lakeId, lakeId, FEED_MAX).all();
   return results.map((r) => ({ ...r, mine: undefined, gave_kudos: r.mine > 0 }));
 }
 
