@@ -319,3 +319,15 @@ a.join-btn { display: inline-flex; align-items: center; min-height: 44px; paddin
 .stat { background: var(--surface2); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
 .stat b { font-size: 24px; }
 .stat span { color: var(--muted); font-size: 13px; }
+
+.map-hint { position: absolute; inset: 0; z-index: 900; display: flex; align-items: center; justify-content: center; pointer-events: none;
+  background: rgba(4, 9, 12, .55); color: #fff; font-size: 17px; font-weight: 600; text-align: center; padding: 0 24px; }
+.map-hint[hidden] { display: none; }
+/* Phones: the strip is one slim row (logo, name, button). */
+@media (max-width: 520px) {
+  #promo { padding: 6px 12px; }
+  .promo-brand { gap: 10px; }
+  .promo-brand img { width: 34px; height: 34px; border-radius: 8px; }
+  .promo-text span { display: none; }
+  a.promo-btn { min-height: 34px; font-size: 12px; padding: 0 12px; }
+}

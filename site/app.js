@@ -485,6 +485,23 @@ function iceLogSection(id) {
   return box;
 }
 
+// Embedded on a phone: one finger scrolls the host page, two fingers move and zoom the map.
+function twoFingerMap() {
+  if (!window.matchMedia?.("(pointer: coarse)").matches) return;
+  map.dragging.disable();
+  const hint = el("div", { class: "map-hint", text: "Use two fingers to move the map" });
+  hint.hidden = true;
+  map.getContainer().append(hint);
+  let timer = null;
+  const box = map.getContainer();
+  box.addEventListener("touchmove", (e) => {
+    if (e.touches.length !== 1) { hint.hidden = true; return; }
+    hint.hidden = false;
+    clearTimeout(timer);
+    timer = setTimeout(() => { hint.hidden = true; }, 1800);
+  }, { passive: true });
+}
+
 // --- anonymous usage counts (owner sees them on Review) ---
 function platformName() {
   const ua = navigator.userAgent;
@@ -1150,6 +1167,7 @@ async function main() {
   window.addEventListener("hashchange", routeHash);
   if (VIEW_ONLY) {
     document.body.classList.add("embed");
+    twoFingerMap();
     // A strip under the host site's header pointing to the full app (opens outside the embed).
     const app = location.origin + location.pathname;
     $("bar").before(el("div", { id: "promo" },
