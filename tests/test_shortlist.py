@@ -108,3 +108,16 @@ def test_pinned_snowed_lake_still_first():
     lakes = [mk("p", 5), mk("c", 900)]
     st = {"p": ice(snow=10, last_snow=SNOW_DAY), "c": ice()}
     assert shortlist(lakes, st, frozenset({"p"}), cfg, 100) == ["p", "c"]
+
+
+def test_shortlist_looks_at_lakes_frozen_since_their_last_check_first():
+    """Crescent Lake: the model froze it, then 12 days went by without a look while it
+    was really open. A lake not checked since its freeze-up goes ahead of snowed-over ones."""
+    from dataclasses import replace
+    lakes = [mk("snowed", 2000), mk("crescent", 1427)]
+    frozen = replace(ice(snow=50, last_snow=SNOW_DAY), freeze_up=date(2025, 11, 7))
+    st = {"snowed": ice(snow=50, last_snow=SNOW_DAY), "crescent": frozen}
+    got = shortlist(lakes, st, frozenset(), cfg, 100, last_checked={"crescent": date(2025, 11, 1), "snowed": date(2025, 11, 1)})
+    assert got == ["crescent", "snowed"]
+    got = shortlist(lakes, st, frozenset(), cfg, 100, last_checked={"crescent": date(2025, 11, 10), "snowed": date(2025, 11, 1)})
+    assert got == ["snowed", "crescent"]  # looked at since: normal snowed-over rotation

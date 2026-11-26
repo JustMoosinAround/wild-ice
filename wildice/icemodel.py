@@ -32,6 +32,19 @@ _LAG_MIN, _LAG_MAX = 5.0, 50.0
 _MIXED_C = 4.0
 _SURFACE_SPEEDUP = 4.0
 _SURFACE_LAG_MIN = 2.0
+# ...but only where the wind can't stir the lake: big lakes keep mixing to the bottom
+# well below 4 C, so the speedup fades from full at 100 acres to none at 1,000 (Crescent
+# Lake, 1,427 acres and 26 m deep, was open on Nov 22 when the full speedup had it frozen
+# Nov 7).
+_SPEEDUP_FULL_ACRES, _SPEEDUP_NONE_ACRES = 100.0, 1000.0
+
+
+def surface_speedup(area_acres: float | None) -> float:
+    """How much faster the surface cools below 4 C: 4x on small lakes, 1x on big ones."""
+    if area_acres is None or area_acres <= _SPEEDUP_FULL_ACRES:
+        return _SURFACE_SPEEDUP
+    f = (log10(area_acres) - log10(_SPEEDUP_FULL_ACRES)) / (log10(_SPEEDUP_NONE_ACRES) - log10(_SPEEDUP_FULL_ACRES))
+    return _SURFACE_SPEEDUP - (_SURFACE_SPEEDUP - 1.0) * min(1.0, f)
 
 TraceRow = tuple[date, float, float]  # day, water C, ice cm
 
@@ -149,7 +162,7 @@ def run_ice_model(
                 cum = max(0.0, cum - d.t_mean)
             water = 0.0
         else:
-            step = lag if water > _MIXED_C else max(_SURFACE_LAG_MIN, lag / _SURFACE_SPEEDUP)
+            step = lag if water > _MIXED_C else max(_SURFACE_LAG_MIN, lag / surface_speedup(area_acres))
             water = max(0.0, water + (d.t_mean - water) / step)
             if water == 0.0:
                 cum = max(0.0, -d.t_mean)  # cooled to 0 C today: ice can start

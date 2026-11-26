@@ -25,8 +25,9 @@ def shortlist(lakes: list[Lake], ice: dict[str, IceState], pinned: frozenset[str
               last_checked: Mapping[str, date] | None = None) -> list[str]:
     """Lake ids to image today, best first, within `remaining_requests` (today's share).
 
-    Order: pinned lakes, then lakes the weather says are clear of snow (largest
-    first), then snowed-over lakes, least recently checked first. Snowed-over
+    Order: pinned lakes, then lakes the weather says are clear of snow and lakes not
+    looked at since the model froze them (largest first), then snowed-over lakes,
+    least recently checked first. Snowed-over
     lakes stay in the rotation because wind can sweep them clear, and only a
     satellite image shows that.
     """
@@ -43,8 +44,13 @@ def shortlist(lakes: list[Lake], ice: dict[str, IceState], pinned: frozenset[str
             continue
         if st is None or st.thickness_cm < cfg.ice.open_cm:
             continue
-        if _snowed_over(st, cfg):
-            ranked.append(((2, checked.get(lake.id, date.min), -lake.area_acres), lake.id))
+        last = checked.get(lake.id, date.min)
+        if st.freeze_up is not None and last < st.freeze_up:
+            # Frozen by the model but not looked at since: is it really? (A big lake the
+            # model froze early stays open under the "snow" otherwise.) Ahead of snowed-over.
+            ranked.append(((1, date.min, -lake.area_acres), lake.id))
+        elif _snowed_over(st, cfg):
+            ranked.append(((2, last, -lake.area_acres), lake.id))
         else:
             ranked.append(((1, date.min, -lake.area_acres), lake.id))
     ranked.sort()
