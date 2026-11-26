@@ -8,6 +8,7 @@ import { renderUpload } from "./views/upload-view.js";
 import { avatarEl, avatarUrl, renderAccount } from "./views/account-view.js";
 import { renderTrips, tripCard } from "./views/trips-view.js";
 import { spotFeature } from "./track.js";
+import { sharedText } from "./activitylink.js";
 import { badges, shortDate } from "./explore.js";
 import { ACCESS, DISTANCES, LABELS, SIZES, SKATE, activeCount, clean, defaults, passes } from "./mapfilter.js";
 
@@ -538,6 +539,11 @@ function renderSpot(id, d) {
   panel.hidden = false;
 }
 
+// "Share -> Wild Ice" on Android (manifest share_target) opens the app with the link in
+// the address: hand it to the Upload tab once, then tidy the address.
+let sharedLink = sharedText(location.search) || null;
+function takeShared() { return sharedLink; } // kept across redraws until the tab changes
+
 // Shared options for trip report cards (feed and lake pages).
 function tripOpts(withLake) {
   return {
@@ -1006,6 +1012,11 @@ function renderTab() {
       labelText: (l) => (STYLE[l] || STYLE.unknown).text, openLake: (id) => openLake(id, true) });
   } else if (tab === "upload") {
     renderUpload($("upload-view"), { joined: canLog(), features: [...features, ...spotFeatures], storage: store,
+      sharedLink: takeShared(),
+      resolveLink: async (url) => {
+        const r = await fetch(`${WORKER_URL}/api/resolve-link?url=${encodeURIComponent(url)}`);
+        return r.ok ? (await r.json()).url : null;
+      },
       addSpot: async (sp) => {
         const r = await addSpot(sp, ICELOG);
         if (r.ok && !status.lakes[r.id]) {
@@ -1021,6 +1032,7 @@ function renderTab() {
 
 function showTab(name) {
   tab = TABS.includes(name) ? name : "explore";
+  if (tab !== "upload") sharedLink = null;
   $("explore-view").hidden = tab !== "explore";
   $("mine-view").hidden = tab !== "mine";
   $("upload-view").hidden = tab !== "upload";
@@ -1306,7 +1318,8 @@ async function main() {
       history.replaceState(null, "", "#tab=" + b.dataset.tab);
       showTab(b.dataset.tab);
     });
-    showTab(location.hash.startsWith("#lake=") ? "map" : "explore");
+    if (sharedLink) history.replaceState(null, "", location.pathname + "#tab=upload");
+    showTab(sharedLink ? "upload" : location.hash.startsWith("#lake=") ? "map" : "explore");
     loadMine();
     if (WORKER_URL) {
       const me = el("a", { id: "me-btn", href: "#account", class: "me-btn" });

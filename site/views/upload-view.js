@@ -3,6 +3,7 @@
 import { shortDate } from "../explore.js";
 import { GRADES, makeReport } from "../icelog.js";
 import { TrackError, matchLakes, readTrackFile, trackSummary } from "../track.js";
+import { parseActivityLink } from "../activitylink.js";
 
 function el(tag, props = {}, ...kids) {
   const n = document.createElement(tag);
@@ -15,7 +16,37 @@ function el(tag, props = {}, ...kids) {
   return n;
 }
 
-// opts: {joined: bool, features, queue(report) -> void, onJoin()}
+// From Strava or Garmin Connect without hunting for the export: paste the activity's
+// link (Share -> Copy link in the app; on Android, Share -> Wild Ice fills it in), and
+// the service's own GPX download opens. Then pick the file below.
+function linkBox(opts) {
+  const input = el("input", { type: "url", placeholder: "Paste a Strava or Garmin activity link", "aria-label": "Activity link" });
+  const out = el("div", { class: "link-out" });
+  const go = async () => {
+    let a = parseActivityLink(input.value);
+    if (a && a.short) {
+      out.replaceChildren(el("p", { class: "meta", text: "Opening the link…" }));
+      const full = await opts.resolveLink(a.short).catch(() => null);
+      a = full ? parseActivityLink(full) : null;
+    }
+    if (!a || a.short) {
+      out.replaceChildren(el("p", { class: "warn", text: "That doesn't look like a Strava or Garmin Connect activity link." }));
+      return;
+    }
+    const how = a.service === "Strava" ? "⋯ (top right) → Export GPX" : "⚙ (top right) → Export to GPX";
+    out.replaceChildren(
+      el("a", { class: "act file-label", href: a.gpxUrl, target: "_blank", rel: "noopener", text: `⇩ Download the GPX from ${a.service}` }),
+      el("p", { class: "meta", text: `Sign in to ${a.service} in your browser if it asks. When the file has downloaded, come back and tap Choose track files.` }),
+      el("p", { class: "meta" }, "No file? ", el("a", { href: a.pageUrl, target: "_blank", rel: "noopener", text: "Open the activity" }), ` on the website and use ${how}.`));
+  };
+  input.addEventListener("change", go);
+  if (opts.sharedLink) { input.value = opts.sharedLink; setTimeout(go, 0); }
+  return el("section", { class: "upload-card" }, el("b", { text: "From Strava or Garmin" }),
+    el("p", { class: "meta", text: "In the app, tap Share → Copy link on your skate, and paste it here." }),
+    el("div", { class: "report-note" }, input, el("button", { type: "button", class: "act small", text: "Get the GPX", onclick: go })), out);
+}
+
+// opts: {joined: bool, features, queue(report) -> void, onJoin(), resolveLink(url), sharedLink?, stravaBox?}
 export function renderUpload(mount, opts) {
   if (!opts.joined) {
     mount.replaceChildren(el("h2", { text: "Upload a track" }),
@@ -31,7 +62,10 @@ export function renderUpload(mount, opts) {
     for (const f of files) list.prepend(fileCard(f, opts));
   });
   mount.replaceChildren(el("h2", { text: "Upload a track" }),
-    el("p", { class: "meta", text: "GPX, FIT or .fit.gz from your watch or a Strava export. The track stays on your phone: only the lake, day, minutes on the ice and one point are sent." }),
+    linkBox(opts),
+    opts.stravaBox || null,
+    el("h3", { text: "Or pick a file" }),
+    el("p", { class: "meta", text: "GPX, FIT or .fit.gz from your watch or an export. The track stays on your phone: only the lake, day, minutes on the ice and one point are sent." }),
     el("label", { class: "act file-label", for: "track-file", text: "Choose track files" }), input, list);
 }
 
