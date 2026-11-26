@@ -1162,9 +1162,6 @@ async function main() {
   } else {
     window.addEventListener("pagehide", commitReport); // don't lose a report in its undo window
     pingInstall();
-  if (isOwner()) {
-    $("bar").append(el("a", { class: "review-link", href: "#review", text: "Review" }));
-  }
   window.addEventListener("online", sendQueue);
   const dropped = clearLegacy(store); // the old GitHub token never stays on a phone
   if (dropped) showMsg(`${dropped} old unsent change(s) from an older version were dropped.`);

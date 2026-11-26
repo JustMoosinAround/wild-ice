@@ -12,7 +12,7 @@ body { display: flex; flex-direction: column; font: 16px/1.4 system-ui, sans-ser
 #bar h1 { font-family: "Montserrat", system-ui, sans-serif; font-weight: 500; font-size: 17px; letter-spacing: .32em; text-transform: uppercase; margin: 0; }
 #map { flex: 1; min-height: 0; }
 #msg { position: fixed; bottom: calc(76px + var(--sab)); top: auto; left: var(--gutter); right: var(--gutter); z-index: 1000; background: var(--bad-bg); color: var(--bad-fg); padding: 8px 12px; border-radius: 8px; font-size: 14px; }
-#panel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000; max-height: 70vh; overflow-y: auto; background: var(--bg);
+#panel { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1200; /* above the header bar, so the X is never covered */ max-height: 70vh; overflow-y: auto; background: var(--bg);
   padding: 12px var(--gutter) calc(16px + env(safe-area-inset-bottom)); border-top-left-radius: 14px; border-top-right-radius: 14px; box-shadow: 0 -4px 16px rgba(0,0,0,.25); }
 #panel h2 { font-size: 20px; margin: 0 40px 4px 0; }
 #panel .close { position: absolute; top: 4px; right: 8px; width: 44px; height: 44px; font-size: 26px; border: 0; background: none; }
@@ -128,7 +128,6 @@ button.act.rep { display: flex; align-items: center; justify-content: center; ga
 .review-row p { margin: 2px 0; overflow-wrap: anywhere; }
 .review-row.friend { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .review input[type=text] { width: 100%; font-size: 14px; padding: 8px; border: 1px solid var(--line2); border-radius: 8px; margin: 6px 0; }
-.review-link { font-size: 14px; color: var(--accent); min-height: 44px; display: inline-flex; align-items: center; }
 .skate-list { list-style: none; margin: 8px 0; padding: 0; }
 .skate-row { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 0; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--fg); text-align: left; font: inherit; cursor: pointer; }
 .skate-row .sw { flex: none; width: 20px; height: 14px; border: 2px solid; border-radius: 3px; }
@@ -206,6 +205,7 @@ button.act.small { min-height: 40px; padding: 0 16px; font-size: 15px; }
   border-top-left-radius: 14px; border-top-right-radius: 14px; }
 .hero-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px var(--gutter) 0; }
 .hero-head h2 { margin: 0 !important; }
+.hero:not(.has-photo) .hero-head { padding-right: 60px; } /* keep Save clear of the close button */
 .hero-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px var(--gutter) 0; align-items: center; }
 #panel.page .close { background: rgba(4, 9, 12, .7); border-radius: 999px; top: 8px; right: 8px; z-index: 2; }
 button.save { flex: none; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line2);

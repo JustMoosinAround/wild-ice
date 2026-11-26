@@ -54,11 +54,11 @@ export async function renderAccount(page, opts) {
     say("Photo updated");
     opts.onChanged();
   });
-  const name = el("input", { type: "text", value: me.name, maxlength: "40", "aria-label": "Your name" });
+  const name = el("input", { type: "text", value: me.name, maxlength: "40", "aria-label": "Display name" });
   const profile = el("section", { class: "acct" },
     el("div", { class: "acct-head" }, pic,
       el("div", {}, el("label", { class: "act small file-label", for: "avatar-file", text: me.avatar ? "Change photo" : "Add a photo" }), file)),
-    el("label", { text: "Name (shows on your comments and featured photos)" }),
+    el("label", { text: "Display name" }),
     el("div", { class: "report-note" }, name, el("button", { type: "button", class: "act small", text: "Save", onclick: async () => {
       const r = await account.rename(name.value, o);
       say(r.status === 200 ? "Name saved" : r.data.error || "Couldn't save, try again");
@@ -88,15 +88,7 @@ export async function renderAccount(page, opts) {
 
   // --- phones ---
   const phoneList = el("ol", { class: "skate-list" });
-  const linkOut = el("div");
-  const phones = el("section", { class: "acct" }, el("h3", { text: "Phones signed in as you" }), phoneList,
-    el("button", { type: "button", class: "act", text: "Add another phone", onclick: async () => {
-      const r = await account.newPhoneLink(o);
-      if (r.status !== 200) { say(r.data.error || "Couldn't make a link, try again"); return; }
-      const box = el("input", { type: "text", readonly: true, value: r.data.invite_url });
-      linkOut.replaceChildren(el("p", { class: "meta", text: "Open this on the other phone (or paste it into the app there). It works once." }), box,
-        el("button", { type: "button", class: "act small", text: "Copy", onclick: () => navigator.clipboard?.writeText(r.data.invite_url).then(() => say("Copied")) }));
-    } }), linkOut);
+  const phones = el("section", { class: "acct" }, el("h3", { text: "Signed in on" }), phoneList);
   account.devices(o).then((r) => {
     for (const d of (r.status === 200 ? r.data.devices : [])) {
       const li = el("li", { class: "acct-row" },
@@ -129,5 +121,7 @@ export async function renderAccount(page, opts) {
         if (r.ok) opts.onSignedOut(); else say(r.error || "Couldn't delete, try again");
       } }));
 
-  page.replaceChildren(profile, msg, reportsBox, phones, data);
+  const owner = me.role === "owner"
+    ? el("section", { class: "acct" }, el("a", { class: "act join-btn", href: "#review", text: "Review and numbers" })) : null;
+  page.replaceChildren(...[profile, msg, owner, reportsBox, phones, data].filter(Boolean));
 }
