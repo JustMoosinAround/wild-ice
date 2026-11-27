@@ -1,6 +1,6 @@
 // Account page: name and photo, my reports, my phones, download and delete.
 import { shortDate } from "../explore.js";
-import { account, prepAvatar } from "../icelog.js";
+import { account, loginInfo, prepAvatar, setLogin } from "../icelog.js";
 
 function el(tag, props = {}, ...kids) {
   const n = document.createElement(tag);
@@ -123,5 +123,33 @@ export async function renderAccount(page, opts) {
 
   const owner = me.role === "owner"
     ? el("section", { class: "acct" }, el("a", { class: "act join-btn", href: "#review", text: "Review and numbers" })) : null;
-  page.replaceChildren(...[profile, msg, owner, reportsBox, phones, data].filter(Boolean));
+  page.replaceChildren(...[profile, msg, loginBox(o, say), owner, reportsBox, phones, data].filter(Boolean));
+}
+
+// Login: set up a username/email/password (older accounts), or change the password.
+function loginBox(o, say) {
+  const box = el("section", { class: "acct" }, el("h3", { text: "Login" }));
+  loginInfo(o).then((r) => {
+    if (!r || r.status !== 200) { box.remove(); return; }
+    const info = r.data;
+    const inp = (type, label, auto, value) => el("input", { type, placeholder: label, "aria-label": label, autocomplete: auto, value: value || null, autocapitalize: "off" });
+    const user = inp("text", "Username", "username", info.username);
+    const email = inp("email", "Email", "email", info.email);
+    const cur = info.has_password ? inp("password", "Current password", "current-password") : null;
+    const pass = inp("password", info.has_password ? "New password (optional)" : "Password (8+ characters)", "new-password");
+    const form = el("form", { class: "comment-form" }, user, email, cur, pass,
+      el("button", { class: "act", type: "submit", text: info.has_password ? "Save" : "Set up login" }));
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const body = { username: user.value.trim(), email: email.value.trim() };
+      if (pass.value) body.password = pass.value;
+      if (cur) body.current_password = cur.value;
+      const res = await setLogin(body, o).catch(() => null);
+      say(res && res.status === 200 ? "Login saved" : (res && res.data.error) || "Couldn't save, try again");
+      if (res && res.status === 200) { if (cur) cur.value = ""; pass.value = ""; }
+    });
+    if (!info.has_password) box.append(el("p", { class: "meta", text: "Add a login to use Wild Ice on other devices." }));
+    box.append(form);
+  });
+  return box;
 }

@@ -254,6 +254,24 @@ export async function loadFeed({ fetch, storage, base }) {
   return res.data.reports;
 }
 
+// Accounts: sign up / log in / reset password; each success saves this device's key.
+async function keyCall(path, body, { fetch, storage, base }) {
+  try {
+    const res = await call(base, path, { fetch, method: "POST", body });
+    if (res.status !== 200) return { ok: false, error: res.data.error || "Something went wrong, try again" };
+    setDevice(storage, { key: res.data.device_key, name: res.data.name, role: res.data.role });
+    return { ok: true, name: res.data.name, role: res.data.role };
+  } catch {
+    return { ok: false, error: "No connection, try again" };
+  }
+}
+export const signup = (b, o) => keyCall("/api/signup", b, o);
+export const login = (b, o) => keyCall("/api/login", b, o);
+export const resetPassword = (token, password, o) => keyCall("/api/password/reset", { token, password }, o);
+export const forgotPassword = (email, o) => call(o.base, "/api/password/forgot", { fetch: o.fetch, method: "POST", body: { email } });
+export const loginInfo = (o) => call(o.base, "/api/me/login", { fetch: o.fetch, token: getDevice(o.storage)?.key });
+export const setLogin = (b, o) => call(o.base, "/api/me/login", { fetch: o.fetch, method: "POST", body: b, token: getDevice(o.storage)?.key });
+
 // Open sign-up: a name and a Turnstile token, no invite needed.
 export async function joinOpen(name, turnstileToken, { fetch, storage, base }) {
   try {

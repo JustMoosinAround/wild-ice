@@ -10,6 +10,7 @@ import { getStats, ping, tally } from "./stats.js";
 import { getFeed, postKudos } from "./feed.js";
 import { getSpots, hideSpot, postSpot } from "./spots.js";
 import { resolveLink } from "./links.js";
+import { forgot, login, loginInfo, ownerReset, reset, setLogin, signup } from "./login.js";
 import { stravaActivities, stravaConnect, stravaDisconnect, stravaPoints, stravaStatus } from "./strava.js";
 import { deleteSaved, getSaved, getSkated, postSaved } from "./saved.js";
 import { deleteMe, deleteMyDevice, deleteReport, getAvatar, myDevices, myExport, myInvite, myReports,
@@ -19,6 +20,13 @@ const ROUTES = [
   ["POST", /^\/api\/bootstrap$/, bootstrap],
   ["POST", /^\/api\/invites\/redeem$/, redeem],
   ["POST", /^\/api\/join$/, join],
+  ["POST", /^\/api\/signup$/, signup],
+  ["POST", /^\/api\/login$/, login],
+  ["GET", /^\/api\/me\/login$/, loginInfo],
+  ["POST", /^\/api\/me\/login$/, setLogin],
+  ["POST", /^\/api\/password\/forgot$/, forgot],
+  ["POST", /^\/api\/password\/reset$/, reset],
+  ["POST", /^\/api\/friends\/([\w-]+)\/reset-link$/, ownerReset],
   ["POST", /^\/api\/ping$/, ping],
   ["POST", /^\/api\/tally$/, tally],
   ["GET", /^\/api\/stats$/, getStats],

@@ -15,7 +15,7 @@ import { ACCESS, DISTANCES, LABELS, SIZES, SKATE, activeCount, clean, defaults, 
 const SKATE_CM = 5; // config.yaml ice.skate_cm: past 2" the thickness doesn't matter
 import {
   GRADES, flushReports, getDevice, inviteCodeFromHash, loadLake, ownerCall, postComment, prepPhoto,
-  queueReport, queuedReports, redeemInvite, joinOpen, giveKudos, loadFeed, loadSpots, addSpot, strava, getSaved, setSaved, getSkated, account, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
+  queueReport, queuedReports, redeemInvite, joinOpen, signup, login, resetPassword, forgotPassword, loginInfo, setLogin, giveKudos, loadFeed, loadSpots, addSpot, strava, getSaved, setSaved, getSkated, account, inviteCodeFromText, makeReport, checkDevice, clearLegacy, inviteDecision,
 } from "./icelog.js";
 import { STRAVA_CLIENT_ID, TURNSTILE_SITEKEY, WORKER_URL } from "./config.js";
 
@@ -661,49 +661,93 @@ function pingInstall() {
 // A button that opens the sign-up page.
 function joinPrompt(text) {
   return el("div", { class: "join-prompt" }, el("p", { class: "meta", text }),
-    el("a", { class: "act join-btn", href: "#join", text: "Join Wild Ice" }));
+    el("div", { class: "row" }, el("a", { class: "act join-btn", href: "#join", text: "Sign up" }),
+      el("a", { class: "act", href: "#login", text: "Log in" })));
 }
 
-// Sign-up: just a name and a quick bot check.
-function showJoin() {
+// Sign up (username, email, password) or log in.
+function showJoin(mode = "signup") {
   if (!WORKER_URL) { showMsg("Sign-up isn't set up yet."); return; }
   if (getDevice(store)) { location.hash = "#account"; return; }
-  const name = el("input", { type: "text", maxlength: "40", placeholder: "Your name", "aria-label": "Your name", autocomplete: "name" });
-  const human = el("div", { class: "turnstile" });
   const msg = el("p", { class: "status" });
-  let token = null;
-  const form = el("form", { class: "comment-form" },
-    el("p", { text: "Free. Just your name." }),
-    name, human,
-    el("p", { class: "disc", text: "Conditions are estimates. Check the ice yourself." }),
-    el("button", { class: "act", type: "submit", text: "Join" }), msg);
-  if (TURNSTILE_SITEKEY) {
-    loadScript("https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit").then(() => {
-      if (window.turnstile && human.isConnected) {
-        window.turnstile.render(human, { sitekey: TURNSTILE_SITEKEY, callback: (t) => { token = t; } });
-      }
-    }).catch(() => { msg.textContent = "Couldn't load the check; try again later."; });
+  const input = (type, label, auto, extra = {}) => el("input", { type, placeholder: label, "aria-label": label, autocomplete: auto, ...extra });
+  const welcome = (r) => {
+    savedIds = new Set(); markSaved(); loadMine(); paintMe();
+    if (canOfferInstall()) openPage(`Welcome, ${r.name}`, el("button", { type: "button", class: "act on", text: "⤓ Install app", onclick: doInstall }));
+    else { closePanel(); showMsg(`Welcome, ${r.name}`); }
+  };
+  const tabs = el("div", { class: "fchips seg-tabs" },
+    el("button", { type: "button", class: "fchip" + (mode === "signup" ? " on" : ""), text: "Sign up", onclick: () => showJoin("signup") }),
+    el("button", { type: "button", class: "fchip" + (mode === "login" ? " on" : ""), text: "Log in", onclick: () => showJoin("login") }));
+  let form;
+  if (mode === "signup") {
+    const user = input("text", "Username", "username", { maxlength: "30", autocapitalize: "off" });
+    const email = input("email", "Email", "email");
+    const pass = input("password", "Password (8+ characters)", "new-password");
+    const human = el("div", { class: "turnstile" });
+    let token = null;
+    form = el("form", { class: "comment-form" }, user, email, pass, human,
+      el("p", { class: "disc", text: "Conditions are estimates. Check the ice yourself." }),
+      el("button", { class: "act on", type: "submit", text: "Create account" }), msg);
+    if (TURNSTILE_SITEKEY) {
+      loadScript("https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit").then(() => {
+        if (window.turnstile && human.isConnected) window.turnstile.render(human, { sitekey: TURNSTILE_SITEKEY, callback: (t) => { token = t; } });
+      }).catch(() => { msg.textContent = "Couldn't load the check; try again later."; });
+    }
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.textContent = "Creating…";
+      const r = await signup({ username: user.value.trim(), email: email.value.trim(), password: pass.value, turnstile_token: token }, ICELOG);
+      if (!r.ok) { msg.textContent = r.error; if (window.turnstile) { window.turnstile.reset(human); token = null; } return; }
+      welcome(r);
+    });
+    openPage("Join Wild Ice", tabs, form);
+    user.focus();
+  } else {
+    const who = input("text", "Username or email", "username", { autocapitalize: "off" });
+    const pass = input("password", "Password", "current-password");
+    form = el("form", { class: "comment-form" }, who, pass, el("button", { class: "act on", type: "submit", text: "Log in" }), msg,
+      el("button", { type: "button", class: "linkish", text: "Forgot password?", onclick: () => showForgot() }));
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      msg.textContent = "Logging in…";
+      const r = await login({ login: who.value.trim(), password: pass.value }, ICELOG);
+      if (!r.ok) { msg.textContent = r.error; return; }
+      welcome(r);
+    });
+    openPage("Log in", tabs, form);
+    who.focus();
   }
+}
+
+function showForgot() {
+  const email = el("input", { type: "email", placeholder: "Your account's email", "aria-label": "Email", autocomplete: "email" });
+  const msg = el("p", { class: "status" });
+  const form = el("form", { class: "comment-form" }, email, el("button", { class: "act on", type: "submit", text: "Send reset link" }), msg);
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!name.value.trim()) { msg.textContent = "Add your name"; name.focus(); return; }
-    msg.textContent = "Joining…";
-    const r = await joinOpen(name.value.trim(), token, ICELOG);
-    if (!r.ok) {
-      msg.textContent = r.error;
-      if (window.turnstile) { window.turnstile.reset(human); token = null; }
-      return;
-    }
-    savedIds = new Set(); markSaved(); loadMine(); paintMe();
-    if (canOfferInstall()) {
-      openPage(`Welcome, ${r.name}`, el("button", { type: "button", class: "act on", text: "⤓ Install app", onclick: doInstall }));
-    } else {
-      closePanel();
-      showMsg(`Welcome, ${r.name}`);
-    }
+    const r = await forgotPassword(email.value.trim(), ICELOG).catch(() => null);
+    msg.textContent = !r ? "No connection, try again"
+      : r.data.email_enabled ? "If that email has an account, a link is on its way." : "Email isn't set up yet: ask the owner for a reset link.";
   });
-  openPage("Join Wild Ice", form, pasteInvite());
-  name.focus();
+  openPage("Reset password", form);
+  email.focus();
+}
+
+// A reset link (#reset=token): pick a new password, then you're logged in.
+function showReset(token) {
+  const pass = el("input", { type: "password", placeholder: "New password (8+ characters)", "aria-label": "New password", autocomplete: "new-password" });
+  const msg = el("p", { class: "status" });
+  const form = el("form", { class: "comment-form" }, pass, el("button", { class: "act on", type: "submit", text: "Save and log in" }), msg);
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const r = await resetPassword(token, pass.value, ICELOG);
+    if (!r.ok) { msg.textContent = r.error; return; }
+    history.replaceState(null, "", location.pathname);
+    savedIds = new Set(); markSaved(); loadMine(); paintMe(); closePanel(); showMsg(`Welcome back, ${r.name}`);
+  });
+  openPage("New password", form);
+  pass.focus();
 }
 
 // "Have an invite?": paste the link here when the app can't open it (home-screen app).
@@ -965,6 +1009,8 @@ function routeHash() {
   if (location.hash === "#glossary") { showGlossary(); return; }
   if (location.hash === "#account") { showAccount(); return; }
   if (location.hash === "#join") { showJoin(); return; }
+  if (location.hash === "#login") { showJoin("login"); return; }
+  if (location.hash.startsWith("#reset=")) { showReset(location.hash.slice(7)); return; }
   if (location.hash === "#skateable") { showTab("explore"); return; }
   const t = location.hash.match(/^#tab=(\w+)$/);
   if (t) { closePanel(); showTab(t[1]); return; }
@@ -1278,9 +1324,9 @@ async function showReview() {
     const row = el("div", { class: "review-row friend" });
     row.append(el("span", { text: f.name + (f.role === "owner" ? " (you)" : "") + (f.revoked ? " — switched off" : "") }));
     if (f.role !== "owner" && !f.revoked) {
-      row.append(el("button", { class: "act", text: "New phone link", onclick: async () => {
-        const res = await ownerCall("/api/invites", { ...ICELOG, method: "POST", body: { friend_id: f.id } }).catch(() => null);
-        if (res && res.status === 200) showInviteLink(out, res.data.invite_url, `New-phone link for ${f.name}. It works once.`);
+      row.append(el("button", { class: "act", text: "Reset link", onclick: async () => {
+        const res = await ownerCall(`/api/friends/${f.id}/reset-link`, { ...ICELOG, method: "POST", body: {} }).catch(() => null);
+        if (res && res.status === 200) showInviteLink(out, res.data.reset_url, `Password reset link for ${f.name}. Works once, for 2 hours.`);
       } }));
       row.append(el("button", { class: "act", text: "Switch off", onclick: async () => {
         if (!confirm(`Switch off ${f.name}'s invite? Their phone stops working; past reports stay.`)) return;
@@ -1290,11 +1336,7 @@ async function showReview() {
     }
     body.append(row);
   }
-  body.append(el("button", { class: "act", text: "New invite", onclick: async () => {
-    const res = await ownerCall("/api/invites", { ...ICELOG, method: "POST", body: {} }).catch(() => null);
-    if (!res || res.status !== 200) { out.replaceChildren(el("p", { class: "status", text: "Couldn't make an invite." })); return; }
-    showInviteLink(out, res.data.invite_url, "Send this to one friend. It works once, on one phone.");
-  } }), out);
+  body.append(out);
 }
 
 function showInviteLink(out, url, text) {

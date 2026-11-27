@@ -110,7 +110,7 @@ export async function deleteMe(env, request) {
   const avatar = await env.DB.prepare("SELECT avatar_id FROM friends WHERE id = ?").bind(who.id).first("avatar_id");
   if (avatar) await env.PHOTOS.delete(`avatar:${avatar}`);
   await env.DB.batch([
-    env.DB.prepare("UPDATE friends SET name = ?, avatar_id = NULL, revoked_at = ? WHERE id = ?").bind(FORMER, now(), who.id),
+    env.DB.prepare("UPDATE friends SET name = ?, avatar_id = NULL, username = NULL, email = NULL, pass_hash = NULL, pass_salt = NULL, revoked_at = ? WHERE id = ?").bind(FORMER, now(), who.id),
     env.DB.prepare("UPDATE comments SET name = ? WHERE friend_id = ?").bind(FORMER, who.id),
     env.DB.prepare("DELETE FROM devices WHERE friend_id = ?").bind(who.id),
     env.DB.prepare("DELETE FROM saved WHERE friend_id = ?").bind(who.id),
