@@ -977,7 +977,6 @@ function propsById() {
 }
 
 const TABS = ["explore", "map", "mine", "upload"];
-const CHIP_KEY = "wildice.chip";
 let tab = "explore";
 let skated = null; // Set of lake ids this phone's skater has skated, or null (not joined / not loaded)
 let skatedRows = null;
@@ -1024,7 +1023,6 @@ async function toggleSave(id) {
   if (tab === "mine") renderTab();
 }
 
-function readChip() { try { return store.getItem(CHIP_KEY) || "just_in"; } catch { return "just_in"; } }
 
 function photoUrl(d) {
   // A skater's featured photo first, then the uncut satellite photo of the lake and
@@ -1035,12 +1033,23 @@ function photoUrl(d) {
 
 function renderTab() {
   if (tab === "explore") {
+    const tripLoad = { ...tripOpts(true), load: () => loadFeed(ICELOG) };
     renderExplore($("explore-view"), {
-      status, props: propsById(), ctx: { runDate: status.run_date, skated }, chip: readChip(),
-      onChip: (c) => { try { store.setItem(CHIP_KEY, c); } catch { /* ignore */ } renderTab(); },
+      status, props: propsById(), ctx: { runDate: status.run_date, skated },
       onMap: () => { setFilter({ ...mapFilter, labels: [...SKATE] }); showTab("map"); },
+      onSeason: (label) => { setFilter({ ...defaults(), labels: [label] }); showTab("map"); },
       openLake: (id) => openLake(id, true), photoUrl,
-      renderTrips: (mount) => renderTrips(mount, { ...tripOpts(true), load: () => loadFeed(ICELOG) }),
+      styleOf: (l) => STYLE[l] || STYLE.unknown,
+      geometry: (id) => layers.get(id)?.feature.geometry || null,
+      saved: [...savedIds],
+      here: () => here,
+      locate: () => {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition((pos) => { here = { lat: pos.coords.latitude, lon: pos.coords.longitude }; renderTab(); },
+          () => showMsg("Location is off."), { maximumAge: 600000, timeout: 15000 });
+      },
+      renderTrips: (mount, limit) => renderTrips(mount, tripLoad, limit),
+      openTrips: () => { const box = el("div", { class: "trips-box" }); openPage("Trip reports", box); renderTrips(box, tripLoad); },
     });
   } else if (tab === "mine") {
     renderMine($("mine-view"), { glossaryHref: "#glossary", status, saved: [...savedIds], skated: skatedRows, joined: !!getDevice(store),

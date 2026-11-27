@@ -369,3 +369,28 @@ button.strava-btn { background: #fc4c02; border-color: #fc4c02; color: #fff; fon
 @media (min-width: 700px) { .install-btn { top: 50%; transform: translateY(-50%); right: calc(var(--gutter) + 44px); position: absolute; }
   #bar:has(.install-btn) { padding-right: calc(var(--gutter) + 170px); } }
 .how { padding-left: 20px; } .how li { margin: 8px 0; }
+
+/* home */
+.season { margin: 6px 0 18px; }
+.season-big { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.season-big b { font-size: 40px; line-height: 1; color: var(--accent); }
+.season-big > span:first-of-type { font-size: 20px; font-weight: 700; }
+.season-sub { color: var(--muted); font-size: 14px; width: 100%; }
+.season-bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; margin: 12px 0 8px; gap: 2px; }
+.season-bar .seg { flex-basis: 0; border: 0; padding: 0; min-width: 6px; cursor: pointer; }
+.season-key { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.key-item { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; padding: 4px 0; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
+.key-item i, .dot-chip i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid; display: inline-block; }
+.home-row { margin: 0 0 22px; }
+.row-head { display: flex; align-items: baseline; justify-content: space-between; }
+.row-head h2 { font-size: 19px; margin: 0 0 10px; }
+.rail { list-style: none; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter) 4px; display: flex; gap: 12px; overflow-x: auto;
+  scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter); scrollbar-width: none; }
+.rail::-webkit-scrollbar { display: none; }
+.rail > li { flex: none; width: min(70vw, 280px); scroll-snap-align: start; }
+.rail .card { height: 100%; }
+.rail .card-photo, .card-art { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+.card-art { background: radial-gradient(ellipse at 50% 40%, #10303a, #04090c 75%); }
+.dot-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--fg); }
+.card-sub { font-size: 13px; color: var(--muted); }
+@media (min-width: 900px) { .rail > li { width: 300px; } }

@@ -42,7 +42,7 @@ export function tripCard(r, opts) {
 }
 
 // The Trip reports feed (Explore): newest first.
-export async function renderTrips(mount, opts) {
+export async function renderTrips(mount, opts, limit = 0) {
   mount.replaceChildren(el("p", { class: "meta", text: "Loading trip reports…" }));
   const reports = await opts.load().catch(() => null);
   if (!reports) { mount.replaceChildren(el("p", { class: "meta", text: "Couldn't load. Try again later." })); return; }
@@ -50,5 +50,5 @@ export async function renderTrips(mount, opts) {
     mount.replaceChildren(el("p", { class: "meta", text: "No trip reports yet." }));
     return;
   }
-  mount.replaceChildren(el("ol", { class: "trips" }, ...reports.map((r) => tripCard(r, opts))));
+  mount.replaceChildren(el("ol", { class: "trips" }, ...(limit ? reports.slice(0, limit) : reports).map((r) => tripCard(r, opts))));
 }

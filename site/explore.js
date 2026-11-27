@@ -110,3 +110,53 @@ export function skateMeta(d, labelText) {
   if (d.road_mi != null) parts.push(d.road_mi < 0.1 ? "at the road" : `${d.road_mi.toFixed(1)} mi from road`);
   return parts.join(" · ");
 }
+
+// --- home sections ---------------------------------------------------------------
+export const SEASON_ORDER = ["likely_black_ice", "rough_ice", "freezing", "unknown", "snow_covered", "open_water"];
+
+// How many lakes carry each colour (hidden ones left out).
+export function seasonCounts(lakes) {
+  const out = Object.fromEntries(SEASON_ORDER.map((l) => [l, 0]));
+  for (const d of Object.values(lakes)) if (!d.hidden && d.label in out) out[d.label] += 1;
+  return out;
+}
+
+// Freezing lakes closest to skateable: thickest estimate first.
+export function comingIn(lakes, n = 10) {
+  return Object.entries(lakes).filter(([, d]) => d.label === "freezing" && !d.hidden)
+    .map(([id, d]) => ({ id, ...d })).sort((a, b) => (b.thickness_cm || 0) - (a.thickness_cm || 0)).slice(0, n);
+}
+
+function km(a, b) {
+  const r = Math.PI / 180;
+  const h = Math.sin((b.lat - a.lat) * r / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin((b.lon - a.lon) * r / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(h));
+}
+
+// Nearest lakes to `here` that aren't open water, with miles.
+export function nearest(lakes, props, here, n = 10) {
+  return Object.entries(lakes).filter(([id, d]) => !d.hidden && d.label !== "open_water" && props[id]?.lat != null)
+    .map(([id, d]) => ({ id, ...d, mi: km(here, props[id]) * 0.621371 })).sort((a, b) => a.mi - b.mi).slice(0, n);
+}
+
+// The biggest lakes that aren't open water.
+export function bigIce(lakes, props, n = 10) {
+  return Object.entries(lakes).filter(([id, d]) => !d.hidden && d.label !== "open_water" && props[id]?.area_acres)
+    .map(([id, d]) => ({ id, ...d })).sort((a, b) => props[b.id].area_acres - props[a.id].area_acres).slice(0, n);
+}
+
+// An SVG path of a lake outline (GeoJSON Polygon/MultiPolygon) fitted to a w x h box.
+export function outlinePath(geometry, w = 160, h = 90, pad = 8) {
+  const polys = !geometry ? [] : geometry.type === "Polygon" ? [geometry.coordinates]
+    : geometry.type === "MultiPolygon" ? geometry.coordinates : [];
+  const rings = polys.flatMap((p) => p.slice(0, 1)); // outer rings only
+  if (!rings.length) return "";
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity, lat = 0, n = 0;
+  for (const r of rings) for (const [x, y] of r) { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); lat += y; n++; }
+  const k = Math.cos((lat / n) * Math.PI / 180);
+  const sx = (maxX - minX) * k || 1e-9, sy = maxY - minY || 1e-9;
+  const s = Math.min((w - 2 * pad) / sx, (h - 2 * pad) / sy);
+  const ox = (w - sx * s) / 2, oy = (h - sy * s) / 2;
+  const f = (v) => Math.round(v * 10) / 10;
+  return rings.map((r) => "M" + r.map(([x, y]) => `${f(ox + (x - minX) * k * s)},${f(oy + (maxY - y) * s)}`).join("L") + "Z").join("");
+}
