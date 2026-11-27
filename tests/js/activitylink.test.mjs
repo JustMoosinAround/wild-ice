@@ -17,3 +17,12 @@ test("an Android share lands in the address", () => {
   assert.equal(sharedText("?share_title=Skate&share_url=https%3A%2F%2Fstrava.app.link%2Fx"), "https://strava.app.link/x Skate");
   assert.equal(sharedText(""), "");
 });
+
+test("on Android the download opens in Chrome, not the Strava app", async () => {
+  const { browserHref } = await import("../../site/activitylink.js");
+  const url = "https://www.strava.com/activities/21137723395/export_gpx";
+  assert.equal(browserHref(url, "Mozilla/5.0 (iPhone)"), url);
+  const h = browserHref(url, "Mozilla/5.0 (Linux; Android 15)");
+  assert.ok(h.startsWith("intent://www.strava.com/activities/21137723395/export_gpx#Intent;scheme=https;package=com.android.chrome;"));
+  assert.ok(h.includes("S.browser_fallback_url=" + encodeURIComponent(url)));
+});

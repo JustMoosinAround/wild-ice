@@ -695,8 +695,12 @@ function showJoin() {
       return;
     }
     savedIds = new Set(); markSaved(); loadMine(); paintMe();
-    openPage("You're in", el("p", { text: `Welcome, ${r.name}.` }),
-      canOfferInstall() ? el("button", { type: "button", class: "act on", text: "⤓ Install app", onclick: doInstall }) : null);
+    if (canOfferInstall()) {
+      openPage(`Welcome, ${r.name}`, el("button", { type: "button", class: "act on", text: "⤓ Install app", onclick: doInstall }));
+    } else {
+      closePanel();
+      showMsg(`Welcome, ${r.name}`);
+    }
   });
   openPage("Join Wild Ice", form, pasteInvite());
   name.focus();

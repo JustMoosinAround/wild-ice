@@ -28,3 +28,12 @@ export function sharedText(search) {
   const q = new URLSearchParams(search || "");
   return ["share_url", "share_text", "share_title"].map((k) => q.get(k)).filter(Boolean).join(" ");
 }
+
+// On Android the Strava / Garmin apps grab their websites' links (and their apps can't
+// export a GPX). An intent link makes Chrome open it instead, so the download happens.
+export function browserHref(url, userAgent) {
+  if (!/Android/i.test(userAgent || "")) return url;
+  const u = new URL(url);
+  return `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=https;package=com.android.chrome;`
+    + `S.browser_fallback_url=${encodeURIComponent(url)};end`;
+}

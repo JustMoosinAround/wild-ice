@@ -3,7 +3,7 @@
 import { shortDate } from "../explore.js";
 import { GRADES, makeReport } from "../icelog.js";
 import { TrackError, matchLakes, readTrackFile, trackSummary } from "../track.js";
-import { parseActivityLink } from "../activitylink.js";
+import { browserHref, parseActivityLink } from "../activitylink.js";
 
 function el(tag, props = {}, ...kids) {
   const n = document.createElement(tag);
@@ -36,9 +36,11 @@ function linkBox(opts) {
     }
     const how = a.service === "Strava" ? "⋯ (top right) → Export GPX" : "⚙ (top right) → Export to GPX";
     out.replaceChildren(
-      el("a", { class: "act file-label", href: a.gpxUrl, target: "_blank", rel: "noopener", text: `⇩ Download the GPX from ${a.service}` }),
-      el("p", { class: "meta", text: "Then choose the downloaded file below." }),
-      el("p", { class: "meta" }, el("a", { href: a.pageUrl, target: "_blank", rel: "noopener", text: "No file?" }), ` Open it and use ${how}.`));
+      el("a", { class: "act file-label", href: browserHref(a.gpxUrl, navigator.userAgent), target: "_blank", rel: "noopener",
+        text: `⇩ Download the GPX from ${a.service}` }),
+      el("p", { class: "meta", text: `Opens in Chrome (sign in to ${a.service} there once). Then choose the file below.` }),
+      el("p", { class: "meta" }, el("a", { href: browserHref(a.pageUrl, navigator.userAgent), target: "_blank", rel: "noopener", text: "No file?" }),
+        ` Open it on the website and use ${how}.`));
   };
   input.addEventListener("change", go);
   input.addEventListener("paste", () => setTimeout(go, 0)); // run as soon as it's pasted
