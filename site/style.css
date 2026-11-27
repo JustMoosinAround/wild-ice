@@ -32,8 +32,9 @@ body { display: flex; flex-direction: column; font: 16px/1.4 system-ui, sans-ser
 .patch figcaption { font-size: 13px; color: var(--warn-fg); margin-top: 4px; }
 a.cop { display: block; padding: 12px 0; color: var(--accent); }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
-button.act, label.act { min-height: 48px; font-size: 16px; border: 1px solid var(--line2); border-radius: 10px; background: var(--surface); color: var(--fg); }
-label.act { display: flex; align-items: center; justify-content: center; padding: 0 16px; cursor: pointer; }
+button.act, label.act, a.act { min-height: 48px; font-size: 16px; border: 1px solid var(--line2); border-radius: 10px; background: var(--surface); color: var(--fg); }
+label.act, a.act { display: flex; align-items: center; justify-content: center; padding: 0 16px; cursor: pointer; text-decoration: none; }
+.link-out a.act { background: #fc4c02; border-color: #fc4c02; color: #fff; font-weight: 600; margin: 10px 0 4px; }
 button.act.on { background: var(--teal); border-color: var(--ice); }
 button.act.sel { outline: 3px solid var(--accent); }
 #panel input[type=text], #panel input[type=password] { width: 100%; min-height: 44px; font-size: 16px; padding: 6px 10px; margin: 4px 0; border: 1px solid var(--line2); border-radius: 8px; }

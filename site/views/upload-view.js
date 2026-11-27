@@ -20,7 +20,8 @@ function el(tag, props = {}, ...kids) {
 // link (Share -> Copy link in the app; on Android, Share -> Wild Ice fills it in), and
 // the service's own GPX download opens. Then pick the file below.
 function linkBox(opts) {
-  const input = el("input", { type: "url", placeholder: "Paste a Strava or Garmin activity link", "aria-label": "Activity link" });
+  const input = el("input", { type: "text", inputmode: "url", autocomplete: "off", placeholder: "Paste the Strava or Garmin share",
+    "aria-label": "Activity link" });
   const out = el("div", { class: "link-out" });
   const go = async () => {
     let a = parseActivityLink(input.value);
@@ -40,9 +41,10 @@ function linkBox(opts) {
       el("p", { class: "meta" }, "No file? ", el("a", { href: a.pageUrl, target: "_blank", rel: "noopener", text: "Open the activity" }), ` on the website and use ${how}.`));
   };
   input.addEventListener("change", go);
+  input.addEventListener("paste", () => setTimeout(go, 0)); // run as soon as it's pasted
   if (opts.sharedLink) { input.value = opts.sharedLink; setTimeout(go, 0); }
   return el("section", { class: "upload-card" }, el("b", { text: "From Strava or Garmin" }),
-    el("p", { class: "meta", text: "In the app, tap Share → Copy link on your skate, and paste it here." }),
+    el("p", { class: "meta", text: "In the Strava or Garmin app, tap Share on your skate, copy it, and paste it here (the whole \"Check out my…\" text is fine)." }),
     el("div", { class: "report-note" }, input, el("button", { type: "button", class: "act small", text: "Get the GPX", onclick: go })), out);
 }
 
@@ -101,12 +103,12 @@ export function renderUpload(mount, opts) {
     input.value = "";
     for (const f of files) list.prepend(fileCard(f, opts));
   });
-  mount.replaceChildren(el("h2", { text: "Upload a track" }),
+  mount.replaceChildren(...[el("h2", { text: "Upload a track" }),
     linkBox(opts),
     opts.strava ? stravaBox(opts, list) : null,
     el("h3", { text: "Or pick a file" }),
     el("p", { class: "meta", text: "GPX, FIT or .fit.gz from your watch or an export. The track stays on your phone: only the lake, day, minutes on the ice and one point are sent." }),
-    el("label", { class: "act file-label", for: "track-file", text: "Choose track files" }), input, list);
+    el("label", { class: "act file-label", for: "track-file", text: "Choose track files" }), input, list].filter(Boolean));
 }
 
 const KINDS = [["marsh", "Marsh"], ["river", "River"], ["slough", "Slough"], ["pond", "Pond"], ["other", "Other"]];
