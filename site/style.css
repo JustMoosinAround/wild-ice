@@ -362,3 +362,10 @@ button.kudos.on { background: var(--teal); border-color: var(--teal); }
 .spot-pin span { display: block; width: 14px; height: 14px; margin: 2px; transform: rotate(45deg); border: 2px solid; border-radius: 2px;
   box-shadow: 0 0 0 1.5px rgba(4, 9, 12, .8); }
 button.strava-btn { background: #fc4c02; border-color: #fc4c02; color: #fff; font-weight: 600; }
+
+/* Install app: a pill in the header, left of the avatar */
+.install-btn { position: absolute; top: calc(6px + var(--sat)); right: calc(var(--gutter) + 38px); min-height: 26px; padding: 0 10px;
+  border-radius: 13px; border: 0; background: var(--accent); color: #04090c; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+@media (min-width: 700px) { .install-btn { top: 50%; transform: translateY(-50%); right: calc(var(--gutter) + 44px); position: absolute; }
+  #bar:has(.install-btn) { padding-right: calc(var(--gutter) + 170px); } }
+.how { padding-left: 20px; } .how li { margin: 8px 0; }

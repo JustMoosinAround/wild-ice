@@ -539,6 +539,40 @@ function renderSpot(id, d) {
   panel.hidden = false;
 }
 
+// --- install as an app: one button where the browser allows it (Android, desktop
+// Chrome/Edge), a short how-to on iPhone (Safari has no install button for sites) ---
+let installPrompt = null;
+const installed = () => window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installPrompt = e; paintInstall(); });
+window.addEventListener("appinstalled", () => { installPrompt = null; paintInstall(); showMsg("Wild Ice is on your home screen"); });
+
+function canOfferInstall() { return !VIEW_ONLY && !installed() && (installPrompt || isIOS()); }
+
+async function doInstall() {
+  if (installPrompt) {
+    installPrompt.prompt();
+    await installPrompt.userChoice.catch(() => null);
+    installPrompt = null;
+    paintInstall();
+    return;
+  }
+  openPage("Install Wild Ice",
+    el("ol", { class: "how" },
+      el("li", { text: "Tap the Share button (the square with an arrow) at the bottom of Safari." }),
+      el("li", { text: "Scroll down and tap Add to Home Screen." }),
+      el("li", { text: "Tap Add. Wild Ice opens full screen from your home screen, like any app." })),
+    el("p", { class: "meta", text: "iPhones don't let websites install themselves, so it takes these three taps. In Chrome on iPhone it's the same: Share → Add to Home Screen." }));
+}
+
+function paintInstall() {
+  const old = $("install-btn");
+  if (!canOfferInstall()) { old?.remove(); return; }
+  if (old) return;
+  $("bar").append(el("button", { type: "button", id: "install-btn", class: "install-btn", text: "⤓ Install app", onclick: doInstall }));
+}
+
 // Connect Strava: off to Strava's consent page (its app on phones), back here with ?code.
 function stravaAuthorize() {
   const state = crypto.randomUUID();
@@ -663,7 +697,8 @@ function showJoin() {
       return;
     }
     savedIds = new Set(); markSaved(); loadMine(); paintMe();
-    openPage("You're in", el("p", { text: `Welcome, ${r.name}. Tap a lake to log the ice, or upload a track from your watch.` }));
+    openPage("You're in", el("p", { text: `Welcome, ${r.name}. Tap a lake to log the ice, or upload a track from your watch.` }),
+      canOfferInstall() ? el("button", { type: "button", class: "act on", text: "⤓ Install Wild Ice on this phone", onclick: doInstall }) : null);
   });
   openPage("Join Wild Ice", form, pasteInvite());
   name.focus();
@@ -1127,7 +1162,7 @@ function openPage(title, ...kids) {
   panel.classList.remove("page");
   panel.replaceChildren(
     el("button", { class: "close", "aria-label": "Close", text: "×", onclick: closePanel }),
-    el("h2", { text: title }), ...kids);
+    el("h2", { text: title }), ...kids.filter(Boolean));
   panel.hidden = false;
   return panel;
 }
@@ -1338,6 +1373,8 @@ async function main() {
   if (WORKER_URL) await loadSpots(ICELOG).then(addSpots).catch(() => { /* spots are extra */ });
   showBanner();
   $("msg").addEventListener("click", () => { $("msg").hidden = true; });
+  if ("serviceWorker" in navigator && !VIEW_ONLY) navigator.serviceWorker.register("sw.js").catch(() => { /* still works as a site */ });
+  paintInstall();
   if (!VIEW_ONLY) overlayReported();
   build();
   setupSearch();
