@@ -70,7 +70,7 @@ export async function renderAccount(page, opts) {
   const reportsBox = el("section", { class: "acct" }, el("h3", { text: "My reports" }), reportList);
   account.reports(o).then((r) => {
     const rows = r.status === 200 ? r.data.reports : [];
-    if (!rows.length) { reportList.replaceWith(el("p", { class: "meta", text: "Reports you post or upload show here." })); return; }
+    if (!rows.length) { reportList.replaceWith(el("p", { class: "meta", text: "None yet." })); return; }
     for (const rep of rows) {
       const li = el("li", { class: "acct-row" },
         el("button", { type: "button", class: "acct-main", onclick: () => opts.openLake(rep.lake_id) },
@@ -93,7 +93,7 @@ export async function renderAccount(page, opts) {
     for (const d of (r.status === 200 ? r.data.devices : [])) {
       const li = el("li", { class: "acct-row" },
         el("span", { class: "acct-main" }, el("b", { text: d.label + (d.current ? " (this phone)" : "") }),
-          el("span", { class: "meta", text: `added ${shortDate(d.added.slice(0, 10))} · last used ${shortDate(d.last_seen.slice(0, 10))}` })),
+          el("span", { class: "meta", text: `last used ${shortDate(d.last_seen.slice(0, 10))}` })),
         el("button", { type: "button", class: "act small", text: "Sign out", onclick: async () => {
           if (!confirm(d.current ? "Sign this phone out? You'll need a new link to sign back in." : "Sign that phone out?")) return;
           const s = await account.signOut(d, o);
@@ -106,7 +106,7 @@ export async function renderAccount(page, opts) {
 
   // --- download and delete ---
   const data = el("section", { class: "acct" }, el("h3", { text: "Your data" }),
-    el("button", { type: "button", class: "act", text: "Download everything I've posted", onclick: async () => {
+    el("button", { type: "button", class: "act", text: "Download my data", onclick: async () => {
       const r = await account.download(o);
       if (r.status !== 200) { say("Couldn't download, try again"); return; }
       const a = el("a", { href: URL.createObjectURL(new Blob([JSON.stringify(r.data, null, 2)], { type: "application/json" })),
@@ -114,7 +114,7 @@ export async function renderAccount(page, opts) {
       document.body.append(a); a.click(); a.remove();
     } }),
     me.role === "owner"
-      ? el("p", { class: "meta", text: "This is the owner account, so it can't be deleted." })
+      ? el("p", { class: "meta", text: "Owner account." })
       : el("button", { type: "button", class: "act danger", text: "Delete my account", onclick: async () => {
         if (!confirm("Delete your account? Your name and photo are erased and your phones are signed out. Your reports stay as anonymous ice data; your comments show as \"Former skater\".")) return;
         const r = await account.remove(o);

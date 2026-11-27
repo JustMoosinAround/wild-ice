@@ -224,7 +224,7 @@ function drawFilterSheet() {
     conds,
     el("h4", { text: "Lake size" }), choice("Lake size", SIZES, f.minAcres, (v) => ({ ...f, minAcres: v })),
     el("h4", { text: "Access" }), choice("Access", ACCESS, f.access, (v) => ({ ...f, access: v })),
-    el("h4", { text: "Distance from me (straight line)" }), choice("Distance from me", DISTANCES, f.maxMiles, (v) => ({ ...f, maxMiles: v })),
+    el("h4", { text: "Distance" }), choice("Distance from me", DISTANCES, f.maxMiles, (v) => ({ ...f, maxMiles: v })),
     hereNote ? el("p", { class: "meta", text: hereNote }) : null,
     el("label", { class: "fcheck" }, justIn, " Just in (came in the last 3 days)"),
     activeCount(f) ? el("button", { type: "button", class: "act small", text: "Clear filters", onclick: () => setFilter(defaults()) }) : null,
@@ -342,18 +342,18 @@ function reportSection(id) {
       box.append(el("p", { class: "report-msg", text: "Logging " + what + " for today" }),
         el("div", { class: "row" },
           el("button", { class: "act", text: "Undo", onclick: undoReport }),
-          el("button", { class: "act", text: "Add trip report & photo", onclick: () => {
+          el("button", { class: "act", text: "Add details", onclick: () => {
             clearTimeout(p.timer); p.timer = null; p.noting = true; renderPanel(id);
           } })));
     } else if (p.noting) {
-      box.append(el("p", { class: "report-msg", text: what + ": add a trip report" }), detailsForm(id, p));
+      box.append(el("p", { class: "report-msg", text: what }), detailsForm(id, p));
     }
     return box;
   }
   const mine = d.reported && d.reported.day === todayLocal() ? d.reported : null;
   box.append(el("p", { class: "report-head", text: mine
     ? "You logged " + REPORT[mine.rating].text.toLowerCase() + " today. Changed?"
-    : "Log the ice: how is it?" }));
+    : "How's the ice?" }));
   const grid = el("div", { class: "report-grid" });
   for (const [r, c] of Object.entries(REPORT)) {
     const sw = el("i", { class: "sw" });
@@ -366,8 +366,7 @@ function reportSection(id) {
     }, sw, c.text));
   }
   box.append(grid,
-    el("p", { class: "meta", text: "Pick one, then add a trip report and a photo." }),
-    el("button", { type: "button", class: "act small", text: "⇪ Upload a GPX or FIT track", onclick: () => { closePanel(); showTab("upload"); } }));
+        el("button", { type: "button", class: "act small", text: "⇪ Upload a track", onclick: () => { closePanel(); showTab("upload"); } }));
   return box;
 }
 
@@ -383,9 +382,9 @@ function detailsForm(id, p) {
         onclick: () => { p.grade = p.grade === g ? null : g; renderPanel(id); },
       }));
     }
-    form.append(el("p", { class: "meta", text: "Ice quality (optional): A+ best … F- skateable but awful" }), chips);
+    form.append(el("p", { class: "meta", text: "Grade (optional)" }), chips);
   }
-  const note = el("textarea", { placeholder: "How was it? Where did you get on, how was the ice, anything to watch for…",
+  const note = el("textarea", { placeholder: "How was it?",
     "aria-label": "Trip report", maxlength: "1000", rows: "4" });
   note.value = p.story || "";
   note.addEventListener("input", () => { p.story = note.value; });
@@ -403,8 +402,8 @@ function detailsForm(id, p) {
       photoMsg.textContent = "Couldn't read that photo";
     }
   });
-  form.append(el("label", { class: "meta", text: "Trip report (everyone sees this)" }), note,
-    el("label", { class: "act file-label", for: "rep-photo", text: p.photo ? "📷 Change photo" : "📷 Add a photo (everyone sees it)" }), photo, photoMsg);
+  form.append(note,
+    el("label", { class: "act file-label", for: "rep-photo", text: p.photo ? "📷 Change photo" : "📷 Add photo" }), photo, photoMsg);
   if (!(p.photo && p.photo.gps)) {
     const where = el("button", { type: "button", class: "act", text: p.gps ? "Location added ✓" : "Use my location" });
     where.addEventListener("click", () => {
@@ -415,7 +414,7 @@ function detailsForm(id, p) {
         () => { where.textContent = "Location not available"; },
         { enableHighAccuracy: true, timeout: 15000 });
     });
-    form.append(el("p", { class: "meta", text: "At the lake? Adding your location confirms which lake." }), where);
+    form.append(where);
   }
   form.append(el("button", { class: "act", type: "submit", text: "Post trip report" }));
   form.addEventListener("submit", (e) => { e.preventDefault(); p.story = note.value.trim(); commitReport(); });
@@ -494,7 +493,6 @@ async function sendQueue() {
 // Field Notes (public part): featured photos and comments, for everyone.
 function iceLogSection(id) {
   const box = el("section", { class: "icelog", "aria-label": "Field Notes" });
-  box.append(el("h3", { text: "Field Notes" }));
   const photos = el("div", { class: "featured" });
   const trips = el("ol", { class: "trips" });
   const list = el("ol", { class: "comments" });
@@ -502,7 +500,7 @@ function iceLogSection(id) {
   if (!VIEW_ONLY && WORKER_URL && !getDevice(store)) box.append(joinPrompt("Join Wild Ice to post ice reports and photos"));
   loadLake(id, ICELOG).then(({ comments, photos: ph, reports = [] }) => {
     if (!box.isConnected) return;
-    if (!reports.length) trips.append(el("li", { class: "meta", text: "No trip reports in the last 60 days." }));
+    if (!reports.length) trips.append(el("li", { class: "meta", text: "None yet." }));
     for (const r of reports) trips.append(tripCard(r, tripOpts(false)));
     for (const p of ph || []) {
       photos.append(el("figure", {},
@@ -510,7 +508,7 @@ function iceLogSection(id) {
         el("figcaption", {}, avatarEl(avatarUrl(WORKER_URL, p.avatar), p.credit || "A skater", 20),
           document.createTextNode(" " + (p.credit || "A skater") + ", " + shortDay(p.created_at.slice(0, 10))))));
     }
-    if (!comments.length) list.append(el("li", { class: "meta", text: "No comments yet." }));
+    if (!comments.length) list.append(el("li", { class: "meta", text: "None yet." }));
     for (const c of comments) {
       list.append(el("li", { class: "comment" }, avatarEl(avatarUrl(WORKER_URL, c.avatar), c.name, 32),
         el("div", {}, el("b", { text: c.name }), el("span", { class: "meta", text: " · " + shortDay(c.created_at.slice(0, 10)) }), el("p", { text: c.text }))));
@@ -560,10 +558,10 @@ async function doInstall() {
   }
   openPage("Install Wild Ice",
     el("ol", { class: "how" },
-      el("li", { text: "Tap the Share button (the square with an arrow) at the bottom of Safari." }),
-      el("li", { text: "Scroll down and tap Add to Home Screen." }),
-      el("li", { text: "Tap Add. Wild Ice opens full screen from your home screen, like any app." })),
-    el("p", { class: "meta", text: "iPhones don't let websites install themselves, so it takes these three taps. In Chrome on iPhone it's the same: Share → Add to Home Screen." }));
+      el("li", { text: "Tap Share in Safari." }),
+      el("li", { text: "Tap Add to Home Screen." }),
+      el("li", { text: "Tap Add." })),
+    );
 }
 
 function paintInstall() {
@@ -618,7 +616,7 @@ function tripOpts(withLake) {
 function twoFingerMap() {
   if (!window.matchMedia?.("(pointer: coarse)").matches) return;
   map.dragging.disable();
-  const hint = el("div", { class: "map-hint", text: "Use two fingers to move the map" });
+  const hint = el("div", { class: "map-hint", text: "Two fingers to move the map" });
   hint.hidden = true;
   map.getContainer().append(hint);
   let timer = null;
@@ -675,9 +673,9 @@ function showJoin() {
   const msg = el("p", { class: "status" });
   let token = null;
   const form = el("form", { class: "comment-form" },
-    el("p", { text: "Post ice reports, photos, trip reports and comments, save lakes and keep a list of the lakes you've skated. Free, no email." }),
+    el("p", { text: "Free. Just your name." }),
     name, human,
-    el("p", { class: "disc", text: "Ice conditions on Wild Ice are estimates from satellites, weather and other skaters' reports. They can be wrong or out of date, so check the ice yourself before you go out." }),
+    el("p", { class: "disc", text: "Conditions are estimates. Check the ice yourself." }),
     el("button", { class: "act", type: "submit", text: "Join" }), msg);
   if (TURNSTILE_SITEKEY) {
     loadScript("https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit").then(() => {
@@ -697,8 +695,8 @@ function showJoin() {
       return;
     }
     savedIds = new Set(); markSaved(); loadMine(); paintMe();
-    openPage("You're in", el("p", { text: `Welcome, ${r.name}. Tap a lake to log the ice, or upload a track from your watch.` }),
-      canOfferInstall() ? el("button", { type: "button", class: "act on", text: "⤓ Install Wild Ice on this phone", onclick: doInstall }) : null);
+    openPage("You're in", el("p", { text: `Welcome, ${r.name}.` }),
+      canOfferInstall() ? el("button", { type: "button", class: "act on", text: "⤓ Install app", onclick: doInstall }) : null);
   });
   openPage("Join Wild Ice", form, pasteInvite());
   name.focus();
@@ -716,21 +714,21 @@ function pasteInvite() {
     input.value = "";
     showInvite(code);
   });
-  return el("details", { class: "invite-paste" }, el("summary", { text: "Adding another phone? Paste its link" }), form);
+  return el("details", { class: "invite-paste" }, el("summary", { text: "Have a link from your other phone?" }), form);
 }
 
 function commentForm(id, list) {
   const device = getDevice(store);
   const form = el("form", { class: "comment-form" });
   const name = el("input", { type: "text", placeholder: "Your name", "aria-label": "Your name", maxlength: "40", required: "" });
-  if (device) name.value = device.name;
+  if (device) { name.value = device.name; name.hidden = true; } // members post under their name
   const text = el("textarea", { placeholder: "Add a comment", "aria-label": "Comment", maxlength: "500", rows: "3", required: "" });
   const msg = el("p", { class: "status" });
   const human = el("div", { class: "turnstile" });
   let token = null;
   form.append(name, text);
   if (!device) {
-    form.append(human, el("p", { class: "meta", text: "Comments are checked before they appear." }));
+    form.append(human, el("p", { class: "meta", text: "Checked before posting." }));
     if (TURNSTILE_SITEKEY) {
       loadScript("https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit").then(() => {
         if (window.turnstile && human.isConnected) {
@@ -765,8 +763,8 @@ function renderPanel(id, statusText) {
   panel.replaceChildren();
   const props = (layers.get(id) || {}).feature?.properties || {};
   if (props.area_acres) {
-    let size = Math.round(props.area_acres).toLocaleString() + " acres";
-    if (props.depth_m) size += ", about " + Math.round(props.depth_m) + " m deep on average";
+    let size = Math.round(props.area_acres).toLocaleString() + " ac";
+    if (props.depth_m) size += " · " + Math.round(props.depth_m) + " m deep";
     panel.append(el("p", { class: "meta", text: size }));
   }
   const chip = el("span", { class: "chip", text: s.text });
@@ -786,7 +784,7 @@ function renderPanel(id, statusText) {
   // The graph tells the story: weather, water, ice, snow, and the clear images and reports.
   if (d.kind === "marsh") {
     // A marsh: no lake ice model or satellite reading; its colour is skaters' reports.
-    panel.append(el("p", { class: "meta", text: "Marsh: skated as one big area. Marshes freeze their own way (shallow water, channels, springs), so there's no ice model here: the colour comes only from skaters' reports in the last 2 weeks. Check the ice yourself." }));
+    panel.append(el("p", { class: "meta", text: "Marsh: colour comes from skaters' reports only." }));
   } else {
     const chart = el("div", { class: "wx-mount" });
     panel.append(chart);
@@ -795,36 +793,14 @@ function renderPanel(id, statusText) {
   if (d.warning) panel.append(el("p", { class: "warn", text: d.warning }));
   if (canLog()) panel.append(reportSection(id));
   if (WORKER_URL) panel.append(iceLogSection(id));
-  if (d.thickness_cm != null && d.kind !== "marsh") {
-    panel.append(el("p", { class: "est", text: d.thickness_cm >= SKATE_CM ? "est. 2+ in of ice" : "est. " + d.thickness_cm + " cm" }));
-  }
-  // Daily color history, oldest first. Published history stops at yesterday, so add today.
-  const days = (d.history || []).filter((h) => h.day !== status.run_date);
-  if (status.run_date) days.push({ day: status.run_date, label: d.label });
-  if (days.length > 1) {
-    const recent = days.slice(-14);
-    panel.append(el("p", { class: "strip-head", text: "Color each day" }));
-    const strip = el("div", { class: "strip", "aria-label": "Lake color each day, oldest first" });
-    recent.forEach((h, i) => {
-      const hs = STYLE[h.label] || STYLE.unknown;
-      const c = el("span", { title: shortDay(h.day) + ": " + hs.text });
-      c.style.background = hs.fill;
-      c.style.borderColor = hs.line;
-      if (i === recent.length - 1) c.className = "today";
-      strip.append(c);
-    });
-    panel.append(strip);
-    panel.append(el("div", { class: "strip-ends" },
-      el("span", { text: shortDay(recent[0].day) }), el("span", { text: "Today" })));
-  }
   if (d.patch_thumb) {
     // Grey ice next to black patches: shade the black part (open water or newer, thinner ice).
     panel.append(el("figure", { class: "patch" },
       el("img", { class: "thumb", src: "data/" + d.patch_thumb, alt: d.name + " satellite image with black patches shaded orange", loading: "lazy" }),
-      el("figcaption", { text: "Orange: black patches next to grey ice. Could be open water or newer, thinner ice: check before you cross."
+      el("figcaption", { text: "Orange: dark patches, maybe open water."
         + (d.patch_low_sun ? " Low sun: some may be mountain shadow." : "") })));
   }
-  if (typeof d.browser_url === "string" && d.browser_url.startsWith("https://")) {
+  if (isOwner() && typeof d.browser_url === "string" && d.browser_url.startsWith("https://")) {
     panel.append(el("a", { class: "cop", href: d.browser_url, target: "_blank", rel: "noopener", text: "Open in Copernicus Browser" }));
   }
   if (VIEW_ONLY) {
@@ -1172,15 +1148,15 @@ function showInvite(code) {
   const decision = inviteDecision(getDevice(store));
   if (decision === "refuse") {
     // Never let an invite (e.g. one being tested) replace the owner's key on this phone.
-    openPage("Invite link", el("p", { text: "This phone is already the owner's. Send the link to the friend it's for." }));
+    openPage("Invite link", el("p", { text: "This phone is the owner's. Send the link to someone else." }));
     return;
   }
   if (decision === "confirm" && !confirm("This phone is already signed in to Wild Ice. Join again with this new link?")) return;
   const name = el("input", { type: "text", maxlength: "40", placeholder: "Your name", "aria-label": "Your name" });
   const msg = el("p", { class: "status" });
   const form = el("form", { class: "comment-form" },
-    el("p", { class: "meta", text: "You're invited to post ice reports, photos and comments on Wild Ice. Your name shows on your comments and on photos the owner features. This invite works once, on this phone." }),
-    el("p", { class: "disc", text: "Ice conditions on Wild Ice are estimates from satellites, weather and other skaters' reports. They can be wrong or out of date, so check the ice yourself before you go out." }),
+    el("p", { class: "meta", text: "You're invited to Wild Ice." }),
+    el("p", { class: "disc", text: "Conditions are estimates. Check the ice yourself." }),
     name, el("button", { class: "act", type: "submit", text: "Join" }), msg);
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1213,7 +1189,7 @@ async function showReview() {
         tile(d.members.total, "members"), tile(d.get_app_clicks.d30, "Get the app taps, 30 days")),
       el("p", { class: "meta", text: [plat, `${d.installs.new_7d} new installs and ${d.members.new_7d} new members this week`,
         `${d.reports_30d} reports in 30 days`].filter(Boolean).join(" · ") }),
-      el("p", { class: "meta", text: "Installs are counted when the app is opened from a home screen (from now on), anonymously." }));
+      el("p", { class: "meta", text: "Anonymous." }));
   }).catch(() => {});
   const decide = (path, action, row) => async () => {
     row.querySelectorAll("button").forEach((b) => { b.disabled = true; });
@@ -1233,7 +1209,7 @@ async function showReview() {
   }
   const spots = Object.entries(status.lakes).filter(([, d]) => d.spot);
   if (spots.length) {
-    body.append(el("h3", { text: `Spots added by skaters (${spots.length})` }));
+    body.append(el("h3", { text: `Spots (${spots.length})` }));
     for (const [sid, d] of spots) {
       const row = el("div", { class: "review-row" });
       row.append(el("p", {}, el("b", { text: d.name }), el("span", { class: "meta", text: ` · ${SPOT_KIND[d.kind] || "Spot"} · added by ${d.added_by || "?"}` })),
@@ -1244,7 +1220,7 @@ async function showReview() {
     }
   }
   body.append(el("h3", { text: `New photos (${photos.length})` }),
-    el("p", { class: "meta", text: "Already showing in trip reports. Feature one to put it at the top of its lake page, or remove it." }));
+    el("p", { class: "meta", text: "Already public." }));
   for (const p of photos) {
     const row = el("div", { class: "review-row" });
     const img = el("img", { class: "thumb", alt: "Photo from " + (p.credit || "a friend") });
@@ -1265,7 +1241,7 @@ async function showReview() {
     row.append(el("p", {}, el("b", { text: rep.credit || "Someone" }),
         el("span", { class: "meta", text: ` · ${lakeName(rep.lake_id)} · ${shortDay(rep.day)}` })),
       el("p", { text: (REPORT[rep.rating] ? REPORT[rep.rating].text : rep.rating) + (rep.grade ? " " + rep.grade : "") + (rep.note ? " — " + rep.note : "") }),
-      el("button", { class: "act", text: "Remove (wrong or bad report)", onclick: decide(`/api/review/reports/${rep.id}`, "remove", row) }));
+      el("button", { class: "act", text: "Remove", onclick: decide(`/api/review/reports/${rep.id}`, "remove", row) }));
     body.append(row);
   }
   body.append(el("h3", { text: `Published comments (${published.length})` }));
@@ -1343,7 +1319,7 @@ async function main() {
       el("a", { class: "promo-brand", href: app, target: "_blank", rel: "noopener" },
         el("img", { src: "icons/icon-192.png", alt: "", width: "44", height: "44" }),
         el("span", { class: "promo-text" }, el("b", { text: "Wild Ice" }),
-          el("span", { text: "Join the community. Add observations and trip reports." }))),
+          el("span", { text: "Lake ice, mapped by skaters." }))),
       el("a", { class: "promo-btn", href: app + "#join", target: "_blank", rel: "noopener", text: "Get the app",
         onclick: () => countUse("/api/tally", { name: "get_app_click" }) })));
   } else {

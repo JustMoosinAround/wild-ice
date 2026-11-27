@@ -26,7 +26,7 @@ test("badges", () => {
   const d = { id: "a", came_in: "2026-11-21", last_report: { day: "2026-11-10", rating: "skated", grade: "B+" } };
   const props = { a: { area_acres: 1600.4, road_mi: 3.46, trail_mi: 0.02 } };
   assert.deepEqual(badges(d, props, { runDate: RUN, skated: new Set() }),
-    ["Just in · no tracks yet", "Last grade B+", "1,600 ac", "New to you", "Approach ~3.5 mi"]);
+    ["Just in", "Grade B+", "1,600 ac", "New to you", "Approach ~3.5 mi"]);
   assert.deepEqual(badges({ id: "a" }, { a: { area_acres: 40, road_mi: 0.2, trail_mi: 0 } },
     { runDate: RUN, skated: null }), ["40 ac"]);
   assert.deepEqual(badges({ id: "a" }, { a: { area_acres: 40, road_mi: 0.2 } },

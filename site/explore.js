@@ -46,9 +46,9 @@ export function isHikeIn(p) {
 export function badges(d, props, ctx) {
   const p = props[d.id] || {};
   const out = [];
-  if (isJustIn(d, ctx.runDate)) out.push("Just in · no tracks yet");
+  if (isJustIn(d, ctx.runDate)) out.push("Just in");
   const r = skatedReport(d);
-  if (r && r.grade) out.push(`Last grade ${r.grade}`);
+  if (r && r.grade) out.push(`Grade ${r.grade}`);
   // Unnamed lakes already say "(17 ac)" in their name.
   if (p.area_acres != null && !/\(\d[\d,]* ac\)$/.test(d.name || "")) out.push(`${Math.round(p.area_acres).toLocaleString("en-US")} ac`);
   if (ctx.skated && !ctx.skated.has(d.id)) out.push("New to you");

@@ -132,10 +132,7 @@ export function renderWeatherChart(s, mount, markers = []) {
 
   const wrap = document.createElement("div");
   wrap.className = "wx";
-  const h = document.createElement("p");
-  h.className = "meta";
-  h.textContent = "Last " + n + " days";
-  wrap.append(h, legend1, temp.root, legend2, ice.root, tip);
+  wrap.append(legend1, temp.root, legend2, ice.root, tip);
 
   // Crosshair: snap to the nearest day on either panel; one readout for every series.
   const show = (evt, p) => {

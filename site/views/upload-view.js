@@ -20,7 +20,7 @@ function el(tag, props = {}, ...kids) {
 // link (Share -> Copy link in the app; on Android, Share -> Wild Ice fills it in), and
 // the service's own GPX download opens. Then pick the file below.
 function linkBox(opts) {
-  const input = el("input", { type: "text", inputmode: "url", autocomplete: "off", placeholder: "Paste the Strava or Garmin share",
+  const input = el("input", { type: "text", inputmode: "url", autocomplete: "off", placeholder: "Paste a Strava or Garmin share",
     "aria-label": "Activity link" });
   const out = el("div", { class: "link-out" });
   const go = async () => {
@@ -31,20 +31,20 @@ function linkBox(opts) {
       a = full ? parseActivityLink(full) : null;
     }
     if (!a || a.short) {
-      out.replaceChildren(el("p", { class: "warn", text: "That doesn't look like a Strava or Garmin Connect activity link." }));
+      out.replaceChildren(el("p", { class: "warn", text: "No Strava or Garmin activity in that." }));
       return;
     }
     const how = a.service === "Strava" ? "⋯ (top right) → Export GPX" : "⚙ (top right) → Export to GPX";
     out.replaceChildren(
       el("a", { class: "act file-label", href: a.gpxUrl, target: "_blank", rel: "noopener", text: `⇩ Download the GPX from ${a.service}` }),
-      el("p", { class: "meta", text: `Sign in to ${a.service} in your browser if it asks. When the file has downloaded, come back and tap Choose track files.` }),
-      el("p", { class: "meta" }, "No file? ", el("a", { href: a.pageUrl, target: "_blank", rel: "noopener", text: "Open the activity" }), ` on the website and use ${how}.`));
+      el("p", { class: "meta", text: "Then choose the downloaded file below." }),
+      el("p", { class: "meta" }, el("a", { href: a.pageUrl, target: "_blank", rel: "noopener", text: "No file?" }), ` Open it and use ${how}.`));
   };
   input.addEventListener("change", go);
   input.addEventListener("paste", () => setTimeout(go, 0)); // run as soon as it's pasted
   if (opts.sharedLink) { input.value = opts.sharedLink; setTimeout(go, 0); }
   return el("section", { class: "upload-card" }, el("b", { text: "From Strava or Garmin" }),
-    el("p", { class: "meta", text: "In the Strava or Garmin app, tap Share on your skate, copy it, and paste it here (the whole \"Check out my…\" text is fine)." }),
+    el("p", { class: "meta", text: "In Strava or Garmin: Share → copy, then paste here." }),
     el("div", { class: "report-note" }, input, el("button", { type: "button", class: "act small", text: "Get the GPX", onclick: go })), out);
 }
 
@@ -57,20 +57,20 @@ function stravaBox(opts, list) {
     if (!st || st.status !== 200 || !st.data.available) { box.remove(); return; }
     if (!st.data.connected) {
       box.replaceChildren(el("b", { text: "Strava" }),
-        el("p", { class: "meta", text: "Connect once, then pick a recent skate: no file to download. Your track and minutes stay private; only what you write in the trip report is shown to others." }),
+        el("p", { class: "meta", text: "Pick a recent skate, no file needed. Your track stays private." }),
         el("button", { type: "button", class: "act strava-btn", text: "Connect with Strava", onclick: S.authorize }));
       return;
     }
     const acts = el("ol", { class: "skate-list" });
     box.replaceChildren(el("b", { text: `Strava${st.data.athlete ? " · " + st.data.athlete : ""}` }),
-      el("p", { class: "meta", text: "Your recent activities with GPS (skates first). Tap one to log it." }), acts,
+      el("p", { class: "meta", text: "Tap one to log it." }), acts,
       el("button", { type: "button", class: "linkish", text: "Disconnect Strava", onclick: async () => {
         if (!confirm("Disconnect Strava from Wild Ice?")) return;
         await S.disconnect(); box.replaceChildren(el("b", { text: "Strava" }), el("p", { class: "meta", text: "Disconnected." }));
       } }));
     const r = await S.activities().catch(() => null);
     if (!r || r.status !== 200) { acts.replaceWith(el("p", { class: "warn", text: (r && r.data.error) || "Couldn't reach Strava, try again" })); return; }
-    if (!r.data.activities.length) { acts.replaceWith(el("p", { class: "meta", text: "No activities with GPS in the last 60 days." })); return; }
+    if (!r.data.activities.length) { acts.replaceWith(el("p", { class: "meta", text: "No recent activities." })); return; }
     for (const a of r.data.activities.slice(0, 12)) {
       const li = el("li", { class: "acct-row" }, el("button", { type: "button", class: "acct-main", onclick: () => {
         list.prepend(trackCard({ name: a.name }, async () => {
@@ -92,7 +92,7 @@ function stravaBox(opts, list) {
 export function renderUpload(mount, opts) {
   if (!opts.joined) {
     mount.replaceChildren(el("h2", { text: "Upload a track" }),
-      el("p", { class: "meta", text: "Upload a GPX or FIT file from your watch or Strava, and it becomes a trip report on the lake you skated. Join Wild Ice (free, just your name) to post reports." }),
+      el("p", { class: "meta", text: "Join to post your tracks." }),
       el("button", { type: "button", class: "act", text: "Join Wild Ice", onclick: opts.onJoin }));
     return;
   }
@@ -107,7 +107,7 @@ export function renderUpload(mount, opts) {
     linkBox(opts),
     opts.strava ? stravaBox(opts, list) : null,
     el("h3", { text: "Or pick a file" }),
-    el("p", { class: "meta", text: "GPX, FIT or .fit.gz from your watch or an export. The track stays on your phone: only the lake, day, minutes on the ice and one point are sent." }),
+    el("p", { class: "meta", text: "GPX or FIT. Your track stays on your phone." }),
     el("label", { class: "act file-label", for: "track-file", text: "Choose track files" }), input, list].filter(Boolean));
 }
 
@@ -129,10 +129,10 @@ function newSpotForm(card, file, sum, opts, resolve) {
     resolve({ lakeId: r.id, name: r.name, minutes: sum.minutes, day: sum.day, point: sum.point, existing: r.existing });
   } });
   card.replaceChildren(el("b", { text: file.name }),
-    el("p", { class: "meta", text: `${shortDate(sum.day)} ${sum.day.slice(0, 4)} · ${sum.minutes} min · not on a lake we track` }),
-    el("p", { text: "Skated a marsh, river or slough? Add it as a spot. There's no satellite or ice model for these, so other skaters will rely on reports like yours." }),
+    el("p", { class: "meta", text: `${shortDate(sum.day)} · ${sum.minutes} min · not on a known lake` }),
+    el("p", { text: "Add it as a new spot?" }),
     name, kinds, add, msg,
-    el("button", { type: "button", class: "linkish", text: "Not ice skating? Skip this track", onclick: () => {
+    el("button", { type: "button", class: "linkish", text: "Skip", onclick: () => {
       card.replaceChildren(el("b", { text: file.name }), el("p", { class: "meta", text: "Skipped." })); resolve(null); } }));
 }
 
@@ -158,7 +158,7 @@ function trackCard(file, getPoints, opts, via) {
       const sum = trackSummary(points);
       if (!sum || !opts.addSpot) {
         card.replaceChildren(el("b", { text: file.name }),
-          el("p", { class: "warn", text: "This track is under 10 minutes, so there's nothing to log." }));
+          el("p", { class: "warn", text: "Under 10 minutes: nothing to log." }));
         return;
       }
       // Not on a catalog lake: a marsh, river or slough. Add it as a new spot.
@@ -179,7 +179,7 @@ function trackCard(file, getPoints, opts, via) {
       el("option", { value: "", text: "Grade (optional)" }), ...GRADES.map((g) => el("option", { value: g, text: g })));
     gradeSel.addEventListener("change", () => { grade = gradeSel.value || null; });
     const note = el("textarea", { maxlength: "1000", rows: "3", class: "story-in",
-      placeholder: "Trip report (optional, everyone sees it): how was the ice, where did you get on…" });
+      placeholder: "How was it? (optional)" });
     const msg = el("p", { class: "status" });
     const ratings = el("div", { class: "row" },
       ...[["skated", "Skateable"], ["rough", "Rough ice"]].map(([r, t]) => el("button", { type: "button",
@@ -203,7 +203,7 @@ function trackCard(file, getPoints, opts, via) {
     function redraw() {
       card.replaceChildren(...posted.map((t) => el("p", { class: "meta", text: `Posted: ${t}.` })),
         el("b", { text: `${pick.name || pick.lakeId}` }),
-        el("p", { class: "meta", text: `${shortDate(pick.day)} ${pick.day.slice(0, 4)} · ${pick.minutes} min on the ice · ${file.name}` }),
+        el("p", { class: "meta", text: `${shortDate(pick.day)} · ${pick.minutes} min` }),
         pickers, ratings, gradeSel, note, send, msg);
       if (pickers) [...pickers.children].forEach((b, i) => b.classList.toggle("sel", matches[i] === pick));
       [...ratings.children].forEach((b, i) => b.classList.toggle("sel", ["skated", "rough"][i] === rating));

@@ -24,15 +24,15 @@ export function renderMine(mount, opts) {
   const saved = opts.saved.map((id) => row(id, (d) => `${opts.labelText(d.label)} · ${evidenceLine(d, status.run_date).text}`)).filter(Boolean);
   const kids = [el("h2", { text: "My lakes" }), el("h3", { text: "Saved" })];
   kids.push(saved.length ? el("ol", { class: "skate-list" }, ...saved)
-    : el("p", { class: "meta", text: "Tap ♡ Save on a lake to keep it here." }));
+    : el("p", { class: "meta", text: "Tap ♡ Save on a lake." }));
   kids.push(el("h3", { text: "Skated" }));
   if (!opts.joined) {
-    kids.push(el("p", { class: "meta", text: "Join Wild Ice (free, just your name) to sync saved lakes across your phones and keep a list of lakes you've skated." }));
+    kids.push(el("p", { class: "meta", text: "Join to keep a list of lakes you've skated." }));
   } else {
     const sk = (opts.skated || []).map((s) => row(s.lake_id, () => `Last skated ${shortDate(s.day)}`)).filter(Boolean);
     kids.push(sk.length ? el("ol", { class: "skate-list" }, ...sk)
-      : el("p", { class: "meta", text: "Lakes you report skating, or upload a track for, show here." }));
+      : el("p", { class: "meta", text: "None yet." }));
   }
-  kids.push(el("p", { class: "meta foot" }, el("a", { href: opts.glossaryHref || "#glossary", text: "Glossary: what the colours, badges and warnings mean" })));
+  kids.push(el("p", { class: "meta foot" }, el("a", { href: opts.glossaryHref || "#glossary", text: "Glossary" })));
   mount.replaceChildren(...kids);
 }

@@ -45,9 +45,9 @@ export function tripCard(r, opts) {
 export async function renderTrips(mount, opts) {
   mount.replaceChildren(el("p", { class: "meta", text: "Loading trip reports…" }));
   const reports = await opts.load().catch(() => null);
-  if (!reports) { mount.replaceChildren(el("p", { class: "meta", text: "Couldn't load trip reports. Pull to refresh or try again later." })); return; }
+  if (!reports) { mount.replaceChildren(el("p", { class: "meta", text: "Couldn't load. Try again later." })); return; }
   if (!reports.length) {
-    mount.replaceChildren(el("p", { class: "meta", text: "No trip reports in the last 60 days yet. Be the first: open a lake you skated and log it." }));
+    mount.replaceChildren(el("p", { class: "meta", text: "No trip reports yet." }));
     return;
   }
   mount.replaceChildren(el("ol", { class: "trips" }, ...reports.map((r) => tripCard(r, opts))));
